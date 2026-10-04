@@ -1,0 +1,39 @@
+# Runs the FantasyPros update once a day, and any time you press "Run workflow".
+name: Update values
+
+on:
+  schedule:
+    - cron: "0 11 * * *"   # every day at 11:00 UTC (6 or 7 AM Eastern)
+  workflow_dispatch:        # adds a "Run workflow" button on the Actions tab
+
+permissions:
+  contents: write           # lets the workflow save data/values.json back to the repo
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get the repository files
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Download FantasyPros rankings and build values
+        env:
+          FANTASYPROS_API_KEY: ${{ secrets.FANTASYPROS_API_KEY }}
+        run: python scripts/update_values.py
+
+      - name: Save the new values file
+        run: |
+          git config user.name "front-office-bot"
+          git config user.email "front-office-bot@users.noreply.github.com"
+          git add data/values.json
+          if git diff --cached --quiet; then
+            echo "Values unchanged today."
+          else
+            git commit -m "Daily values update"
+            git push
+          fi
