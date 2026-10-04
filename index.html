@@ -259,6 +259,8 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 .titem .tv{font-family:var(--display);font-weight:700;font-size:17px;white-space:nowrap}
 .ttotal{display:flex;justify-content:space-between;margin-top:8px;font-weight:600}
 .ttotal span:last-child{font-family:var(--display);font-size:20px;font-weight:800}
+.ttotal.gave{margin-top:2px;font-weight:400;color:var(--muted)}
+.ttotal.gave span:last-child{font-size:17px;font-weight:700}
 
 /* League tuning indicator */
 .tuning{display:flex;align-items:flex-start;gap:12px;background:var(--card);border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:14px}
@@ -521,7 +523,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
     <li><b>Read your league from Sleeper.</b> Team count, starting lineup, scoring, bench, IR and taxi spots, rosters, and traded picks all come straight from your league. Nothing is typed in by hand.</li>
     <li><b>Apply your league's adjustments.</b> Each player's market value is multiplied by every rule below that matches your settings.</li>
     <li><b>Rescale to 10,000.</b> The best player in your league is set to exactly 10,000 and everyone else scales with him, so numbers stay familiar and comparable.</li>
-    <li><b>Tune to your league's trades.</b> If your league has made at least 15 two-team trades, values are nudged toward how your managers actually trade (explained below).</li>
+    <li><b>Tune to your league's trades.</b> If your league has made at least 15 trades, values are nudged toward how your managers actually trade (explained below).</li>
     <li><b>Value the draft picks</b> using each team's projected finish (explained below).</li>
   </ol>
   <div class="tablewrap">
@@ -561,14 +563,14 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
   <h2 id="tuning">How your league's trades tune values</h2>
   <p>Every league has its own habits. Some overpay for running backs, some hoard rookie picks. Once your league has enough trading history, Front Office learns those habits and adjusts values to match, without letting them override the expert market.</p>
   <ol class="steps">
-    <li><b>Collect the trades.</b> Every two-team trade from the last four seasons is included. Trades with three or more teams are shown in Trade History but left out of the tuning.</li>
-    <li><b>Break each trade down by position.</b> For both sides, Front Office adds up the market value received at each position: QB, RB, WR, TE, and draft picks.</li>
+    <li><b>Collect the trades.</b> Every completed trade from the last four seasons is included, from simple two-team swaps to 3- and 4-team deals.</li>
+    <li><b>Break each trade down by team and position.</b> For every team in the trade, Front Office adds up the market value it received and the value it gave up at each position: QB, RB, WR, TE, and draft picks. In a 3- or 4-team trade, each team is measured against what it personally sent out, not against one other team.</li>
     <li><b>Find what balances your league's trades.</b> If managers in your league agreed to a trade, they considered it fair. Front Office finds the set of multipliers, one per position, that makes your league's trades come out most even. For example, if your managers keep giving up extra market value to land running backs, running backs get a multiplier above 1.</li>
     <li><b>Keep it in check.</b> Each position's multiplier is capped between 0.75 and 1.25, and the math pulls every position back toward 1 unless the trades clearly point the other way, so a single unusual trade can't swing values.</li>
     <li><b>Blend it in gently.</b> Your league's habits count for about 1% per two trades, up to a maximum of 30%. Expert consensus always makes up the rest. In practice, no position moves more than about 7.5%.</li>
     <li><b>Rebuild the values.</b> Every player and pick is recalculated with the adjustment, then rescaled so the best player is still 10,000.</li>
   </ol>
-  <p>The tuning only switches on once your league has at least <b>15 two-team trades</b>. When it's active, the line under your league name says how many trades it's based on, and the League Settings tab shows the exact adjustment for each position. Because there are no records of past market values, trades are measured against today's values, so the tuning reflects your league's long-run tendencies rather than any single moment.</p>
+  <p>The tuning only switches on once your league has at least <b>15 trades</b> of any size. When it's active, the line under your league name says how many trades it's based on, and the League Settings tab shows the exact adjustment for each position. Because there are no records of past market values, trades are measured against today's values, so the tuning reflects your league's long-run tendencies rather than any single moment.</p>
   <p>Team Strategy uses the same history to show each team's trade record by today's values, their most frequent trade partner, managers who have traded away several of their own picks, and managers who tend to come out behind.</p>
 
   <h2>How trades are scored</h2>
@@ -1201,15 +1203,15 @@ function renderTuningLight(){
     el.innerHTML = `<span class="light wait" aria-hidden="true"></span><div class="tuning-text"><b>Checking your league's trade history...</b><p>Values may adjust slightly in a moment.</p>${link}</div>`;
     return;
   }
-  const twoTeam = S.history.trades.filter(t => t.sides.length === 2).length;
+  const twoTeam = S.history.trades.filter(t => t.sides.length >= 2).length;
   if (S.nudge){
     const adj = ["QB","RB","WR","TE","PICK"].map(k => ({ k, m: S.nudge[k] }))
       .map(x => `<span class="chip">${x.k === "PICK" ? "Picks" : x.k + "s"} ×${(Math.round(x.m*100)/100).toFixed(2)}</span>`).join("");
-    el.innerHTML = `<span class="light on" aria-hidden="true"></span><div class="tuning-text"><b>League tuning is on</b><p>These values include your league's trade habits, learned from ${S.nudge.n} two-team trades.</p><div class="chips">${adj}</div>${link}</div>`;
+    el.innerHTML = `<span class="light on" aria-hidden="true"></span><div class="tuning-text"><b>League tuning is on</b><p>These values include your league's trade habits, learned from ${S.nudge.n} trades.</p><div class="chips">${adj}</div>${link}</div>`;
   } else {
     const left = Math.max(0, NUDGE_MIN_TRADES - twoTeam);
     const pct = Math.min(100, Math.round(twoTeam / NUDGE_MIN_TRADES * 100));
-    el.innerHTML = `<span class="light off" aria-hidden="true"></span><div class="tuning-text"><b>League tuning is off for now: ${left} more trade${left === 1 ? "" : "s"} to go</b><p>Your league has ${twoTeam} of the ${NUDGE_MIN_TRADES} two-team trades needed. Until then, values use expert consensus and your league settings only.</p><div class="tprog" role="progressbar" aria-valuemin="0" aria-valuemax="${NUDGE_MIN_TRADES}" aria-valuenow="${twoTeam}" aria-label="Trades toward league tuning"><span style="width:${pct}%"></span></div><small class="tprog-label">${twoTeam} / ${NUDGE_MIN_TRADES} trades</small>${link}</div>`;
+    el.innerHTML = `<span class="light off" aria-hidden="true"></span><div class="tuning-text"><b>League tuning is off for now: ${left} more trade${left === 1 ? "" : "s"} to go</b><p>Your league has ${twoTeam} of the ${NUDGE_MIN_TRADES} trades needed. Until then, values use expert consensus and your league settings only.</p><div class="tprog" role="progressbar" aria-valuemin="0" aria-valuemax="${NUDGE_MIN_TRADES}" aria-valuenow="${twoTeam}" aria-label="Trades toward league tuning"><span style="width:${pct}%"></span></div><small class="tprog-label">${twoTeam} / ${NUDGE_MIN_TRADES} trades</small>${link}</div>`;
   }
 }
 
@@ -1598,8 +1600,12 @@ async function loadHistory(league){
             photo: now ? now.photo : (u?.metadata?.avatar || u?.avatar || null), gets: [], faab: 0 };
         });
         const side = rid => sides.find(x => x.rid === rid);
-        for (const [pid, rid] of Object.entries(t.adds || {})) side(rid)?.gets.push({ kind: "player", pid });
-        for (const pk of t.draft_picks || []) side(pk.owner_id)?.gets.push({ kind: "pick", season: Number(pk.season), round: pk.round, orig: pk.roster_id });
+        // "from" = the team that gave the item up (Sleeper lists it under drops / previous_owner_id)
+        const other = rid => sides.length === 2 ? sides.find(x => x.rid !== rid)?.rid : null;
+        for (const [pid, rid] of Object.entries(t.adds || {}))
+          side(rid)?.gets.push({ kind: "player", pid, from: (t.drops || {})[pid] ?? other(rid) });
+        for (const pk of t.draft_picks || [])
+          side(pk.owner_id)?.gets.push({ kind: "pick", season: Number(pk.season), round: pk.round, orig: pk.roster_id, from: pk.previous_owner_id ?? other(pk.owner_id) });
         for (const w of t.waiver_budget || []) { const x = side(w.receiver); if (x) x.faab += w.amount || 0; }
         if (sides.length >= 2) trades.push({ id: t.transaction_id, created: t.created, season: Number(sd.L.season), sides });
       }
@@ -1646,39 +1652,59 @@ function valueItem(it){
 }
 function gradeTrade(tr){
   const sides = tr.sides.map(sd => {
-    const items = sd.gets.map(valueItem).sort((a,b) => b.value - a.value);
+    const items = sd.gets.map(it => ({ ...valueItem(it), from: it.from })).sort((a,b) => b.value - a.value);
     return { ...sd, items, total: eq(items.map(i => i.value)), raw: items.reduce((s,i) => s + i.value, 0) };
   });
-  const best = Math.max(...sides.map(x => x.total));
   for (const x of sides){
-    const others = Math.max(0, ...sides.filter(y => y !== x).map(y => y.total));
-    x.margin = x.total - others;
-    x.result = Math.abs(x.margin) <= FAIR_BAND * Math.max(x.total, others, 1) ? "even" : x.total === best ? "won" : "lost";
+    // What this team gave up = everything other teams received from it
+    x.sentItems = sides.filter(y => y !== x).flatMap(y => y.items.filter(i => i.from === x.rid));
+    x.sentTotal = eq(x.sentItems.map(i => i.value));
+    x.margin = x.total - x.sentTotal;
+    x.result = Math.abs(x.margin) <= FAIR_BAND * Math.max(x.total, x.sentTotal, 1) ? "even" : x.margin > 0 ? "won" : "lost";
   }
   return { ...tr, sides };
 }
 
 // Least-squares fit: what multiplier per position makes this league's trades balance?
 function learnNudge(trades){
-  const recent = trades.filter(t => t.sides.length === 2);
+  const recent = trades.filter(t => t.sides.length >= 2);
   if (recent.length < NUDGE_MIN_TRADES) return null;
   const K = ["QB","RB","WR","TE","PICK"], rows = [];
   for (const t of recent){
-    const g = gradeTrade(t), row = K.map(() => 0);
-    g.sides[0].items.forEach(i => { const k = K.indexOf(i.cat); if (k >= 0) row[k] += i.value/10000; });
-    g.sides[1].items.forEach(i => { const k = K.indexOf(i.cat); if (k >= 0) row[k] -= i.value/10000; });
-    rows.push(row);
+    const g = gradeTrade(t);
+    // One balance equation per team; the last team's is implied by the others, so it's skipped
+    g.sides.slice(0, -1).forEach(x => {
+      const row = K.map(() => 0);
+      x.items.forEach(i => { const k = K.indexOf(i.cat); if (k >= 0) row[k] += i.value/10000; });
+      x.sentItems.forEach(i => { const k = K.indexOf(i.cat); if (k >= 0) row[k] -= i.value/10000; });
+      rows.push(row);
+    });
   }
-  // Solve (DᵀD + λI)m = λ·1 so multipliers stay near 1 unless the trades clearly say otherwise
-  const lam = 2, A = K.map((_, i) => K.map((_, j) => (i === j ? lam : 0) + rows.reduce((s, r) => s + r[i]*r[j], 0))), b = K.map(() => lam);
-  for (let c = 0; c < 5; c++){
-    let piv = c; for (let r = c+1; r < 5; r++) if (Math.abs(A[r][c]) > Math.abs(A[piv][c])) piv = r;
-    [A[c], A[piv]] = [A[piv], A[c]]; [b[c], b[piv]] = [b[piv], b[c]];
-    for (let r = 0; r < 5; r++) if (r !== c){ const f = A[r][c]/A[c][c]; for (let k = c; k < 5; k++) A[r][k] -= f*A[c][k]; b[r] -= f*b[c]; }
+  // Find small per-position adjustments d (multiplier = 1 + d) that make the league's trades
+  // balance best. Two guards keep it honest:
+  //  - the adjustments must average out to zero, so the fit can only move positions RELATIVE
+  //    to each other (shrinking every value equally would "balance" trades trivially), and
+  //  - a ridge penalty pulls every adjustment toward zero unless the trades clearly disagree.
+  // This is a 6x6 linear system: [G+λI  1; 1ᵀ 0][d; μ] = [-G·1; 0], where G = DᵀD.
+  const n = K.length, lam = 2;
+  const G = K.map((_, a) => K.map((_, c) => rows.reduce((t, r) => t + r[a]*r[c], 0)));
+  const M = [], rhs = [];
+  for (let a = 0; a < n; a++){
+    M.push([...G[a].map((v, c) => v + (a === c ? lam : 0)), 1]);
+    rhs.push(-G[a].reduce((t, v) => t + v, 0));
   }
+  M.push([...K.map(() => 1), 0]); rhs.push(0);
+  const N = n + 1;
+  for (let c = 0; c < N; c++){
+    let piv = c; for (let r = c+1; r < N; r++) if (Math.abs(M[r][c]) > Math.abs(M[piv][c])) piv = r;
+    [M[c], M[piv]] = [M[piv], M[c]]; [rhs[c], rhs[piv]] = [rhs[piv], rhs[c]];
+    if (Math.abs(M[c][c]) < 1e-12) continue;
+    for (let r = 0; r < N; r++) if (r !== c){ const f = M[r][c]/M[c][c]; for (let k = c; k < N; k++) M[r][k] -= f*M[c][k]; rhs[r] -= f*rhs[c]; }
+  }
+  const delta = K.map((_, a) => Math.abs(M[a][a]) < 1e-12 ? 0 : rhs[a]/M[a][a]);
   const w = Math.min(NUDGE_MAX_WEIGHT, recent.length / 60);
   const out = { n: recent.length };
-  K.forEach((k, i) => { const m = Math.min(1.25, Math.max(0.75, b[i]/A[i][i])); out[k] = 1 + w*(m - 1); });
+  K.forEach((k, i) => { const m = Math.min(1.25, Math.max(0.75, 1 + delta[i])); out[k] = 1 + w*(m - 1); });
   return out;
 }
 
@@ -1700,11 +1726,11 @@ function renderHistory(){
 
   // Summary
   const count = {}, net = {};
-  for (const t of graded) for (const x of t.sides){ count[x.owner] = (count[x.owner]||0) + 1; if (t.sides.length === 2) net[x.owner] = (net[x.owner]||0) + x.margin; }
+  for (const t of graded) for (const x of t.sides){ count[x.owner] = (count[x.owner]||0) + 1; net[x.owner] = (net[x.owner]||0) + x.margin; }
   const ownerTeam = o => [...S.teams.values()].find(t => t.owner === o);
   const top = (obj, dir) => Object.entries(obj).filter(([o]) => ownerTeam(o)).sort((a,b) => dir*(b[1]-a[1]))[0];
   const busiest = top(count, 1), sharp = top(net, 1);
-  const biggest = graded.flatMap(t => t.sides.length === 2 ? [{ t, x: t.sides.find(x => x.result === "won") }] : []).filter(o => o.x).sort((a,b) => b.x.margin - a.x.margin)[0];
+  const biggest = graded.flatMap(t => t.sides.filter(x => x.result === "won").map(x => ({ t, x }))).sort((a,b) => b.x.margin - a.x.margin)[0];
   const teamLine = o => { const t = ownerTeam(o); return t ? `<span class="teamcell">${teamPhoto(t.rid, true)}${esc(t.name)}</span>` : ""; };
   $("histStats").innerHTML = `
     <div class="hs"><small>Trades found</small><b>${graded.length}</b><small>${H.seasons.length > 1 ? `${H.seasons[H.seasons.length-1]}–${H.seasons[0]}` : H.seasons[0]}</small></div>
@@ -1712,7 +1738,7 @@ function renderHistory(){
     ${sharp && sharp[1] > 0 ? `<div class="hs"><small>Best trader (today's values)</small><b>+${fmt(sharp[1])}</b>${teamLine(sharp[0])}</div>` : ""}
     ${biggest ? `<div class="hs"><small>Biggest win</small><b>+${fmt(biggest.x.margin)}</b><span class="teamcell">${avatar(biggest.x.photo, biggest.x.name, true)}${esc(biggest.x.name)}</span></div>` : ""}`;
   $("histNote").textContent = S.nudge
-    ? `Trades are graded with today's values. Your league's ${S.nudge.n} two-team trades are also used to lightly tune player values (see League Settings).`
+    ? `Trades are graded with today's values. All ${S.nudge.n} of your league's trades, including 3- and 4-team deals, are also used to lightly tune player values (see League Settings).`
     : `Trades are graded with today's values, so they show how each deal has aged.${graded.length < NUDGE_MIN_TRADES ? ` Once your league has ${NUDGE_MIN_TRADES} trades, they'll also tune player values.` : ""}`;
 
   if (!shown.length){
@@ -1730,7 +1756,8 @@ function renderHistory(){
           <div class="tside-head">${avatar(x.photo, x.name, "md")}<span class="nm"><b>${esc(x.name)}</b><small>Received</small></span>${tagFor(x)}</div>
           ${x.items.map(i => `<div class="titem"><span class="tn">${esc(i.name)}<small>${esc(i.sub)}</small></span><span class="tv">${fmt(i.value)}</span></div>`).join("") || `<div class="titem"><span class="tn">Nothing but FAAB</span></div>`}
           ${x.faab ? `<div class="titem"><span class="tn">$${x.faab} FAAB<small>Not valued</small></span><span class="tv">–</span></div>` : ""}
-          <div class="ttotal"><span>Value today</span><span>${fmt(x.total)}</span></div>
+          <div class="ttotal"><span>Received, value today</span><span>${fmt(x.total)}</span></div>
+          <div class="ttotal gave"><span>Gave up, value today</span><span>${fmt(x.sentTotal)}</span></div>
         </div>`).join("")}
       </div>
     </article>`).join("");
@@ -1746,7 +1773,7 @@ function historyInsightsHTML(rid){
   const mine = graded.filter(t => t.sides.some(x => x.owner === me.owner));
   const lines = [];
   if (mine.length){
-    const twoTeam = mine.filter(t => t.sides.length === 2).map(t => t.sides.find(x => x.owner === me.owner));
+    const twoTeam = mine.map(t => t.sides.find(x => x.owner === me.owner));
     const won = twoTeam.filter(x => x.result === "won").length, lost = twoTeam.filter(x => x.result === "lost").length;
     const netV = twoTeam.reduce((s, x) => s + x.margin, 0);
     lines.push(`You've made ${mine.length} trade${mine.length>1?"s":""}: ${won} won, ${lost} lost by today's values (net ${netV >= 0 ? "+" : ""}${fmt(netV)}).`);
@@ -1761,7 +1788,7 @@ function historyInsightsHTML(rid){
   for (const t of graded){
     for (const x of t.sides){
       trades[x.owner] = (trades[x.owner]||0) + 1;
-      if (t.sides.length === 2 && x.result === "lost") losses[x.owner] = (losses[x.owner]||0) + 1;
+      if (x.result === "lost") losses[x.owner] = (losses[x.owner]||0) + 1;
       for (const y of t.sides) if (y !== x) for (const it of y.gets) if (it.kind === "pick" && it.orig === x.rid) picksOut[x.owner] = (picksOut[x.owner]||0) + 1;
     }
   }
