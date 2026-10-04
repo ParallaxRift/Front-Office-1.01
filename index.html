@@ -231,6 +231,35 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 .pk-opt small{color:var(--muted);font-size:13px}
 .pk-you{font-size:12px;font-weight:600;border-radius:999px;padding:2px 8px;background:var(--gold-soft);color:var(--gold);white-space:nowrap}
 
+/* Trade history tab */
+.histstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:16px}
+.hs{background:var(--card);border:1.5px solid var(--line);border-radius:12px;padding:12px 14px}
+.hs small{display:block;color:var(--muted);font-size:13px}
+.hs b{display:block;font-family:var(--display);font-weight:800;font-size:26px;line-height:1.15}
+.hs .teamcell{font-weight:600;margin-top:4px}
+.trades{display:flex;flex-direction:column;gap:14px}
+.trade{background:var(--card);border:1.5px solid var(--line);border-radius:14px;overflow:hidden}
+.trade-head{display:flex;justify-content:space-between;gap:10px;padding:10px 14px;background:var(--paper);font-size:14px;color:var(--muted)}
+.trade-sides{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.tside{padding:12px 14px;border-top:1px solid var(--line)}
+.tside + .tside{border-left:1px solid var(--line)}
+@media (max-width:600px){.tside + .tside{border-left:0}}
+.tside-head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.tside-head .nm{flex:1;min-width:0}
+.tside-head .nm b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tside-head .nm small{color:var(--muted);font-size:13px}
+.verdict-tag{font-size:12px;font-weight:700;border-radius:999px;padding:3px 9px;white-space:nowrap}
+.v-won{background:var(--field-soft);color:var(--field)}
+.v-lost{background:var(--loss-soft);color:var(--loss)}
+.v-even{background:var(--paper);color:var(--muted)}
+.titem{display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px solid var(--line);font-size:15px}
+.titem:last-child{border-bottom:0}
+.titem .tn{min-width:0}
+.titem .tn small{display:block;color:var(--muted);font-size:12px}
+.titem .tv{font-family:var(--display);font-weight:700;font-size:17px;white-space:nowrap}
+.ttotal{display:flex;justify-content:space-between;margin-top:8px;font-weight:600}
+.ttotal span:last-child{font-family:var(--display);font-size:20px;font-weight:800}
+
 /* Live scores tab */
 .scorebar{display:flex;flex-wrap:wrap;align-items:end;gap:10px 14px;margin-bottom:14px}
 .updated{font-size:14px;color:var(--muted);display:flex;align-items:center;gap:7px;padding-bottom:9px}
@@ -369,6 +398,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
     <button class="tab" role="tab" aria-selected="false" data-tab="values">League Values</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="settings">League Settings</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="strategy">Team Strategy</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="history">Trade History</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="scores">Live Scores</button>
   </div>
 
@@ -395,6 +425,16 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
         <div class="list" id="listB"></div>
       </div>
     </div>
+  </section>
+
+  <section class="panel" id="panel-history">
+    <div class="histstats" id="histStats"></div>
+    <div class="scorebar">
+      <div class="field" style="flex:0 1 280px"><label for="histTeam">Show trades for</label><select id="histTeam"></select></div>
+      <div class="field" style="flex:0 1 180px"><label for="histSeason">Season</label><select id="histSeason"></select></div>
+    </div>
+    <p class="note" id="histNote" style="margin:0 0 12px"></p>
+    <div class="trades" id="tradeList"><p class="empty">Open a league to see its trade history.</p></div>
   </section>
 
   <section class="panel" id="panel-scores">
@@ -456,14 +496,15 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
   <p class="intro">Most trade value charts give every league the same numbers. Front Office starts from the dynasty market, rebuilds those values around your league's rules, and gives every team its own read on what to do next.</p>
 
   <h2>Where the values start</h2>
-  <p>Every player begins with a <b>market value</b> on a 0–10,000 scale. Once a day, Front Office downloads FantasyPros' expert consensus dynasty rankings and turns each ranking into a value: the top-ranked player is 10,000, and value drops smoothly down the list (rank 50 is about 5,400 and rank 100 about 2,900). There are separate 1QB and Superflex rankings, and Front Office uses whichever matches your league.</p>
-  <p>If the FantasyPros list doesn't go deep enough, deeper players are filled in from DynastyProcess open data, always valued below the last FantasyPros player. If neither source can be reached, Front Office falls back to an estimate built from Sleeper's own player rankings, adjusted for age: running backs lose value fastest after 25, wide receivers and tight ends after their late 20s, and quarterbacks hold value into their 30s.</p>
+  <p>Every player begins with a <b>market value</b> on a 0–10,000 scale, built from <b>expert consensus</b>: the combined dynasty rankings of <span class="expertCount">dozens</span> of the country's top fantasy football analysts. Once a day, Front Office downloads the latest consensus and turns each ranking into a value. The top-ranked player is 10,000, and value drops smoothly down the list (rank 50 is about 5,400 and rank 100 about 2,900). There are separate rankings for 1QB and Superflex leagues, and Front Office uses whichever matches your league.</p>
+  <p>Players the experts don't rank, such as deep bench and taxi-squad players, are filled in from DynastyProcess open data, always valued below the lowest expert-ranked player. If neither source can be reached, Front Office falls back to an estimate built from Sleeper's own player rankings, adjusted for age: running backs lose value fastest after 25, wide receivers and tight ends after their late 20s, and quarterbacks hold value into their 30s.</p>
 
   <h2>How values are customized for your league</h2>
   <ol class="steps">
     <li><b>Read your league from Sleeper.</b> Team count, starting lineup, scoring, bench, IR and taxi spots, rosters, and traded picks all come straight from your league. Nothing is typed in by hand.</li>
     <li><b>Apply your league's adjustments.</b> Each player's market value is multiplied by every rule below that matches your settings.</li>
     <li><b>Rescale to 10,000.</b> The best player in your league is set to exactly 10,000 and everyone else scales with him, so numbers stay familiar and comparable.</li>
+    <li><b>Tune to your league's trades.</b> If your league has made at least 15 two-team trades, values are nudged toward how your managers actually trade (explained below).</li>
     <li><b>Value the draft picks</b> using each team's projected finish (explained below).</li>
   </ol>
   <div class="tablewrap">
@@ -478,6 +519,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
         <tr><td>6-point passing TDs</td><td>×1.10</td><td>Quarterbacks</td></tr>
         <tr><td>Each flex spot beyond one</td><td>×1.05</td><td>RBs, WRs and TEs outside the top 24</td></tr>
         <tr><td>3 or more starting WRs</td><td>×1.05</td><td>Wide receivers</td></tr>
+        <tr><td>Your league's trade habits (15+ trades)</td><td>Up to ×0.925 to ×1.075, learned from your trades</td><td>QBs, RBs, WRs, TEs and picks, each separately</td></tr>
       </tbody>
     </table>
   </div>
@@ -496,6 +538,22 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
     <li><b>The trade calculator</b> adds hints based on your situation, like noting when picks and young players fit a rebuild.</li>
   </ul>
 
+  <h2>Your league's trade history</h2>
+  <p>Front Office reads every completed trade from the current season and up to three earlier seasons, following Sleeper's links between seasons. The Trade History tab lists each deal and grades it with today's values, so you can see who won and how each trade has aged. Picks still to be made show their projected slot, and picks that were already used show the player they became.</p>
+
+  <h2>How your league's trades tune values</h2>
+  <p>Every league has its own habits. Some overpay for running backs, some hoard rookie picks. Once your league has enough trading history, Front Office learns those habits and adjusts values to match, without letting them override the expert market.</p>
+  <ol class="steps">
+    <li><b>Collect the trades.</b> Every two-team trade from the last four seasons is included. Trades with three or more teams are shown in Trade History but left out of the tuning.</li>
+    <li><b>Break each trade down by position.</b> For both sides, Front Office adds up the market value received at each position: QB, RB, WR, TE, and draft picks.</li>
+    <li><b>Find what balances your league's trades.</b> If managers in your league agreed to a trade, they considered it fair. Front Office finds the set of multipliers, one per position, that makes your league's trades come out most even. For example, if your managers keep giving up extra market value to land running backs, running backs get a multiplier above 1.</li>
+    <li><b>Keep it in check.</b> Each position's multiplier is capped between 0.75 and 1.25, and the math pulls every position back toward 1 unless the trades clearly point the other way, so a single unusual trade can't swing values.</li>
+    <li><b>Blend it in gently.</b> Your league's habits count for about 1% per two trades, up to a maximum of 30%. Expert consensus always makes up the rest. In practice, no position moves more than about 7.5%.</li>
+    <li><b>Rebuild the values.</b> Every player and pick is recalculated with the adjustment, then rescaled so the best player is still 10,000.</li>
+  </ol>
+  <p>The tuning only switches on once your league has at least <b>15 two-team trades</b>. When it's active, the line under your league name says how many trades it's based on, and the League Settings tab shows the exact adjustment for each position. Because there are no records of past market values, trades are measured against today's values, so the tuning reflects your league's long-run tendencies rather than any single moment.</p>
+  <p>Team Strategy uses the same history to show each team's trade record by today's values, their most frequent trade partner, managers who have traded away several of their own picks, and managers who tend to come out behind.</p>
+
   <h2>How trades are scored</h2>
   <p>Two good players shouldn't automatically equal one great one. Before adding up each side, the calculator gives extra weight to higher values, so one 8,000 player beats two 4,000 players, roughly 8,000 to 6,800. The simple totals are shown underneath for comparison. A trade within 5% either way is called fair.</p>
 
@@ -506,7 +564,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
   <p>Front Office only needs your public Sleeper username, never a password. Your username and last-opened league are remembered in your own browser so you don't have to retype them, and they aren't sent anywhere else.</p>
 
   <h2>Fine print</h2>
-  <p class="small">Values are estimates to help you think through trades, not guarantees. Front Office isn't affiliated with Sleeper, FantasyPros, or DynastyProcess. League data comes from Sleeper's public API. Market values come from FantasyPros rankings, with DynastyProcess open data as a backup, and are used here for personal, non-commercial purposes.</p>
+  <p class="small">Values are estimates to help you think through trades, not guarantees. Expert consensus rankings are provided by FantasyPros and used here for personal, non-commercial purposes, with DynastyProcess open data for players the experts don't rank. League data comes from Sleeper's public API. Front Office isn't affiliated with Sleeper, FantasyPros, or DynastyProcess.</p>
   <a class="back" href="#">Back to Front Office</a>
 </article>
 
@@ -549,7 +607,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
   <path d="M40.8 28h6.4M40.8 32h6.4M40.8 36h6.4" stroke="#D99A1E" stroke-width="2" stroke-linecap="round"/>
 </svg><span>Front Office</span></span>
   <nav><a href="#">Home</a><a href="#about">About</a><a href="#beta">Sleeper Leagues in Beta</a></nav>
-  <p>Rankings data from FantasyPros. Not affiliated with Sleeper or FantasyPros.</p>
+  <p>Expert consensus rankings provided by FantasyPros. Not affiliated with Sleeper or FantasyPros.</p>
 </footer>
 </div>
 
@@ -704,9 +762,11 @@ async function openLeague(leagueId){
 
     progress(3, "active");
     S.cfg = readSettings(league, S.rosters);
+    S.history = null; S.nudge = null;
     buildValues();
     S.sendIds.clear(); S.getIds.clear();
     renderLeague();
+    loadHistory(league);
     progress(3, "done");
 
     store.set("tr_league", leagueId);
@@ -752,17 +812,25 @@ const normName = n => (n||"").toLowerCase().replace(/[.'’`]/g,"").replace(/-/g
 // 1st choice: data/values.json, written daily by the GitHub Action from FantasyPros.
 // It only exists when the site is hosted (GitHub Pages), not when opened as a local file.
 const FP_VALUES = "data/values.json";
+let fpDataPromise = null;
+function getValuesFile(){
+  if (!fpDataPromise) fpDataPromise = fetch(FP_VALUES, { cache: "no-store" })
+    .then(r => { if (!r.ok) throw new Error("values.json " + r.status); return r.json(); })
+    .catch(e => { fpDataPromise = null; throw e; });
+  return fpDataPromise;
+}
+// "87 of the country's top fantasy football experts", or a safe fallback if the count is unknown
+function expertPhrase(n){ return n > 0 ? `${n} of the country's top fantasy football experts` : "the country's top fantasy football experts"; }
 async function loadFantasyPros(){
-  const r = await fetch(FP_VALUES, { cache: "no-store" });
-  if (!r.ok) throw new Error("values.json " + r.status);
-  const data = await r.json();
+  const data = await getValuesFile();
   const map = new Map();
   for (const p of data.players || []){
     const key = normName(p.name) + "|" + String(p.pos||"").toUpperCase();
     if (!map.has(key)) map.set(key, { v1: +p.value_1qb || 0, v2: +p.value_2qb || 0 });
   }
   if (map.size < 100) throw new Error("too few players");
-  return { kind: "fp", map, updated: data.updated, mixed: !!data.filled_from_dynastyprocess };
+  return { kind: "fp", map, updated: data.updated, mixed: !!data.filled_from_dynastyprocess,
+           experts: { oneqb: +data.experts_1qb || 0, sf: +data.experts_sf || 0 } };
 }
 async function loadMarket(){
   try { return await loadFantasyPros(); } catch(e){ console.info("FantasyPros values not available, trying DynastyProcess", e.message); }
@@ -867,9 +935,15 @@ function buildValues(){
   if (cfg.passTd >= 6) rules.push({m:"×1.1", t:`${cfg.passTd}-point passing TDs`, d:"Applies to every quarterback."});
   if (cfg.flex > 1) rules.push({m:"×"+r2(Math.pow(1.05,cfg.flex-1)), t:`${cfg.flex} flex spots`, d:"RBs, WRs and TEs ranked outside the top 24 overall, since more of them start."});
   if (cfg.wr >= 3) rules.push({m:"×1.05", t:`${cfg.wr} starting WRs`, d:"Applies to every wide receiver."});
+  if (S.nudge){
+    const parts = ["QB","RB","WR","TE","PICK"].filter(k => Math.abs(S.nudge[k]-1) >= 0.005)
+      .map(k => `${k === "PICK" ? "Picks" : k + "s"} ×${r2(S.nudge[k])}`);
+    rules.push({ m: "League", t: `Your league's trade habits (${S.nudge.n} trades)`,
+      d: parts.length ? parts.join(", ") + ". A light adjustment based on how your league has actually traded." : "Your league trades close to market value, so no adjustment was needed." });
+  }
   S.rules = rules;
   for (const a of list){
-    let m = 1;
+    let m = S.nudge ? (S.nudge[a.pos] || 1) : 1;
     if (S.market.kind === "sleeper" && cfg.superflex && a.pos==="QB") m *= a.posRank<=12 ? 1.7 : a.posRank<=24 ? 2.2 : 1.3;
     if (a.pos==="TE") m *= tepMult;
     if (a.rank > 36) m *= sizeMult;
@@ -929,7 +1003,7 @@ function buildValues(){
     const slot = yi===0 ? t.slot : yi===1 ? (t.slot+mid)/2 : mid;
     const overall = (rd-1)*cfg.teams + slot;
     const p12 = (overall-1)*12/cfg.teams + 1;
-    const value = 7000 * Math.exp(-0.06*(p12-1)) * Math.pow(0.92, yi);
+    const value = 7000 * Math.exp(-0.06*(p12-1)) * Math.pow(0.92, yi) * (S.nudge ? S.nudge.PICK : 1);
     let label;
     if (yi===0) label = `${s} Pick ${rd}.${String(Math.round(slot)).padStart(2,"0")}`;
     else { const tier = slot <= cfg.teams/3 ? "Early" : slot > cfg.teams*2/3 ? "Late" : "Mid"; label = yi===1 ? `${s} ${tier} ${ord(rd)}` : `${s} ${ord(rd)}`; }
@@ -966,11 +1040,12 @@ function renderLeague(){
   loadChampion(S.league);
   const fpDate = S.market.updated ? new Date(S.market.updated).toLocaleDateString([], { month: "short", day: "numeric" }) : "";
   $("source").textContent = S.market.kind === "fp"
-    ? `Market values: FantasyPros dynasty rankings${fpDate ? ", updated " + fpDate : ""}${S.market.mixed ? ", with deeper players from DynastyProcess" : ""} (personal use). Adjusted for this league's settings.`
+    ? `Market values: expert consensus from ${expertPhrase(S.cfg.superflex ? S.market.experts.sf : S.market.experts.oneqb)} (rankings via FantasyPros)${fpDate ? ", updated " + fpDate : ""}. Adjusted for this league's settings.`
     : S.market.kind === "dp"
-    ? "Market values: DynastyProcess open data (based on FantasyPros rankings, personal use). Adjusted for this league's settings."
+    ? "Market values: DynastyProcess open data, based on expert consensus rankings. Adjusted for this league's settings."
     : "Market values: estimated from Sleeper's player rankings and age curves. Adjusted for this league's settings.";
 
+  if (S.nudge) $("source").textContent += ` Tuned to ${S.nudge.n} of your league's trades.`;
   const opts = [...S.teams.values()].map(t => `<option value="${t.rid}">${esc(t.name)}</option>`).join("");
   $("teamA").innerHTML = opts; $("teamB").innerHTML = opts;
   $("teamA").value = S.myRid;
@@ -979,6 +1054,7 @@ function renderLeague(){
   $("board").style.display = "block"; $("sides").style.display = "grid";
   $("stratTeam").innerHTML = opts; $("stratTeam").value = S.myRid;
   renderCalc(); renderValues(); renderSettings(); renderStrategy(); setupScores();
+  if (S.history) renderHistory();
 }
 
 // ============================================================
@@ -1319,6 +1395,7 @@ function renderStrategy(){
       <span class="l1">${esc(a.name)}<small>${esc(a.pos)}, ${esc(a.age||"?")}</small></span>
       <span class="l2">${buyers.length ? `<span>Possible buyers: ${esc(buyers.join(", "))}</span>` : `<span>${buying ? "Bench piece to package" : "Aging, sell soon"}</span>`}</span>
     </span><span class="val">${fmt(a.value)}</span></div>`; }).join("")}</div></div>` : ""}
+      ${historyInsightsHTML(t.rid)}
       ${partners.length ? `<div class="box"><h3>Best trade partners</h3><ul class="moves">${partners.map(p => `<li><span class="teamcell" style="vertical-align:middle">${teamPhoto(p.x.team.rid, true)}<b>${esc(p.x.team.name)}</b></span> (${statusText[p.x.team.status].toLowerCase()})${p.fit.length ? `: deep at ${andList(p.fit)}` : ""}${p.give.length ? `${p.fit.length?",":":"} needs ${andList(p.give)}, where you're deep` : ""}.</li>`).join("")}</ul></div>` : ""}
     </div>`;
 }
@@ -1421,6 +1498,240 @@ function renderScores(data, week){
 }
 
 // ============================================================
+// LEAGUE TRADE HISTORY
+// Reads every trade from this season and up to 3 earlier seasons,
+// grades each one with today's values, learns the league's trading
+// habits (a light value adjustment), and feeds Team Strategy.
+// ============================================================
+const HISTORY_SEASONS = 4;      // this season plus up to 3 earlier ones
+const NUDGE_MIN_TRADES = 15;    // fewer trades than this = no value adjustment
+const NUDGE_MAX_WEIGHT = 0.3;   // the league's habits never count for more than 30%
+
+async function loadHistory(league){
+  $("tradeList").innerHTML = `<p class="empty">Loading your league's trade history...</p>`;
+  $("histStats").innerHTML = ""; $("histNote").textContent = "";
+  try {
+    // Walk back through linked seasons
+    const seasons = [league];
+    let lg = league;
+    while (seasons.length < HISTORY_SEASONS && lg.previous_league_id && lg.previous_league_id !== "0"){
+      lg = await getJSON(`/league/${lg.previous_league_id}`).catch(() => null);
+      if (!lg) break;
+      seasons.push(lg);
+    }
+    const perSeason = await Promise.all(seasons.map(async (L, idx) => {
+      const isCurrent = idx === 0;
+      const [rosters, users, drafts, weeks] = await Promise.all([
+        isCurrent ? S.rosters : getJSON(`/league/${L.league_id}/rosters`).catch(() => []),
+        isCurrent ? S.users : getJSON(`/league/${L.league_id}/users`).catch(() => []),
+        getJSON(`/league/${L.league_id}/drafts`).catch(() => []),
+        Promise.all(Array.from({length: 19}, (_, w) => getJSON(`/league/${L.league_id}/transactions/${w}`).catch(() => [])))
+      ]);
+      const draftPicks = await Promise.all((drafts || []).filter(d => d.status === "complete")
+        .map(d => getJSON(`/draft/${d.draft_id}/picks`).then(ps => ({ d, ps })).catch(() => null)));
+      return { L, rosters: rosters || [], users: users || [], draftPicks: draftPicks.filter(Boolean), tx: weeks.flat() };
+    }));
+    if (S.league?.league_id !== league.league_id) return; // switched leagues mid-load
+
+    // What each traded pick turned into: "season-round-originalRoster" -> player id
+    const pickResult = new Map();
+    for (const sd of perSeason) for (const { d, ps } of sd.draftPicks){
+      const slotMap = d.slot_to_roster_id || {};
+      for (const pk of ps || []){
+        const orig = slotMap[pk.draft_slot];
+        if (orig != null && pk.player_id) pickResult.set(`${d.season}-${pk.round}-${orig}`, pk.player_id);
+      }
+    }
+
+    const trades = [], seen = new Set();
+    for (const sd of perSeason){
+      const ownerOf = new Map(sd.rosters.map(r => [r.roster_id, r.owner_id]));
+      for (const t of sd.tx){
+        if (t?.type !== "trade" || t.status !== "complete" || seen.has(t.transaction_id)) continue;
+        seen.add(t.transaction_id);
+        const sides = (t.roster_ids || []).map(rid => {
+          const owner = ownerOf.get(rid);
+          const now = [...S.teams.values()].find(x => x.owner === owner);
+          const u = sd.users.find(x => x.user_id === owner);
+          return { rid, owner, curRid: now?.rid ?? null,
+            name: now?.name || u?.metadata?.team_name || u?.display_name || `Team ${rid}`,
+            photo: now ? now.photo : (u?.metadata?.avatar || u?.avatar || null), gets: [], faab: 0 };
+        });
+        const side = rid => sides.find(x => x.rid === rid);
+        for (const [pid, rid] of Object.entries(t.adds || {})) side(rid)?.gets.push({ kind: "player", pid });
+        for (const pk of t.draft_picks || []) side(pk.owner_id)?.gets.push({ kind: "pick", season: Number(pk.season), round: pk.round, orig: pk.roster_id });
+        for (const w of t.waiver_budget || []) { const x = side(w.receiver); if (x) x.faab += w.amount || 0; }
+        if (sides.length >= 2) trades.push({ id: t.transaction_id, created: t.created, season: Number(sd.L.season), sides });
+      }
+    }
+    trades.sort((a, b) => b.created - a.created);
+    S.history = { trades, pickResult, seasons: seasons.map(x => Number(x.season)) };
+
+    // Learn the league's habits, then rebuild values once with the adjustment
+    const nudge = learnNudge(trades);
+    if (nudge){
+      S.nudge = nudge;
+      buildValues();
+      renderLeague();
+    } else {
+      renderHistory(); renderStrategy();
+    }
+  } catch(err){
+    console.error(err);
+    $("tradeList").innerHTML = `<p class="empty">Couldn't load trade history. Reopen the league to try again.</p>`;
+  }
+}
+
+// Today's value for one traded item
+function valueItem(it){
+  if (it.kind === "player"){
+    const a = S.assets.get("p:" + it.pid), p = S.sleeperPlayers?.[it.pid] || {};
+    const name = a?.name || p.full_name || `${p.first_name||""} ${p.last_name||""}`.trim() || "Unknown player";
+    return { name, pos: a?.pos || p.position || "", value: a?.value || 0, sub: a ? `${a.pos}, ${a.nfl}` : (p.position || "No longer rostered") , cat: a?.pos || p.position };
+  }
+  const label = `${it.season} Round ${it.round} pick`;
+  const live = S.assets.get(`k:${it.season}-${it.round}-${it.orig}`);
+  if (live) return { name: live.name, pos: "PICK", value: live.value, sub: "Pick still to be made", cat: "PICK" };
+  const pid = S.history?.pickResult.get(`${it.season}-${it.round}-${it.orig}`);
+  if (pid){
+    const a = S.assets.get("p:" + pid), p = S.sleeperPlayers?.[pid] || {};
+    const pname = a?.name || p.full_name || "a player";
+    return { name: label, pos: "PICK", value: a?.value || 0, sub: `Became ${pname}`, cat: "PICK" };
+  }
+  const teams = S.cfg?.teams || 12;
+  const est = 7000 * Math.exp(-0.06 * (((it.round-1)*teams + (teams+1)/2 - 1) * 12/teams)) * (S.nudge ? S.nudge.PICK : 1);
+  return { name: label, pos: "PICK", value: est, sub: "Estimated (pick result unknown)", cat: "PICK" };
+}
+function gradeTrade(tr){
+  const sides = tr.sides.map(sd => {
+    const items = sd.gets.map(valueItem).sort((a,b) => b.value - a.value);
+    return { ...sd, items, total: eq(items.map(i => i.value)), raw: items.reduce((s,i) => s + i.value, 0) };
+  });
+  const best = Math.max(...sides.map(x => x.total));
+  for (const x of sides){
+    const others = Math.max(0, ...sides.filter(y => y !== x).map(y => y.total));
+    x.margin = x.total - others;
+    x.result = Math.abs(x.margin) <= FAIR_BAND * Math.max(x.total, others, 1) ? "even" : x.total === best ? "won" : "lost";
+  }
+  return { ...tr, sides };
+}
+
+// Least-squares fit: what multiplier per position makes this league's trades balance?
+function learnNudge(trades){
+  const recent = trades.filter(t => t.sides.length === 2);
+  if (recent.length < NUDGE_MIN_TRADES) return null;
+  const K = ["QB","RB","WR","TE","PICK"], rows = [];
+  for (const t of recent){
+    const g = gradeTrade(t), row = K.map(() => 0);
+    g.sides[0].items.forEach(i => { const k = K.indexOf(i.cat); if (k >= 0) row[k] += i.value/10000; });
+    g.sides[1].items.forEach(i => { const k = K.indexOf(i.cat); if (k >= 0) row[k] -= i.value/10000; });
+    rows.push(row);
+  }
+  // Solve (DᵀD + λI)m = λ·1 so multipliers stay near 1 unless the trades clearly say otherwise
+  const lam = 2, A = K.map((_, i) => K.map((_, j) => (i === j ? lam : 0) + rows.reduce((s, r) => s + r[i]*r[j], 0))), b = K.map(() => lam);
+  for (let c = 0; c < 5; c++){
+    let piv = c; for (let r = c+1; r < 5; r++) if (Math.abs(A[r][c]) > Math.abs(A[piv][c])) piv = r;
+    [A[c], A[piv]] = [A[piv], A[c]]; [b[c], b[piv]] = [b[piv], b[c]];
+    for (let r = 0; r < 5; r++) if (r !== c){ const f = A[r][c]/A[c][c]; for (let k = c; k < 5; k++) A[r][k] -= f*A[c][k]; b[r] -= f*b[c]; }
+  }
+  const w = Math.min(NUDGE_MAX_WEIGHT, recent.length / 60);
+  const out = { n: recent.length };
+  K.forEach((k, i) => { const m = Math.min(1.25, Math.max(0.75, b[i]/A[i][i])); out[k] = 1 + w*(m - 1); });
+  return out;
+}
+
+const fmtDate = ms => new Date(ms).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" });
+function renderHistory(){
+  const H = S.history;
+  if (!H){ return; }
+  // Filters
+  const teamSel = $("histTeam"), seasonSel = $("histSeason");
+  const prevTeam = teamSel.value, prevSeason = seasonSel.value;
+  teamSel.innerHTML = `<option value="all">All teams</option>` + [...S.teams.values()].map(t => `<option value="${t.owner}">${esc(t.name)}</option>`).join("");
+  seasonSel.innerHTML = `<option value="all">All seasons</option>` + H.seasons.map(y => `<option value="${y}">${y}</option>`).join("");
+  teamSel.value = [...teamSel.options].some(o => o.value === prevTeam) ? prevTeam : "all";
+  seasonSel.value = [...seasonSel.options].some(o => o.value === prevSeason) ? prevSeason : "all";
+
+  const graded = H.trades.map(gradeTrade);
+  const shown = graded.filter(t => (teamSel.value === "all" || t.sides.some(x => x.owner === teamSel.value))
+                               && (seasonSel.value === "all" || String(t.season) === seasonSel.value));
+
+  // Summary
+  const count = {}, net = {};
+  for (const t of graded) for (const x of t.sides){ count[x.owner] = (count[x.owner]||0) + 1; if (t.sides.length === 2) net[x.owner] = (net[x.owner]||0) + x.margin; }
+  const ownerTeam = o => [...S.teams.values()].find(t => t.owner === o);
+  const top = (obj, dir) => Object.entries(obj).filter(([o]) => ownerTeam(o)).sort((a,b) => dir*(b[1]-a[1]))[0];
+  const busiest = top(count, 1), sharp = top(net, 1);
+  const biggest = graded.flatMap(t => t.sides.length === 2 ? [{ t, x: t.sides.find(x => x.result === "won") }] : []).filter(o => o.x).sort((a,b) => b.x.margin - a.x.margin)[0];
+  const teamLine = o => { const t = ownerTeam(o); return t ? `<span class="teamcell">${teamPhoto(t.rid, true)}${esc(t.name)}</span>` : ""; };
+  $("histStats").innerHTML = `
+    <div class="hs"><small>Trades found</small><b>${graded.length}</b><small>${H.seasons.length > 1 ? `${H.seasons[H.seasons.length-1]}–${H.seasons[0]}` : H.seasons[0]}</small></div>
+    ${busiest ? `<div class="hs"><small>Most active trader</small><b>${busiest[1]} trades</b>${teamLine(busiest[0])}</div>` : ""}
+    ${sharp && sharp[1] > 0 ? `<div class="hs"><small>Best trader (today's values)</small><b>+${fmt(sharp[1])}</b>${teamLine(sharp[0])}</div>` : ""}
+    ${biggest ? `<div class="hs"><small>Biggest win</small><b>+${fmt(biggest.x.margin)}</b><span class="teamcell">${avatar(biggest.x.photo, biggest.x.name, true)}${esc(biggest.x.name)}</span></div>` : ""}`;
+  $("histNote").textContent = S.nudge
+    ? `Trades are graded with today's values. Your league's ${S.nudge.n} two-team trades are also used to lightly tune player values (see League Settings).`
+    : `Trades are graded with today's values, so they show how each deal has aged.${graded.length < NUDGE_MIN_TRADES ? ` Once your league has ${NUDGE_MIN_TRADES} trades, they'll also tune player values.` : ""}`;
+
+  if (!shown.length){
+    $("tradeList").innerHTML = `<p class="empty">${graded.length ? "No trades match these filters." : "No trades found in this league yet."}</p>`;
+    return;
+  }
+  const tagFor = x => x.result === "won" ? `<span class="verdict-tag v-won">Won by ${fmt(x.margin)}</span>`
+                    : x.result === "lost" ? `<span class="verdict-tag v-lost">Lost by ${fmt(-x.margin)}</span>`
+                    : `<span class="verdict-tag v-even">Even</span>`;
+  $("tradeList").innerHTML = shown.slice(0, 150).map(t => `
+    <article class="trade">
+      <div class="trade-head"><span>${fmtDate(t.created)}</span><span>${t.season} season${t.sides.length > 2 ? `, ${t.sides.length}-team trade` : ""}</span></div>
+      <div class="trade-sides">${t.sides.map(x => `
+        <div class="tside">
+          <div class="tside-head">${avatar(x.photo, x.name, "md")}<span class="nm"><b>${esc(x.name)}</b><small>Received</small></span>${tagFor(x)}</div>
+          ${x.items.map(i => `<div class="titem"><span class="tn">${esc(i.name)}<small>${esc(i.sub)}</small></span><span class="tv">${fmt(i.value)}</span></div>`).join("") || `<div class="titem"><span class="tn">Nothing but FAAB</span></div>`}
+          ${x.faab ? `<div class="titem"><span class="tn">$${x.faab} FAAB<small>Not valued</small></span><span class="tv">–</span></div>` : ""}
+          <div class="ttotal"><span>Value today</span><span>${fmt(x.total)}</span></div>
+        </div>`).join("")}
+      </div>
+    </article>`).join("");
+}
+$("histTeam").addEventListener("change", renderHistory);
+$("histSeason").addEventListener("change", renderHistory);
+
+// Insights for Team Strategy
+function historyInsightsHTML(rid){
+  const H = S.history; if (!H) return "";
+  const me = S.teams.get(rid); if (!me) return "";
+  const graded = H.trades.map(gradeTrade);
+  const mine = graded.filter(t => t.sides.some(x => x.owner === me.owner));
+  const lines = [];
+  if (mine.length){
+    const twoTeam = mine.filter(t => t.sides.length === 2).map(t => t.sides.find(x => x.owner === me.owner));
+    const won = twoTeam.filter(x => x.result === "won").length, lost = twoTeam.filter(x => x.result === "lost").length;
+    const netV = twoTeam.reduce((s, x) => s + x.margin, 0);
+    lines.push(`You've made ${mine.length} trade${mine.length>1?"s":""}: ${won} won, ${lost} lost by today's values (net ${netV >= 0 ? "+" : ""}${fmt(netV)}).`);
+    const partners = {};
+    for (const t of mine) for (const x of t.sides) if (x.owner !== me.owner) partners[x.owner] = (partners[x.owner]||0) + 1;
+    const fav = Object.entries(partners).sort((a,b) => b[1]-a[1])[0];
+    const favTeam = fav && [...S.teams.values()].find(t => t.owner === fav[0]);
+    if (fav && fav[1] >= 2 && favTeam) lines.push(`You and ${favTeam.name} have traded ${fav[1]} times. A proven partner is a good first call.`);
+  } else lines.push("You haven't made a trade yet in the seasons Front Office can see.");
+  // Other managers' habits
+  const picksOut = {}, losses = {}, trades = {};
+  for (const t of graded){
+    for (const x of t.sides){
+      trades[x.owner] = (trades[x.owner]||0) + 1;
+      if (t.sides.length === 2 && x.result === "lost") losses[x.owner] = (losses[x.owner]||0) + 1;
+      for (const y of t.sides) if (y !== x) for (const it of y.gets) if (it.kind === "pick" && it.orig === x.rid) picksOut[x.owner] = (picksOut[x.owner]||0) + 1;
+    }
+  }
+  const nameOf = o => [...S.teams.values()].find(t => t.owner === o && t.owner !== me.owner)?.name;
+  const seller = Object.entries(picksOut).filter(([o, n]) => nameOf(o) && n >= 3).sort((a,b) => b[1]-a[1])[0];
+  if (seller) lines.push(`${nameOf(seller[0])} has traded away ${seller[1]} of their own draft picks. They may part with picks for the right player.`);
+  const giver = Object.entries(losses).filter(([o, n]) => nameOf(o) && n >= 2 && n / trades[o] >= 0.6).sort((a,b) => b[1]-a[1])[0];
+  if (giver) lines.push(`${nameOf(giver[0])} has come out behind in ${giver[1]} of ${trades[giver[0]]} trades by today's values. Worth checking in with.`);
+  return `<div class="box"><h3>From your league's trade history</h3><ul class="moves">${lines.map(l => `<li>${esc(l)}</li>`).join("")}</ul></div>`;
+}
+
+// ============================================================
 // TEAM PICKERS: the browser's built-in dropdown can't show images,
 // so each team <select> gets a custom button and list with photos.
 // The hidden <select> still holds the value, so nothing else changes.
@@ -1482,7 +1793,7 @@ PICKERS.forEach(makePicker);
 $("tabs").addEventListener("click", e => {
   const b = e.target.closest(".tab"); if (!b) return;
   for (const t of $("tabs").children) t.setAttribute("aria-selected", t === b);
-  for (const name of ["calc","scores","values","settings","strategy"]) $("panel-"+name).classList.toggle("on", b.dataset.tab === name);
+  for (const name of ["calc","history","scores","values","settings","strategy"]) $("panel-"+name).classList.toggle("on", b.dataset.tab === name);
   if (b.dataset.tab === "scores") loadScores();
 });
 
@@ -1499,6 +1810,10 @@ function route(){
   window.scrollTo({ top: 0 });
 }
 window.addEventListener("hashchange", route);
+getValuesFile().then(d => {
+  const n = Math.max(+d.experts_1qb || 0, +d.experts_sf || 0);
+  if (n > 0) document.querySelectorAll(".expertCount").forEach(el => el.textContent = n);
+}).catch(() => {});
 route();
 </script>
 </body>
