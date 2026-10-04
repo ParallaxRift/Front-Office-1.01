@@ -35,5 +35,6 @@ jobs:
             echo "Values unchanged today."
           else
             git commit -m "Daily values update"
+            git pull --rebase -X theirs origin main
             git push
           fi
