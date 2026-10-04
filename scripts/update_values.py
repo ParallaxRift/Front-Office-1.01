@@ -31,7 +31,6 @@ QUERY_1QB = {"type": "dynasty", "scoring": "PPR", "position": "ALL"}
 QUERY_SF = {"type": "dynasty", "scoring": "PPR", "position": "OP"}
 
 CURVE = 0.0125      # how fast value drops by rank (rank 1 = 10,000, rank 100 ≈ 2,900)
-MIN_PLAYERS = 150   # fewer than this means the list was cut short, so fill from DynastyProcess
 DP_CSV = "https://raw.githubusercontent.com/dynastyprocess/data/master/files/values-players.csv"
 OUTPUT = os.path.join(os.path.dirname(__file__), "..", "data", "values.json")
 # ---------------------------------------------
@@ -113,12 +112,22 @@ for i, p in enumerate(one_qb, start=1):
     })
 
 if superflex:
+    floor_1qb = min(p["value_1qb"] for p in players.values())
+    sf_only = 0
     for i, p in enumerate(superflex, start=1):
         name, pos = p.get("player_name"), position_of(p)
-        key = norm(name or "") + "|" + pos
-        if key in players:
-            players[key]["rank_sf"] = rank_of(p, i)
-            players[key]["value_2qb"] = to_value(rank_of(p, i))
+        if not name or pos not in ("QB", "RB", "WR", "TE"):
+            continue
+        key = norm(name) + "|" + pos
+        if key not in players:
+            # Ranked in Superflex but not in 1QB (usually depth QBs): keep them,
+            # with a 1QB value just below the last 1QB-ranked player
+            players[key] = {"name": name, "pos": pos, "team": p.get("player_team_id") or p.get("team") or "",
+                            "value_1qb": round(floor_1qb * 0.99)}
+            sf_only += 1
+        players[key]["rank_sf"] = rank_of(p, i)
+        players[key]["value_2qb"] = to_value(rank_of(p, i))
+    print(f"Added {sf_only} players ranked only in the Superflex list.")
     sf_source = "FantasyPros Superflex rankings"
 else:
     sf_source = "1QB rankings with a QB boost (Superflex list unavailable)"
@@ -134,10 +143,13 @@ for p in players.values():
             boost = 1.7 if r <= 12 else 2.2 if r <= 24 else 1.3
         p["value_2qb"] = min(10000, round(p["value_1qb"] * boost))
 
-# ---------- 3) Fill deeper players if the list was cut short ----------
+# ---------- 3) Fill in players FantasyPros doesn't rank ----------
+# Deep bench and taxi players still need a small value, so anyone missing
+# from both FantasyPros lists comes from DynastyProcess, always valued
+# below the lowest FantasyPros-ranked player.
 filled = False
-if len(players) < MIN_PLAYERS:
-    print(f"Only {len(players)} players from FantasyPros, filling deeper players from DynastyProcess.")
+if True:
+    print(f"{len(players)} players from FantasyPros. Filling unranked players from DynastyProcess.")
     try:
         with urllib.request.urlopen(DP_CSV, timeout=60) as r:
             rows = list(csv.DictReader(io.StringIO(r.read().decode("utf-8"))))
