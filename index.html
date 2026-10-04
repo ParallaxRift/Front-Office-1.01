@@ -868,6 +868,14 @@ function buildValues(){
   const topBase = Math.max(1, ...list.map(a => a.base));
   for (const a of list){ a.value = a.raw/topRaw*10000; a.market = a.base/topBase*10000; assets.set(a.id, a); }
 
+  // Ranks by this league's values: overall (#1, #2...) and by position (WR1, WR2...)
+  const posSeen = {};
+  [...list].filter(a => a.value > 0).sort((a,b) => b.value - a.value).forEach((a, i) => {
+    a.lgRank = i + 1;
+    posSeen[a.pos] = (posSeen[a.pos] || 0) + 1;
+    a.lgPosRank = posSeen[a.pos];
+  });
+
   // team strength: sum of each roster's best (starters + 3) players
   const teams = new Map();
   for (const ro of S.rosters){
@@ -993,7 +1001,8 @@ function teamAssets(rid){
   return [...S.assets.values()].filter(a => a.owner === rid && a.value > 0).sort((a,b) => b.value - a.value);
 }
 function assetRow(a, sel){
-  const sub = a.kind === "pick" ? a.nfl : `${a.nfl}${a.age ? ", age " + a.age : ""}`;
+  const sub = a.kind === "pick" ? a.nfl
+    : [a.nfl, a.age ? "age " + a.age : "", a.lgPosRank ? a.pos + a.lgPosRank : "", a.lgRank ? "#" + a.lgRank + " overall" : ""].filter(Boolean).join(", ");
   return `<button class="asset${sel?" sel":""}" data-id="${esc(a.id)}" aria-pressed="${sel}">
     <span class="pos">${esc(a.pos)}</span>
     <span class="nm"><b>${esc(a.name)}</b><small>${esc(sub)}</small></span>
