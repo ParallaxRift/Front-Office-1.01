@@ -40,6 +40,9 @@ if not API_KEY:
     sys.exit("No API key found. Add a repository secret named FANTASYPROS_API_KEY.")
 
 
+EXPERTS = {}  # how many experts contributed to each list, shown on the website
+
+
 def fetch_fp(query, label):
     """Ask FantasyPros for one rankings list and print a summary for the log."""
     url = BASE + "?" + urllib.parse.urlencode(query)
@@ -57,6 +60,12 @@ def fetch_fp(query, label):
 
     players = data.get("players") if isinstance(data, dict) else data
     players = players or []
+    if isinstance(data, dict):
+        try:
+            EXPERTS[label] = int(data.get("total_experts") or 0)
+        except (TypeError, ValueError):
+            pass
+        print(f"[{label}] Experts in this consensus: {EXPERTS.get(label, 'unknown')}")
     print(f"[{label}] Request: {query}")
     print(f"[{label}] Top-level fields: {list(data.keys()) if isinstance(data, dict) else 'list'}")
     print(f"[{label}] Players returned: {len(players)}")
@@ -180,6 +189,8 @@ out = {
     "source": "FantasyPros dynasty consensus rankings (personal, non-commercial use)",
     "superflex_source": sf_source,
     "filled_from_dynastyprocess": filled,
+    "experts_1qb": EXPERTS.get("1QB", 0),
+    "experts_sf": EXPERTS.get("Superflex", 0),
     "players": sorted(players.values(), key=lambda p: -p["value_1qb"]),
 }
 os.makedirs(os.path.dirname(OUTPUT), exist_ok=True)
