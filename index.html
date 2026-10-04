@@ -260,6 +260,22 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 .ttotal{display:flex;justify-content:space-between;margin-top:8px;font-weight:600}
 .ttotal span:last-child{font-family:var(--display);font-size:20px;font-weight:800}
 
+/* League tuning indicator */
+.tuning{display:flex;align-items:flex-start;gap:12px;background:var(--card);border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:14px}
+.tuning:empty{display:none}
+.light{width:14px;height:14px;border-radius:50%;flex:none;margin-top:4px;background:var(--line)}
+.light.on{background:#2FA35B;box-shadow:0 0 0 4px rgba(47,163,91,.2)}
+.light.off{background:#E0A526;box-shadow:0 0 0 4px rgba(224,165,38,.22)}
+.light.wait{animation:pulse 1.6s ease-in-out infinite}
+.tuning-text{flex:1;min-width:0}
+.tuning-text b{display:block;font-size:16px}
+.tuning-text p{margin:2px 0 0;color:var(--muted);font-size:14px}
+.tuning-text .chips{margin:8px 0 0}
+.tprog{height:8px;border-radius:4px;background:var(--line);overflow:hidden;margin:10px 0 4px;max-width:340px}
+.tprog span{display:block;height:100%;background:#E0A526;border-radius:4px}
+.tprog-label{display:block;color:var(--muted);font-size:12px}
+.tlink{display:inline-block;color:var(--field);font-weight:600;font-size:14px;text-underline-offset:3px;margin-top:8px}
+
 /* Live scores tab */
 .scorebar{display:flex;flex-wrap:wrap;align-items:end;gap:10px 14px;margin-bottom:14px}
 .updated{font-size:14px;color:var(--muted);display:flex;align-items:center;gap:7px;padding-bottom:9px}
@@ -447,6 +463,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
   </section>
 
   <section class="panel" id="panel-values">
+    <div class="tuning" id="tuningLight" role="status" aria-live="polite"></div>
     <div class="controls">
       <div class="seg" id="posFilter">
         <button aria-pressed="true" data-pos="ALL">All</button>
@@ -496,7 +513,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
   <p class="intro">Most trade value charts give every league the same numbers. Front Office starts from the dynasty market, rebuilds those values around your league's rules, and gives every team its own read on what to do next.</p>
 
   <h2>Where the values start</h2>
-  <p>Every player begins with a <b>market value</b> on a 0–10,000 scale, built from <b>expert consensus</b>: the combined dynasty rankings of <span class="expertCount">dozens</span> of the country's top fantasy football analysts. Once a day, Front Office downloads the latest consensus and turns each ranking into a value. The top-ranked player is 10,000, and value drops smoothly down the list (rank 50 is about 5,400 and rank 100 about 2,900). There are separate rankings for 1QB and Superflex leagues, and Front Office uses whichever matches your league.</p>
+  <p>Every player begins with a <b>market value</b> on a 0–10,000 scale, built from <b>expert consensus</b>: the combined dynasty rankings of the country's top fantasy football analysts. Once a day, Front Office downloads the latest consensus and turns each ranking into a value. The top-ranked player is 10,000, and value drops smoothly down the list (rank 50 is about 5,400 and rank 100 about 2,900). There are separate rankings for 1QB and Superflex leagues, and Front Office uses whichever matches your league.</p>
   <p>Players the experts don't rank, such as deep bench and taxi-squad players, are filled in from DynastyProcess open data, always valued below the lowest expert-ranked player. If neither source can be reached, Front Office falls back to an estimate built from Sleeper's own player rankings, adjusted for age: running backs lose value fastest after 25, wide receivers and tight ends after their late 20s, and quarterbacks hold value into their 30s.</p>
 
   <h2>How values are customized for your league</h2>
@@ -541,7 +558,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
   <h2>Your league's trade history</h2>
   <p>Front Office reads every completed trade from the current season and up to three earlier seasons, following Sleeper's links between seasons. The Trade History tab lists each deal and grades it with today's values, so you can see who won and how each trade has aged. Picks still to be made show their projected slot, and picks that were already used show the player they became.</p>
 
-  <h2>How your league's trades tune values</h2>
+  <h2 id="tuning">How your league's trades tune values</h2>
   <p>Every league has its own habits. Some overpay for running backs, some hoard rookie picks. Once your league has enough trading history, Front Office learns those habits and adjusts values to match, without letting them override the expert market.</p>
   <ol class="steps">
     <li><b>Collect the trades.</b> Every two-team trade from the last four seasons is included. Trades with three or more teams are shown in Trade History but left out of the tuning.</li>
@@ -762,7 +779,7 @@ async function openLeague(leagueId){
 
     progress(3, "active");
     S.cfg = readSettings(league, S.rosters);
-    S.history = null; S.nudge = null;
+    S.history = null; S.nudge = null; S.historyError = false;
     buildValues();
     S.sendIds.clear(); S.getIds.clear();
     renderLeague();
@@ -1038,14 +1055,12 @@ function renderLeague(){
   if (!c.dynasty) chips.push("Not a dynasty league");
   $("chips").innerHTML = chips.map(x => `<span class="chip">${esc(x)}</span>`).join("");
   loadChampion(S.league);
-  const fpDate = S.market.updated ? new Date(S.market.updated).toLocaleDateString([], { month: "short", day: "numeric" }) : "";
+  const tuned = S.nudge ? `, and tuned to ${S.nudge.n} of your league's trades` : "";
   $("source").textContent = S.market.kind === "fp"
-    ? `Market values: expert consensus from ${expertPhrase(S.cfg.superflex ? S.market.experts.sf : S.market.experts.oneqb)} (rankings via FantasyPros)${fpDate ? ", updated " + fpDate : ""}. Adjusted for this league's settings.`
+    ? `Market values: Expert consensus from top fantasy football experts (rankings via FantasyPros), adjusted for this league's settings${tuned}.`
     : S.market.kind === "dp"
-    ? "Market values: DynastyProcess open data, based on expert consensus rankings. Adjusted for this league's settings."
-    : "Market values: estimated from Sleeper's player rankings and age curves. Adjusted for this league's settings.";
-
-  if (S.nudge) $("source").textContent += ` Tuned to ${S.nudge.n} of your league's trades.`;
+    ? `Market values: Expert consensus via DynastyProcess open data, adjusted for this league's settings${tuned}.`
+    : `Market values: Estimated from Sleeper's player rankings and age curves, adjusted for this league's settings${tuned}.`;
   const opts = [...S.teams.values()].map(t => `<option value="${t.rid}">${esc(t.name)}</option>`).join("");
   $("teamA").innerHTML = opts; $("teamB").innerHTML = opts;
   $("teamA").value = S.myRid;
@@ -1174,7 +1189,32 @@ $("listB").addEventListener("click", e => toggle(S.getIds, e));
 $("teamA").addEventListener("change", renderCalc);
 $("teamB").addEventListener("change", renderCalc);
 
+// Green light = league tuning active, yellow = not active yet, grey = still checking
+function renderTuningLight(){
+  const el = $("tuningLight"); if (!el || !S.league) return;
+  const link = `<a class="tlink" href="#tuning">How tuning works</a>`;
+  if (S.historyError){
+    el.innerHTML = `<span class="light off" aria-hidden="true"></span><div class="tuning-text"><b>League tuning is off</b><p>Couldn't check your league's trade history, so values use expert consensus and your league settings only. Reopen the league to try again.</p>${link}</div>`;
+    return;
+  }
+  if (!S.history){
+    el.innerHTML = `<span class="light wait" aria-hidden="true"></span><div class="tuning-text"><b>Checking your league's trade history...</b><p>Values may adjust slightly in a moment.</p>${link}</div>`;
+    return;
+  }
+  const twoTeam = S.history.trades.filter(t => t.sides.length === 2).length;
+  if (S.nudge){
+    const adj = ["QB","RB","WR","TE","PICK"].map(k => ({ k, m: S.nudge[k] }))
+      .map(x => `<span class="chip">${x.k === "PICK" ? "Picks" : x.k + "s"} ×${(Math.round(x.m*100)/100).toFixed(2)}</span>`).join("");
+    el.innerHTML = `<span class="light on" aria-hidden="true"></span><div class="tuning-text"><b>League tuning is on</b><p>These values include your league's trade habits, learned from ${S.nudge.n} two-team trades.</p><div class="chips">${adj}</div>${link}</div>`;
+  } else {
+    const left = Math.max(0, NUDGE_MIN_TRADES - twoTeam);
+    const pct = Math.min(100, Math.round(twoTeam / NUDGE_MIN_TRADES * 100));
+    el.innerHTML = `<span class="light off" aria-hidden="true"></span><div class="tuning-text"><b>League tuning is off for now: ${left} more trade${left === 1 ? "" : "s"} to go</b><p>Your league has ${twoTeam} of the ${NUDGE_MIN_TRADES} two-team trades needed. Until then, values use expert consensus and your league settings only.</p><div class="tprog" role="progressbar" aria-valuemin="0" aria-valuemax="${NUDGE_MIN_TRADES}" aria-valuenow="${twoTeam}" aria-label="Trades toward league tuning"><span style="width:${pct}%"></span></div><small class="tprog-label">${twoTeam} / ${NUDGE_MIN_TRADES} trades</small>${link}</div>`;
+  }
+}
+
 function renderValues(){
+  renderTuningLight();
   const q = normName($("valueSearch").value), pos = S.posFilter, rosteredOnly = $("rosteredOnly").checked;
   const rows = [...S.assets.values()]
     .filter(a => pos === "ALL" ? a.kind === "player" : pos === "PICK" ? a.kind === "pick" : a.pos === pos)
@@ -1566,6 +1606,7 @@ async function loadHistory(league){
     }
     trades.sort((a, b) => b.created - a.created);
     S.history = { trades, pickResult, seasons: seasons.map(x => Number(x.season)) };
+    S.historyError = false;
 
     // Learn the league's habits, then rebuild values once with the adjustment
     const nudge = learnNudge(trades);
@@ -1574,11 +1615,12 @@ async function loadHistory(league){
       buildValues();
       renderLeague();
     } else {
-      renderHistory(); renderStrategy();
+      renderHistory(); renderStrategy(); renderTuningLight();
     }
   } catch(err){
     console.error(err);
     $("tradeList").innerHTML = `<p class="empty">Couldn't load trade history. Reopen the league to try again.</p>`;
+    S.historyError = true; renderTuningLight();
   }
 }
 
@@ -1801,13 +1843,15 @@ $("tabs").addEventListener("click", e => {
 // ABOUT PAGE: shown when the address ends in #about
 // ============================================================
 function route(){
-  const page = location.hash.slice(1);
+  let page = location.hash.slice(1), section = null;
+  if (page === "tuning"){ page = "about"; section = "tuning"; }
   const pages = { about: ["aboutView", "About Front Office"], beta: ["betaView", "Sleeper Leagues in Beta | Front Office"] };
   $("aboutView").hidden = page !== "about";
   $("betaView").hidden = page !== "beta";
   $("appView").hidden = !!pages[page];
   document.title = pages[page] ? pages[page][1] : "Front Office";
-  window.scrollTo({ top: 0 });
+  if (section) requestAnimationFrame(() => $(section)?.scrollIntoView({ block: "start" }));
+  else window.scrollTo({ top: 0 });
 }
 window.addEventListener("hashchange", route);
 getValuesFile().then(d => {
