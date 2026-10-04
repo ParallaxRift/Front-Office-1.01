@@ -214,6 +214,23 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 .rm.now{border:2px solid var(--field)}
 .rm.now span{color:var(--field);font-weight:600}
 
+/* Team picker (dropdown with team photos) */
+.picker{position:relative;flex:1;min-width:0}
+.picker select{display:none}
+#avA,#avB{display:none}
+.pk-btn{display:flex;align-items:center;gap:10px;width:100%;background:var(--card);border:1.5px solid var(--line);border-radius:10px;padding:7px 10px;cursor:pointer;text-align:left}
+.pk-btn:hover{border-color:var(--field)}
+.pk-btn[aria-expanded=true]{border-color:var(--field)}
+.pk-name{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:16px}
+.pk-list{position:absolute;z-index:30;left:0;right:0;top:calc(100% + 4px);background:var(--card);border:1.5px solid var(--line);border-radius:12px;box-shadow:0 10px 28px rgba(0,0,0,.14);max-height:340px;overflow-y:auto;padding:5px}
+.pk-opt{display:flex;align-items:center;gap:10px;width:100%;border:0;background:none;padding:7px 8px;border-radius:8px;text-align:left;cursor:pointer}
+.pk-opt:hover,.pk-opt:focus-visible{background:var(--paper)}
+.pk-opt[aria-selected=true]{background:var(--field-soft)}
+.pk-opt .pk-text{flex:1;min-width:0}
+.pk-opt b{display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pk-opt small{color:var(--muted);font-size:13px}
+.pk-you{font-size:12px;font-weight:600;border-radius:999px;padding:2px 8px;background:var(--gold-soft);color:var(--gold);white-space:nowrap}
+
 /* Live scores tab */
 .scorebar{display:flex;flex-wrap:wrap;align-items:end;gap:10px 14px;margin-bottom:14px}
 .updated{font-size:14px;color:var(--muted);display:flex;align-items:center;gap:7px;padding-bottom:9px}
@@ -1018,6 +1035,7 @@ const eq = vals => Math.pow(vals.reduce((s,v) => s + Math.pow(v, STUD_EXPONENT),
 
 function renderCalc(){
   const ra = Number($("teamA").value), rb = Number($("teamB").value);
+  syncPicker("teamA"); syncPicker("teamB");
   // drop selections that no longer belong to the chosen teams
   for (const id of [...S.sendIds]) if (S.assets.get(id)?.owner !== ra) S.sendIds.delete(id);
   for (const id of [...S.getIds]) if (S.assets.get(id)?.owner !== rb) S.getIds.delete(id);
@@ -1213,6 +1231,7 @@ const ordinal = n => n + (n%100>=11&&n%100<=13 ? "th" : ({1:"st",2:"nd",3:"rd"}[
 
 function renderStrategy(){
   const rid = Number($("stratTeam").value), N = S.teams.size;
+  syncPicker("stratTeam");
   const prof = teamProfiles(), me = prof.get(rid), t = me.team;
   const third = N/3, POS = ["QB","RB","WR","TE"];
   const needs = POS.filter(p => me.pos[p].rank > N - third);
@@ -1400,6 +1419,64 @@ function renderScores(data, week){
     </article>`;
   }).join("");
 }
+
+// ============================================================
+// TEAM PICKERS: the browser's built-in dropdown can't show images,
+// so each team <select> gets a custom button and list with photos.
+// The hidden <select> still holds the value, so nothing else changes.
+// ============================================================
+const PICKERS = ["teamA", "teamB", "stratTeam"];
+const CHEVRON_DOWN = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:var(--muted)"><path d="M6 9l6 6 6-6"/></svg>`;
+function makePicker(id){
+  const sel = $(id);
+  const wrap = document.createElement("div"); wrap.className = "picker";
+  sel.parentNode.insertBefore(wrap, sel); wrap.appendChild(sel);
+  const btn = document.createElement("button");
+  btn.type = "button"; btn.className = "pk-btn";
+  btn.setAttribute("aria-haspopup", "listbox"); btn.setAttribute("aria-expanded", "false");
+  btn.setAttribute("aria-label", sel.getAttribute("aria-label") || "Choose a team");
+  const list = document.createElement("div");
+  list.className = "pk-list"; list.setAttribute("role", "listbox"); list.hidden = true;
+  wrap.append(btn, list);
+  const close = (focusBtn) => { list.hidden = true; btn.setAttribute("aria-expanded", "false"); if (focusBtn) btn.focus(); };
+  btn.addEventListener("click", () => {
+    const open = list.hidden;
+    PICKERS.forEach(other => { if (other !== id) $(other).parentNode.querySelector(".pk-list").hidden = true; });
+    if (open){ fillPickerList(id); list.hidden = false; btn.setAttribute("aria-expanded", "true");
+      (list.querySelector('[aria-selected="true"]') || list.firstElementChild)?.focus(); }
+    else close();
+  });
+  list.addEventListener("click", e => {
+    const opt = e.target.closest(".pk-opt"); if (!opt) return;
+    sel.value = opt.dataset.rid; close(true); syncPicker(id);
+    sel.dispatchEvent(new Event("change"));
+  });
+  list.addEventListener("keydown", e => {
+    const opts = [...list.querySelectorAll(".pk-opt")], i = opts.indexOf(document.activeElement);
+    if (e.key === "Escape"){ e.preventDefault(); close(true); }
+    else if (e.key === "ArrowDown"){ e.preventDefault(); opts[Math.min(opts.length-1, i+1)]?.focus(); }
+    else if (e.key === "ArrowUp"){ e.preventDefault(); opts[Math.max(0, i-1)]?.focus(); }
+  });
+  document.addEventListener("click", e => { if (!wrap.contains(e.target) && !list.hidden) close(); });
+}
+function fillPickerList(id){
+  const sel = $(id), list = sel.parentNode.querySelector(".pk-list"), cur = Number(sel.value);
+  list.innerHTML = [...sel.options].map(o => {
+    const rid = Number(o.value), t = S.teams.get(rid);
+    if (!t) return "";
+    const sub = [t.manager && t.manager !== t.name ? t.manager : "", statusText[t.status]].filter(Boolean).join(", ");
+    return `<button type="button" class="pk-opt" role="option" data-rid="${rid}" aria-selected="${rid === cur}">
+      ${teamPhoto(rid, "md")}<span class="pk-text"><b>${esc(t.name)}</b><small>${esc(sub)}</small></span>
+      ${rid === S.myRid ? `<span class="pk-you">Your team</span>` : ""}</button>`;
+  }).join("");
+}
+function syncPicker(id){
+  const sel = $(id), btn = sel.parentNode.querySelector(".pk-btn");
+  if (!btn) return;
+  const rid = Number(sel.value), t = S.teams.get(rid);
+  btn.innerHTML = t ? `${teamPhoto(rid, "md")}<span class="pk-name">${esc(t.name)}</span>${CHEVRON_DOWN}` : `<span class="pk-name">Choose a team</span>${CHEVRON_DOWN}`;
+}
+PICKERS.forEach(makePicker);
 
 // tabs
 $("tabs").addEventListener("click", e => {
