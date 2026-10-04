@@ -169,7 +169,7 @@ input[type=text],input[type=search],select{background:var(--card);border:1.5px s
 .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
 .seg{display:flex;flex-wrap:wrap;gap:4px}
 .seg button{border:1.5px solid var(--line);background:var(--card);border-radius:999px;padding:5px 13px;font-weight:600;font-size:14px;cursor:pointer}
-.seg button[aria-pressed=true]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.seg button[aria-pressed=true],.seg button[aria-checked=true]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
 .controls input{max-width:240px}
 .tablewrap{overflow-x:auto;background:var(--card);border:1.5px solid var(--line);border-radius:12px}
 table{border-collapse:collapse;width:100%;font-size:15px;min-width:560px}
@@ -277,6 +277,27 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 .tprog span{display:block;height:100%;background:#E0A526;border-radius:4px}
 .tprog-label{display:block;color:var(--muted);font-size:12px}
 .tlink{display:inline-block;color:var(--field);font-weight:600;font-size:14px;text-underline-offset:3px;margin-top:8px}
+
+/* Beta feedback tab */
+.fb-wrap{display:grid;grid-template-columns:minmax(280px,380px) 1fr;gap:18px;align-items:start}
+@media (max-width:800px){.fb-wrap{grid-template-columns:1fr}}
+.fb-form textarea{background:var(--card);border:1.5px solid var(--line);border-radius:8px;padding:11px 12px;width:100%;font:inherit;resize:vertical}
+.fb-label{font-size:14px;font-weight:600;color:var(--muted)}
+.fb-count{color:var(--muted);font-size:12px;text-align:right}
+.fb-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
+.fb-head h3{font-family:var(--display);font-size:24px;margin:0}
+.fb-list{display:flex;flex-direction:column;gap:10px}
+.fb-item{background:var(--card);border:1.5px solid var(--line);border-radius:12px;padding:12px 14px}
+.fb-item.pending{border-style:dashed}
+.fb-meta{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin-bottom:6px}
+.fb-meta b{color:var(--ink);font-size:15px}
+.fb-msg{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.fb-type{font-size:12px;font-weight:700;border-radius:999px;padding:2px 9px}
+.t-Bug{background:var(--loss-soft);color:var(--loss)}
+.t-Idea{background:var(--field-soft);color:var(--field)}
+.t-Question{background:#E4ECF7;color:#2D5C99}
+.t-Praise{background:var(--gold-soft);color:var(--gold)}
+@media (prefers-color-scheme:dark){.t-Question{background:#1B2A3D;color:#8DB4EA}}
 
 /* Live scores tab */
 .scorebar{display:flex;flex-wrap:wrap;align-items:end;gap:10px 14px;margin-bottom:14px}
@@ -417,6 +438,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
     <button class="tab" role="tab" aria-selected="false" data-tab="settings">League Settings</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="strategy">Team Strategy</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="history">Trade History</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="feedback">Beta Feedback</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="scores">Live Scores</button>
   </div>
 
@@ -453,6 +475,33 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
     </div>
     <p class="note" id="histNote" style="margin:0 0 12px"></p>
     <div class="trades" id="tradeList"><p class="empty">Open a league to see its trade history.</p></div>
+  </section>
+
+  <section class="panel" id="panel-feedback">
+    <div class="fb-wrap">
+      <form class="box fb-form" id="fbForm" novalidate>
+        <h3>Share feedback</h3>
+        <p class="note" style="margin:0 0 12px">You're testing Front Office while it's in beta. Spotted a bug, have an idea, or love something? Post it here for everyone to see.</p>
+        <div class="field" style="max-width:none"><label for="fbName">Your name or team (optional)</label><input id="fbName" type="text" maxlength="60" autocomplete="nickname"></div>
+        <div class="field" style="max-width:none;margin-top:10px"><span class="fb-label" id="fbTypeLabel">Type</span>
+          <div class="seg" id="fbType" role="radiogroup" aria-labelledby="fbTypeLabel">
+            <button type="button" role="radio" aria-checked="true" data-type="Bug">Bug</button>
+            <button type="button" role="radio" aria-checked="false" data-type="Idea">Idea</button>
+            <button type="button" role="radio" aria-checked="false" data-type="Question">Question</button>
+            <button type="button" role="radio" aria-checked="false" data-type="Praise">Praise</button>
+          </div></div>
+        <div class="field" style="max-width:none;margin-top:10px"><label for="fbMsg">Feedback</label><textarea id="fbMsg" rows="5" maxlength="1000" placeholder="What happened, or what would you like to see?"></textarea><small class="fb-count" id="fbCount">0 / 1000</small></div>
+        <button class="btn" type="submit" id="fbSend" style="margin-top:12px">Post feedback</button>
+        <p class="status" id="fbStatus" role="status" aria-live="polite"></p>
+        <p class="note" style="margin:8px 0 0">Posts are public to anyone using Front Office. Don't include passwords or private info.</p>
+      </form>
+      <div class="fb-board">
+        <div class="fb-head"><h3>Feedback board</h3><div class="seg" id="fbFilter">
+          <button aria-pressed="true" data-type="All">All</button><button aria-pressed="false" data-type="Bug">Bugs</button><button aria-pressed="false" data-type="Idea">Ideas</button><button aria-pressed="false" data-type="Question">Questions</button><button aria-pressed="false" data-type="Praise">Praise</button>
+        </div></div>
+        <div id="fbList" class="fb-list"><p class="empty">Loading feedback...</p></div>
+      </div>
+    </div>
   </section>
 
   <section class="panel" id="panel-scores">
@@ -1801,6 +1850,110 @@ function historyInsightsHTML(rid){
 }
 
 // ============================================================
+// BETA FEEDBACK
+// Posts go to a Google Form, and the board reads the Form's response
+// sheet (published as CSV). Fill in the four links below once.
+// To hide a post: in the response sheet, type "yes" in a column
+// named "Hidden" on that row.
+// ============================================================
+const FEEDBACK = {
+  formAction: "https://docs.google.com/forms/d/e/1FAIpQLScj5WkSDhFYMweG58RTLak_TAIQ5TY2ChC7yHZJBvGFxRaUbw/formResponse",
+  // Question IDs from the form's pre-filled link. Type and league are optional: when the form
+  // has no Type/League questions, they're tucked into the feedback text as "[Bug | League] ..."
+  fields: { name: "entry.475520917", type: "", message: "entry.154091632", league: "" },
+  // Published response sheet as CSV (the same publish link, with /pubhtml swapped for /pub?output=csv)
+  csv: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSPJxeizc9URJYgx-ssY4NB_uh0dejbrujggT7DOBfQaf0xAIx3pz1UK4uhG8oYxLoy22o3Qvvt57Sm/pub?output=csv"
+};
+const fbCanPost = () => !!(FEEDBACK.formAction && FEEDBACK.fields.message);
+const fbReady = () => fbCanPost() && !!FEEDBACK.csv;
+let fbPosts = null, fbPending = [], fbFilter = "All";
+
+function setupFeedbackForm(){
+  if (S.teams?.get && S.myRid != null && !$("fbName").value) $("fbName").value = S.teams.get(S.myRid)?.name || "";
+}
+$("fbType").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  for (const x of $("fbType").children) x.setAttribute("aria-checked", x === b);
+});
+$("fbMsg").addEventListener("input", () => { $("fbCount").textContent = `${$("fbMsg").value.length} / 1000`; });
+$("fbFilter").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  fbFilter = b.dataset.type;
+  for (const x of $("fbFilter").children) x.setAttribute("aria-pressed", x === b);
+  renderFeedback();
+});
+
+async function loadFeedback(){
+  setupFeedbackForm();
+  $("fbSend").disabled = !fbCanPost();
+  if (!fbReady()){
+    $("fbList").innerHTML = fbPending.length ? "" : `<p class="empty">${fbCanPost() ? "The public board is coming soon. You can already post feedback, and it will show here once the board is switched on." : "The feedback board isn't connected yet."}</p>`;
+    if (fbPending.length) renderFeedback();
+    return;
+  }
+  try {
+    const r = await fetch(FEEDBACK.csv + (FEEDBACK.csv.includes("?") ? "&" : "?") + "t=" + Date.now());
+    if (!r.ok) throw new Error("csv " + r.status);
+    const rows = parseCSV(await r.text());
+    const h = (rows[0] || []).map(x => x.trim().toLowerCase());
+    const col = (...names) => h.findIndex(x => names.some(n => x.includes(n)));
+    const iTime = col("timestamp"), iName = col("name"), iType = col("type"), iMsg = col("feedback", "message"), iLeague = col("league"), iHide = col("hidden");
+    fbPosts = rows.slice(1).filter(r => r[iMsg] && !(iHide >= 0 && /^(y|yes|x|true|hide)/i.test((r[iHide] || "").trim())))
+      .map(r => {
+        let msg = r[iMsg], type = iType >= 0 ? (r[iType] || "").trim() : "", league = iLeague >= 0 ? r[iLeague] : "";
+        // Unpack "[Bug | League name] message" written by Front Office
+        const m = msg.match(/^\[(Bug|Idea|Question|Praise)(?: \| ([^\]]*))?\]\s*/);
+        if (m){ type = type || m[1]; league = league || m[2] || ""; msg = msg.slice(m[0].length); }
+        return { time: r[iTime] || "", name: r[iName] || "", type: type || "Idea", msg, league };
+      });
+    fbPosts.reverse(); // newest first
+    // Drop local "just posted" items once they show up on the board
+    fbPending = fbPending.filter(p => !fbPosts.some(q => q.msg === p.msg));
+    renderFeedback();
+  } catch(e){
+    console.error(e);
+    $("fbList").innerHTML = `<p class="empty">Couldn't load the feedback board. Check your connection and reopen this tab.</p>`;
+  }
+}
+function renderFeedback(){
+  const all = [...fbPending, ...(fbPosts || [])].filter(p => fbFilter === "All" || p.type === fbFilter);
+  if (!all.length){ $("fbList").innerHTML = `<p class="empty">${fbFilter === "All" ? "No feedback yet. Be the first to post." : "Nothing here yet."}</p>`; return; }
+  const types = ["Bug","Idea","Question","Praise"];
+  $("fbList").innerHTML = all.slice(0, 200).map(p => {
+    const type = types.includes(p.type) ? p.type : "Idea";
+    return `<article class="fb-item${p.pending ? " pending" : ""}">
+      <div class="fb-meta"><span class="fb-type t-${type}">${type}</span><b>${esc(p.name || "Anonymous")}</b>${p.league ? `<span>${esc(p.league)}</span>` : ""}<span>${esc(p.pending ? "Just posted, visible to everyone within a few minutes" : p.time)}</span></div>
+      <p class="fb-msg">${esc(p.msg)}</p></article>`;
+  }).join("");
+}
+$("fbForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const msg = $("fbMsg").value.trim();
+  const st = $("fbStatus");
+  if (!fbCanPost()){ st.textContent = "The feedback board isn't connected yet."; st.className = "status error"; return; }
+  if (msg.length < 3){ st.textContent = "Write a few words of feedback first."; st.className = "status error"; $("fbMsg").focus(); return; }
+  const type = [...$("fbType").children].find(x => x.getAttribute("aria-checked") === "true")?.dataset.type || "Idea";
+  const name = $("fbName").value.trim(), league = S.league?.name || "";
+  const body = new URLSearchParams(); // standard form encoding, which Google Forms expects
+  const tag = !FEEDBACK.fields.type ? `[${type}${league && !FEEDBACK.fields.league ? " | " + league.replace(/[\[\]]/g, "") : ""}] ` : "";
+  body.append(FEEDBACK.fields.message, tag + msg);
+  if (FEEDBACK.fields.name) body.append(FEEDBACK.fields.name, name);
+  if (FEEDBACK.fields.type) body.append(FEEDBACK.fields.type, type);
+  if (FEEDBACK.fields.league) body.append(FEEDBACK.fields.league, league);
+  $("fbSend").disabled = true; st.className = "status"; st.textContent = "Posting...";
+  try {
+    // Google Forms doesn't allow reading the reply from another site, so "no-cors" sends it blind
+    await fetch(FEEDBACK.formAction, { method: "POST", mode: "no-cors", body });
+    fbPending.unshift({ name, type, msg, league, pending: true });
+    $("fbMsg").value = ""; $("fbCount").textContent = "0 / 1000";
+    st.textContent = "Thanks! Your feedback is posted.";
+    renderFeedback();
+  } catch(err){
+    st.textContent = "Couldn't post. Check your connection and try again."; st.className = "status error";
+  } finally { $("fbSend").disabled = false; }
+});
+
+// ============================================================
 // TEAM PICKERS: the browser's built-in dropdown can't show images,
 // so each team <select> gets a custom button and list with photos.
 // The hidden <select> still holds the value, so nothing else changes.
@@ -1862,8 +2015,9 @@ PICKERS.forEach(makePicker);
 $("tabs").addEventListener("click", e => {
   const b = e.target.closest(".tab"); if (!b) return;
   for (const t of $("tabs").children) t.setAttribute("aria-selected", t === b);
-  for (const name of ["calc","history","scores","values","settings","strategy"]) $("panel-"+name).classList.toggle("on", b.dataset.tab === name);
+  for (const name of ["calc","history","feedback","scores","values","settings","strategy"]) $("panel-"+name).classList.toggle("on", b.dataset.tab === name);
   if (b.dataset.tab === "scores") loadScores();
+  if (b.dataset.tab === "feedback") loadFeedback();
 });
 
 // ============================================================
