@@ -335,11 +335,12 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 .mu-row.lead .mu-pts{color:var(--field)}
 .mu details{border-top:1px solid var(--line)}
 .mu summary{cursor:pointer;padding:9px 14px;font-size:14px;font-weight:600;color:var(--field)}
-.lineups{display:grid;grid-template-columns:1fr 1fr;gap:0 14px;padding:0 14px 12px;font-size:14px}
+.lineups{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 14px;padding:0 14px 12px;font-size:14px}
+.lineups > div{min-width:0}
 .lu{display:flex;justify-content:space-between;gap:6px;padding:5px 0;border-bottom:1px solid var(--line);min-width:0}
-.lu span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lu span:first-child{flex:1 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .lu i{font-style:normal;color:var(--muted);font-size:12px;margin-right:5px;font-family:var(--display);font-weight:700}
-.lu b{font-variant-numeric:tabular-nums}
+.lu b{flex:none;font-variant-numeric:tabular-nums}
 .lu.empty{color:var(--muted)}
 .lu.total{font-weight:700;border-bottom:0}
 
@@ -538,7 +539,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 
   <section class="panel" id="panel-scores">
     <div class="scorebar">
-      <div class="field" style="flex:0 1 160px"><label for="weekSelect">Week</label><select id="weekSelect"></select></div>
+      <div class="field" style="flex:0 1 210px"><label for="weekSelect">Week</label><select id="weekSelect"></select></div>
       <button class="ghost" id="refreshScores">Refresh</button>
       <span class="updated" id="scoresUpdated" role="status" aria-live="polite"></span>
     </div>
