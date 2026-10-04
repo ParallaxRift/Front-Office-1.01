@@ -279,6 +279,21 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 .tprog-label{display:block;color:var(--muted);font-size:12px}
 .tlink{display:inline-block;color:var(--field);font-weight:600;font-size:14px;text-underline-offset:3px;margin-top:8px}
 
+/* Trade history: records table + filters */
+.hrec{margin-bottom:16px}
+.hrec table{min-width:640px}
+.hrec th button{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:4px;font-weight:600}
+.hrec th button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.hrec th[aria-sort="ascending"] button::after{content:"▲";font-size:10px}
+.hrec th[aria-sort="descending"] button::after{content:"▼";font-size:10px}
+.hrec tbody tr{cursor:pointer}
+.hrec tbody tr:hover{background:var(--paper)}
+.hrec tbody tr.sel{background:var(--gold-soft)}
+.hfilters{display:flex;flex-wrap:wrap;align-items:end;gap:10px 12px;margin-bottom:10px}
+.hfilters .field{flex:1 1 150px;max-width:240px}
+.hfilters .field:first-child{flex-basis:200px}
+.tside.focus{background:var(--gold-soft)}
+
 /* Beta feedback tab */
 .fb-wrap{display:grid;grid-template-columns:minmax(280px,380px) 1fr;gap:18px;align-items:start}
 @media (max-width:800px){.fb-wrap{grid-template-columns:1fr}}
@@ -326,6 +341,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 .lu i{font-style:normal;color:var(--muted);font-size:12px;margin-right:5px;font-family:var(--display);font-weight:700}
 .lu b{font-variant-numeric:tabular-nums}
 .lu.empty{color:var(--muted)}
+.lu.total{font-weight:700;border-bottom:0}
 
 /* Settings tab */
 .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
@@ -470,10 +486,25 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 
   <section class="panel" id="panel-history">
     <div class="histstats" id="histStats"></div>
-    <div class="scorebar">
-      <div class="field" style="flex:0 1 280px"><label for="histTeam">Show trades for</label><select id="histTeam"></select></div>
-      <div class="field" style="flex:0 1 180px"><label for="histSeason">Season</label><select id="histSeason"></select></div>
+    <div class="box hrec">
+      <h3>Team trade records</h3>
+      <p class="note" style="margin:0 0 10px">Tap a column to sort. Tap a team to see only its trades.</p>
+      <div class="tablewrap"><table id="histTable"></table></div>
     </div>
+    <div class="hfilters">
+      <div class="field"><label for="histTeam">Team</label><select id="histTeam"></select></div>
+      <div class="field"><label for="histResult">Result for that team</label><select id="histResult">
+        <option value="all">Any result</option><option value="won">Won</option><option value="lost">Lost</option><option value="even">Even</option></select></div>
+      <div class="field"><label for="histSeason">Season</label><select id="histSeason"></select></div>
+      <div class="field"><label for="histSize">Trade size</label><select id="histSize">
+        <option value="all">Any size</option><option value="2">2-team</option><option value="multi">3+ teams</option></select></div>
+      <div class="field"><label for="histSort">Sort by</label><select id="histSort">
+        <option value="new">Newest first</option><option value="old">Oldest first</option>
+        <option value="win">Biggest win</option><option value="loss">Biggest loss</option>
+        <option value="value">Most value traded</option></select></div>
+      <button class="ghost" id="histClear" type="button">Clear filters</button>
+    </div>
+    <p class="note" id="histCount" style="margin:0 0 4px"></p>
     <p class="note" id="histNote" style="margin:0 0 12px"></p>
     <div class="trades" id="tradeList"><p class="empty">Open a league to see its trade history.</p></div>
   </section>
@@ -1527,6 +1558,8 @@ $("weekSelect").addEventListener("change", () => loadScores());
 $("refreshScores").addEventListener("click", () => loadScores());
 document.addEventListener("visibilitychange", () => { if (!document.hidden && $("panel-scores").classList.contains("on")) loadScores(); });
 
+// Exact fantasy points, shown with both decimal places (e.g. 1.52, 18.50) so nothing is cut off
+const ptsText = v => (Math.round(Number(v || 0) * 100) / 100).toFixed(2);
 function playerLabel(pid){
   if (!pid || pid === "0") return null;
   const p = S.sleeperPlayers?.[pid];
@@ -1579,12 +1612,24 @@ function renderScores(data, week){
     const lineup = m => (m.starters || []).map((pid, i) => {
       const pl = playerLabel(pid), sp = m.starters_points?.[i];
       const slot = slotName[slots[i]] || slots[i] || "";
-      return pl ? `<div class="lu"><span><i>${esc(slot)}</i>${esc(pl.name)}</span><b>${Number(sp ?? m.players_points?.[pid] ?? 0).toFixed(1)}</b></div>`
-                : `<div class="lu empty"><span><i>${esc(slot)}</i>Empty</span><b>0.0</b></div>`;
+      return pl ? `<div class="lu"><span><i>${esc(slot)}</i>${esc(pl.name)}</span><b>${ptsText(sp ?? m.players_points?.[pid])}</b></div>`
+                : `<div class="lu empty"><span><i>${esc(slot)}</i>Empty</span><b>0.00</b></div>`;
     }).join("");
+    // Bench = everyone on the roster who isn't starting, highest scorers first
+    const benchOf = m => {
+      const starters = new Set(m.starters || []);
+      return (m.players || []).filter(pid => pid && pid !== "0" && !starters.has(pid))
+        .map(pid => ({ pid, pl: playerLabel(pid), p: Number(m.players_points?.[pid] ?? 0) }))
+        .filter(x => x.pl).sort((a, b) => b.p - a.p);
+    };
+    const bench = m => { const b = benchOf(m);
+      return b.length ? b.map(x => `<div class="lu"><span><i>${esc(x.pl.pos || "BN")}</i>${esc(x.pl.name)}</span><b>${ptsText(x.p)}</b></div>`).join("")
+        + `<div class="lu total"><span>Bench total</span><b>${ptsText(b.reduce((s, x) => s + x.p, 0))}</b></div>`
+        : `<div class="lu empty"><span>No bench players</span><b></b></div>`; };
     return `<article class="mu${mine ? " mine" : ""}">${mine ? `<div class="mu-tag">Your matchup</div>` : ""}
       ${pair.map(row).join("")}
-      ${pair.length === 2 ? `<details${mine ? " open" : ""}><summary>Starting lineups</summary><div class="lineups"><div>${lineup(pair[0])}</div><div>${lineup(pair[1])}</div></div></details>` : ""}
+      ${pair.length === 2 ? `<details${mine ? " open" : ""}><summary>Starting lineups</summary><div class="lineups"><div>${lineup(pair[0])}</div><div>${lineup(pair[1])}</div></div></details>
+      <details><summary>Bench</summary><div class="lineups"><div>${bench(pair[0])}</div><div>${bench(pair[1])}</div></div></details>` : ""}
     </article>`;
   }).join("");
 }
@@ -1759,27 +1804,32 @@ function learnNudge(trades){
 }
 
 const fmtDate = ms => new Date(ms).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" });
+let histSort = { key: "net", dir: -1 };   // records table sort
 function renderHistory(){
   const H = S.history;
   if (!H){ return; }
-  // Filters
-  const teamSel = $("histTeam"), seasonSel = $("histSeason");
+  const ownerTeam = o => [...S.teams.values()].find(t => t.owner === o);
+  // ---- Filter controls ----
+  const teamSel = $("histTeam"), seasonSel = $("histSeason"), resSel = $("histResult"), sizeSel = $("histSize"), sortSel = $("histSort");
   const prevTeam = teamSel.value, prevSeason = seasonSel.value;
-  teamSel.innerHTML = `<option value="all">All teams</option>` + [...S.teams.values()].map(t => `<option value="${t.owner}">${esc(t.name)}</option>`).join("");
+  teamSel.innerHTML = `<option value="all">All teams</option>` + [...S.teams.values()].map(t => `<option value="${esc(t.owner)}">${esc(t.name)}</option>`).join("");
   seasonSel.innerHTML = `<option value="all">All seasons</option>` + H.seasons.map(y => `<option value="${y}">${y}</option>`).join("");
   teamSel.value = [...teamSel.options].some(o => o.value === prevTeam) ? prevTeam : "all";
   seasonSel.value = [...seasonSel.options].some(o => o.value === prevSeason) ? prevSeason : "all";
+  const team = teamSel.value;
+  resSel.disabled = team === "all";
+  if (team === "all") resSel.value = "all";
+  const winOpt = sortSel.querySelector('[value="win"]'), lossOpt = sortSel.querySelector('[value="loss"]');
+  winOpt.textContent = team === "all" ? "Biggest win" : "Their biggest wins";
+  lossOpt.textContent = team === "all" ? "Biggest loss" : "Their biggest losses";
 
   const graded = H.trades.map(gradeTrade);
-  const shown = graded.filter(t => (teamSel.value === "all" || t.sides.some(x => x.owner === teamSel.value))
-                               && (seasonSel.value === "all" || String(t.season) === seasonSel.value));
 
-  // Summary
+  // ---- Summary cards (whole league) ----
   const count = {}, net = {};
   for (const t of graded) for (const x of t.sides){ count[x.owner] = (count[x.owner]||0) + 1; net[x.owner] = (net[x.owner]||0) + x.margin; }
-  const ownerTeam = o => [...S.teams.values()].find(t => t.owner === o);
-  const top = (obj, dir) => Object.entries(obj).filter(([o]) => ownerTeam(o)).sort((a,b) => dir*(b[1]-a[1]))[0];
-  const busiest = top(count, 1), sharp = top(net, 1);
+  const top = (obj) => Object.entries(obj).filter(([o]) => ownerTeam(o)).sort((a,b) => b[1]-a[1])[0];
+  const busiest = top(count), sharp = top(net);
   const biggest = graded.flatMap(t => t.sides.filter(x => x.result === "won").map(x => ({ t, x }))).sort((a,b) => b.x.margin - a.x.margin)[0];
   const teamLine = o => { const t = ownerTeam(o); return t ? `<span class="teamcell">${teamPhoto(t.rid, true)}${esc(t.name)}</span>` : ""; };
   $("histStats").innerHTML = `
@@ -1791,18 +1841,81 @@ function renderHistory(){
     ? `Trades are graded with today's values. All ${S.nudge.n} of your league's trades, including 3- and 4-team deals, are also used to lightly tune player values (see League Settings).`
     : `Trades are graded with today's values, so they show how each deal has aged.${graded.length < NUDGE_MIN_TRADES ? ` Once your league has ${NUDGE_MIN_TRADES} trades, they'll also tune player values.` : ""}`;
 
+  // ---- Team trade records table (respects the season and size filters) ----
+  const inScope = t => (seasonSel.value === "all" || String(t.season) === seasonSel.value)
+                    && (sizeSel.value === "all" || (sizeSel.value === "2" ? t.sides.length === 2 : t.sides.length > 2));
+  const rec = new Map([...S.teams.values()].map(t => [t.owner, { owner: t.owner, rid: t.rid, name: t.name, trades: 0, won: 0, lost: 0, even: 0, net: 0, picksOut: 0, picksIn: 0, partners: {} }]));
+  for (const t of graded.filter(inScope)) for (const x of t.sides){
+    const r = rec.get(x.owner); if (!r) continue;
+    r.trades++; r[x.result]++; r.net += x.margin;
+    r.picksIn += x.items.filter(i => i.cat === "PICK").length;
+    r.picksOut += x.sentItems.filter(i => i.cat === "PICK").length;
+    for (const y of t.sides) if (y.owner !== x.owner) r.partners[y.owner] = (r.partners[y.owner]||0) + 1;
+  }
+  for (const r of rec.values()){
+    const fav = Object.entries(r.partners).sort((a,b) => b[1]-a[1])[0];
+    r.partner = fav ? (ownerTeam(fav[0])?.name || "Former manager") : "";
+    r.partnerN = fav ? fav[1] : 0;
+    r.winPct = r.trades ? r.won / r.trades : -1;
+  }
+  const cols = [
+    { key: "name", label: "Team", num: false },
+    { key: "trades", label: "Trades", num: true },
+    { key: "won", label: "Won", num: true },
+    { key: "lost", label: "Lost", num: true },
+    { key: "even", label: "Even", num: true },
+    { key: "winPct", label: "Win %", num: true },
+    { key: "net", label: "Net value", num: true },
+    { key: "picksIn", label: "Picks in", num: true },
+    { key: "picksOut", label: "Picks out", num: true },
+    { key: "partner", label: "Top partner", num: false },
+  ];
+  const rows = [...rec.values()].sort((a, b) => {
+    const k = histSort.key, va = a[k], vb = b[k];
+    const c = typeof va === "string" ? va.localeCompare(vb) : va - vb;
+    return c * histSort.dir || a.name.localeCompare(b.name);
+  });
+  $("histTable").innerHTML = `<thead><tr>${cols.map(c => `<th class="${c.num ? "n" : ""}" aria-sort="${histSort.key === c.key ? (histSort.dir > 0 ? "ascending" : "descending") : "none"}"><button type="button" data-key="${c.key}">${c.label}</button></th>`).join("")}</tr></thead>
+    <tbody>${rows.map(r => `<tr data-owner="${esc(r.owner)}" class="${r.owner === team ? "sel" : ""}" tabindex="0">
+      <td><span class="teamcell">${teamPhoto(r.rid, true)}${esc(r.name)}</span></td>
+      <td class="n">${r.trades}</td><td class="n">${r.won}</td><td class="n">${r.lost}</td><td class="n">${r.even}</td>
+      <td class="n">${r.trades ? Math.round(r.winPct*100) + "%" : "–"}</td>
+      <td class="n ${r.net > 0 ? "up" : r.net < 0 ? "down" : ""}">${r.trades ? (r.net > 0 ? "+" : "") + fmt(r.net) : "–"}</td>
+      <td class="n">${r.picksIn}</td><td class="n">${r.picksOut}</td>
+      <td>${r.partner ? `${esc(r.partner)} (${r.partnerN})` : "–"}</td></tr>`).join("")}</tbody>`;
+
+  // ---- Filter + sort the trade list ----
+  const sideOf = t => t.sides.find(x => x.owner === team);
+  let shown = graded.filter(t => inScope(t)
+    && (team === "all" || sideOf(t))
+    && (resSel.value === "all" || sideOf(t)?.result === resSel.value));
+  const maxMargin = t => Math.max(...t.sides.map(x => x.margin));
+  const moved = t => t.sides.reduce((s, x) => s + x.total, 0);
+  const sorters = {
+    new: (a, b) => b.created - a.created,
+    old: (a, b) => a.created - b.created,
+    win: (a, b) => team === "all" ? maxMargin(b) - maxMargin(a) : sideOf(b).margin - sideOf(a).margin,
+    loss: (a, b) => team === "all" ? maxMargin(b) - maxMargin(a) : sideOf(a).margin - sideOf(b).margin,
+    value: (a, b) => moved(b) - moved(a),
+  };
+  shown.sort(sorters[sortSel.value] || sorters.new);
+  $("histCount").textContent = `Showing ${shown.length} of ${graded.length} trade${graded.length === 1 ? "" : "s"}${team !== "all" ? ` for ${ownerTeam(team)?.name || "this team"}` : ""}.`;
+
   if (!shown.length){
-    $("tradeList").innerHTML = `<p class="empty">${graded.length ? "No trades match these filters." : "No trades found in this league yet."}</p>`;
+    $("tradeList").innerHTML = `<p class="empty">${graded.length ? "No trades match these filters. Try Clear filters." : "No trades found in this league yet."}</p>`;
     return;
   }
   const tagFor = x => x.result === "won" ? `<span class="verdict-tag v-won">Won by ${fmt(x.margin)}</span>`
                     : x.result === "lost" ? `<span class="verdict-tag v-lost">Lost by ${fmt(-x.margin)}</span>`
                     : `<span class="verdict-tag v-even">Even</span>`;
-  $("tradeList").innerHTML = shown.slice(0, 150).map(t => `
+  $("tradeList").innerHTML = shown.slice(0, 150).map(t => {
+    // When filtering by a team, show that team's side first and highlight it
+    const sides = team === "all" ? t.sides : [...t.sides].sort((a, b) => (b.owner === team) - (a.owner === team));
+    return `
     <article class="trade">
       <div class="trade-head"><span>${fmtDate(t.created)}</span><span>${t.season} season${t.sides.length > 2 ? `, ${t.sides.length}-team trade` : ""}</span></div>
-      <div class="trade-sides">${t.sides.map(x => `
-        <div class="tside">
+      <div class="trade-sides">${sides.map(x => `
+        <div class="tside${team !== "all" && x.owner === team ? " focus" : ""}">
           <div class="tside-head">${avatar(x.photo, x.name, "md")}<span class="nm"><b>${esc(x.name)}</b><small>Received</small></span>${tagFor(x)}</div>
           ${x.items.map(i => `<div class="titem"><span class="tn">${esc(i.name)}<small>${esc(i.sub)}</small></span><span class="tv">${fmt(i.value)}</span></div>`).join("") || `<div class="titem"><span class="tn">Nothing but FAAB</span></div>`}
           ${x.faab ? `<div class="titem"><span class="tn">$${x.faab} FAAB<small>Not valued</small></span><span class="tv">–</span></div>` : ""}
@@ -1810,10 +1923,28 @@ function renderHistory(){
           <div class="ttotal gave"><span>Gave up, value today</span><span>${fmt(x.sentTotal)}</span></div>
         </div>`).join("")}
       </div>
-    </article>`).join("");
+    </article>`;
+  }).join("") + (shown.length > 150 ? `<p class="note">Showing the first 150. Narrow the filters to see more.</p>` : "");
 }
-$("histTeam").addEventListener("change", renderHistory);
-$("histSeason").addEventListener("change", renderHistory);
+["histTeam","histSeason","histResult","histSize","histSort"].forEach(id => $(id).addEventListener("change", renderHistory));
+$("histClear").addEventListener("click", () => {
+  $("histTeam").value = "all"; $("histSeason").value = "all"; $("histResult").value = "all"; $("histSize").value = "all"; $("histSort").value = "new";
+  renderHistory();
+});
+$("histTable").addEventListener("click", e => {
+  const h = e.target.closest("th button");
+  if (h){
+    const k = h.dataset.key;
+    histSort = histSort.key === k ? { key: k, dir: -histSort.dir } : { key: k, dir: k === "name" || k === "partner" ? 1 : -1 };
+    renderHistory(); return;
+  }
+  const row = e.target.closest("tbody tr");
+  if (row){ $("histTeam").value = $("histTeam").value === row.dataset.owner ? "all" : row.dataset.owner; renderHistory(); }
+});
+$("histTable").addEventListener("keydown", e => {
+  const row = e.target.closest("tbody tr");
+  if (row && (e.key === "Enter" || e.key === " ")){ e.preventDefault(); row.click(); }
+});
 
 // Insights for Team Strategy
 function historyInsightsHTML(rid){
