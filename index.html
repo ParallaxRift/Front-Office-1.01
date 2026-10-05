@@ -345,7 +345,8 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 
 /* League settings button next to the league name */
 .lname-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px}
-.settings-btn{display:inline-flex;align-items:center;gap:6px;background:var(--card);border:1.5px solid var(--line);border-radius:999px;padding:6px 13px;font-weight:600;font-size:14px;color:var(--ink);cursor:pointer;white-space:nowrap}
+.settings-btn{display:inline-flex;align-items:center;gap:5px;background:var(--card);border:1.5px solid var(--line);border-radius:999px;padding:3px 10px;font-weight:600;font-size:12.5px;line-height:1.4;color:var(--ink);cursor:pointer;white-space:nowrap}
+.settings-btn svg{width:13px;height:13px}
 .settings-btn:hover{border-color:var(--field);color:var(--field)}
 .settings-btn[aria-pressed=true]{background:var(--ink);border-color:var(--ink);color:var(--paper)}
 
@@ -536,13 +537,13 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
   <section class="leaguebar" id="leagueBar">
     <div class="leaguehead"><span id="leagueAv"></span><div><div class="lname-row"><h2 id="leagueName"></h2><button type="button" class="settings-btn" id="settingsBtn" aria-pressed="false" aria-controls="panel-settings"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>League settings</button></div><small id="myTeamLine"></small></div></div>
     <div class="chips" id="chips"></div>
-    <p class="source" id="source"></p>
+    <p class="source" id="source" hidden></p>
   </section>
 
   <div class="modebar" id="modeBar" hidden>
     <div class="mode-toggle" id="modeToggle" role="radiogroup" aria-label="How much to show">
-      <button type="button" role="radio" data-mode="basics" aria-checked="false">The Basics</button>
       <button type="button" role="radio" data-mode="freak" aria-checked="true">Freakshow</button>
+      <button type="button" role="radio" data-mode="basics" aria-checked="false">The Basics</button>
     </div>
     <span class="mode-note" id="modeNote"></span>
   </div>
@@ -1246,7 +1247,7 @@ function renderLeague(){
   $("leagueName").textContent = S.league.name;
   $("leagueAv").innerHTML = avatar(S.league.avatar, S.league.name, "lg");
   const myT = S.teams.get(S.myRid);
-  $("myTeamLine").innerHTML = myT ? `<span class="teamcell">${teamPhoto(S.myRid, "sm")}Your team: ${esc(myT.name)}</span>` : "";
+  $("myTeamLine").innerHTML = myT ? `<span class="teamcell">${teamPhoto(S.myRid, "sm")}${esc(myT.name)}</span>` : "";
   const recLabel = c.rec >= 1 ? "Full PPR" : c.rec >= .5 ? "Half PPR" : c.rec > 0 ? c.rec + " PPR" : "Standard";
   const chips = [`${c.teams} teams`, c.superflex ? "Superflex" : "1QB", recLabel];
   if (c.tep) chips.push(`TE premium +${c.tep}`);
@@ -1724,6 +1725,30 @@ function playerLabel(pid){
   return { name: p.full_name || `${p.first_name||""} ${p.last_name||""}`.trim(), pos: p.position };
 }
 
+// Which NFL games haven't kicked off yet, from ESPN's public scoreboard (no key needed).
+// Players on those teams show "–" instead of 0.00. If it can't be reached, scores show as before.
+const ESPN_TEAM = { WSH: "WAS" };   // ESPN abbreviations that differ from Sleeper's
+async function loadGameStatus(week){
+  try {
+    const season = Number(S.nflState?.season) || new Date().getFullYear();
+    const r = await fetch(`https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?seasontype=2&week=${week}&dates=${season}`);
+    if (!r.ok) return null;
+    const d = await r.json(), status = {};
+    for (const ev of d.events || []){
+      const state = ev.status?.type?.state || ev.competitions?.[0]?.status?.type?.state;   // "pre", "in" or "post"
+      for (const c of ev.competitions?.[0]?.competitors || []){
+        const ab = c.team?.abbreviation; if (ab) status[ESPN_TEAM[ab] || ab] = state;
+      }
+    }
+    return Object.keys(status).length ? status : null;
+  } catch(e){ return null; }
+}
+const notStarted = pid => {
+  if (!S.gameStatus) return false;
+  const team = /^[A-Z]{2,3}$/.test(pid) ? pid : S.sleeperPlayers?.[pid]?.team;
+  if (!team) return false;
+  return !S.gameStatus[team] || S.gameStatus[team] === "pre";      // no game listed = bye week
+};
 async function loadScores(){
   clearTimeout(scoresTimer);
   if (!S.league) return;
@@ -1731,7 +1756,9 @@ async function loadScores(){
   const leagueId = S.league.league_id;
   if (scoresLeague !== leagueId + ":" + week) $("matchups").innerHTML = `<p class="empty">Loading week ${week}...</p>`;
   try {
-    const data = await getJSON(`/league/${leagueId}/matchups/${week}`);
+    const live0 = week === currentWeek() && S.nflState?.season_type === "regular";
+    const [data, games] = await Promise.all([getJSON(`/league/${leagueId}/matchups/${week}`), live0 ? loadGameStatus(week) : null]);
+    S.gameStatus = games;
     if (S.league.league_id !== leagueId) return; // user switched leagues mid-load
     scoresLeague = leagueId + ":" + week;
     renderScores(data || [], week);
@@ -1768,7 +1795,8 @@ function renderScores(data, week){
     const lineup = m => (m.starters || []).map((pid, i) => {
       const pl = playerLabel(pid), sp = m.starters_points?.[i];
       const slot = slotName[slots[i]] || slots[i] || "";
-      return pl ? `<div class="lu"><span><i>${esc(slot)}</i>${scorePhoto(pid, pl)}${esc(pl.name)}</span><b>${ptsText(sp ?? m.players_points?.[pid])}</b></div>`
+      const raw = sp ?? m.players_points?.[pid];
+      return pl ? `<div class="lu"><span><i>${esc(slot)}</i>${scorePhoto(pid, pl)}${esc(pl.name)}</span><b>${notStarted(pid) && !Number(raw) ? "–" : ptsText(raw)}</b></div>`
                 : `<div class="lu empty"><span><i>${esc(slot)}</i>Empty</span><b>0.00</b></div>`;
     }).join("");
     // Bench = everyone on the roster who isn't starting, highest scorers first
@@ -1779,7 +1807,7 @@ function renderScores(data, week){
         .filter(x => x.pl).sort((a, b) => b.p - a.p);
     };
     const bench = m => { const b = benchOf(m);
-      return b.length ? b.map(x => `<div class="lu"><span><i>${esc(x.pl.pos || "BN")}</i>${scorePhoto(x.pid, x.pl)}${esc(x.pl.name)}</span><b>${ptsText(x.p)}</b></div>`).join("")
+      return b.length ? b.map(x => `<div class="lu"><span><i>${esc(x.pl.pos || "BN")}</i>${scorePhoto(x.pid, x.pl)}${esc(x.pl.name)}</span><b>${notStarted(x.pid) && !x.p ? "–" : ptsText(x.p)}</b></div>`).join("")
         + `<div class="lu total"><span>Bench total</span><b>${ptsText(b.reduce((s, x) => s + x.p, 0))}</b></div>`
         : `<div class="lu empty"><span>No bench players</span><b></b></div>`; };
     return `<article class="mu${mine ? " mine" : ""}">${mine ? `<div class="mu-tag">Your matchup</div>` : ""}
