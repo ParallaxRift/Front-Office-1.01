@@ -425,6 +425,16 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 .bitem .bi-x:hover{background:var(--loss-soft);color:var(--loss)}
 #valuesBody tr.hl{background:var(--gold-soft);outline:2px solid var(--gold);outline-offset:-2px}
 
+/* Roster filter dropdown under each team picker */
+.side-filter{display:flex;align-items:center;gap:8px;margin:0 0 10px}
+.side-filter label{font-size:14px;font-weight:600;color:var(--muted)}
+.side-filter select{flex:1;padding:8px 10px}
+/* "You get" players line up on the right, mirroring the header above them */
+#getItems .bitem{flex-direction:row-reverse;text-align:right}
+#getItems .bi-link{flex-direction:row-reverse;text-align:right}
+#getItems .bi-text{align-items:flex-end}
+@media (max-width:600px){#getItems .bitem,#getItems .bi-link{flex-direction:row;text-align:left}#getItems .bi-text{align-items:flex-start}}
+
 /* Trade Finder */
 .tf-top{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:14px;margin-bottom:14px;align-items:start}
 @media (max-width:760px){.tf-top{grid-template-columns:1fr}}
@@ -720,10 +730,12 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
     <div class="sides" id="sides" style="display:none">
       <div class="side">
         <div class="teamline"><span id="avA"></span><select id="teamA" aria-label="Your team"></select><span class="badge" id="badgeA"></span></div>
+        <div class="side-filter"><label for="posA">Show</label><select id="posA"><option value="EVERY">All players and picks</option><option value="ALL">Players only</option><option value="QB">Quarterbacks</option><option value="RB">Running backs</option><option value="WR">Wide receivers</option><option value="TE">Tight ends</option><option value="PICK">Draft picks</option></select></div>
         <div class="list" id="listA"></div>
       </div>
       <div class="side">
         <div class="teamline"><span id="avB"></span><select id="teamB" aria-label="Trade partner"></select><span class="badge" id="badgeB"></span></div>
+        <div class="side-filter"><label for="posB">Show</label><select id="posB"><option value="EVERY">All players and picks</option><option value="ALL">Players only</option><option value="QB">Quarterbacks</option><option value="RB">Running backs</option><option value="WR">Wide receivers</option><option value="TE">Tight ends</option><option value="PICK">Draft picks</option></select></div>
         <div class="list" id="listB"></div>
       </div>
     </div>
@@ -1551,8 +1563,9 @@ function assetRow(a, sel){
 function renderSide(rid, listEl, badgeEl, set){
   const t = S.teams.get(rid);
   badgeEl.textContent = statusText[t.status]; badgeEl.className = "badge " + badgeClass[t.status];
-  const items = teamAssets(rid);
-  listEl.innerHTML = items.length ? items.map(a => assetRow(a, set.has(a.id))).join("") : `<p class="empty">No valued players on this roster yet.</p>`;
+  const f = $(listEl.id === "listA" ? "posA" : "posB").value;
+  const items = teamAssets(rid).filter(a => f === "EVERY" ? true : f === "ALL" ? a.kind === "player" : f === "PICK" ? a.kind === "pick" : a.pos === f);
+  listEl.innerHTML = items.length ? items.map(a => assetRow(a, set.has(a.id))).join("") : `<p class="empty">${f === "EVERY" || f === "ALL" ? "No valued players on this roster yet." : "None on this roster."}</p>`;
 }
 const eq = vals => Math.pow(vals.reduce((s,v) => s + Math.pow(v, STUD_EXPONENT), 0), 1/STUD_EXPONENT);
 
@@ -1680,6 +1693,8 @@ function showInValues(id){
 }
 $("listB").addEventListener("click", e => toggle(S.getIds, e));
 $("teamA").addEventListener("change", renderCalc);
+$("posA").addEventListener("change", renderCalc);
+$("posB").addEventListener("change", renderCalc);
 $("teamB").addEventListener("change", renderCalc);
 
 // Green light = league tuning active, yellow = not active yet, grey = still checking
