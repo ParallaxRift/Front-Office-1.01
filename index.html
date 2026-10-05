@@ -391,6 +391,12 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 .strk.w{background:var(--field-soft);color:var(--field)}
 .strk.l{background:var(--loss-soft);color:var(--loss)}
 
+/* Verdict with the hint beside it; suggestions sit under the players */
+.vrow{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 16px}
+.vrow .verdict,.vrow .hint{margin:0}
+.board .suggest{margin-top:10px}
+.board .suggest:empty{display:none}
+
 /* Players in the trade: white panel under the verdict */
 .bplayers{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;background:var(--card);color:var(--ink);border-radius:12px;padding:10px;margin-top:12px}
 .bplayers .bitems{margin-top:0;align-content:start}
@@ -689,13 +695,12 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
         <div class="bside right"><div class="side-label">You get</div><div class="bteam" id="getTeam"></div><div class="num" id="getNum">0</div><div class="raw" id="getRaw"></div></div>
       </div>
       <div class="track" aria-hidden="true"><div class="fill" id="fill" style="width:50%"></div><div class="mid"></div></div>
-      <p class="verdict" id="verdict">Tap players and picks to build a trade.</p>
-      <p class="hint" id="hint"></p>
-      <div class="suggest" id="suggest"></div>
+      <div class="vrow"><p class="verdict" id="verdict">Tap players and picks to build a trade.</p><p class="hint" id="hint"></p></div>
       <div class="bplayers" id="bPlayers" hidden>
         <div class="bitems" id="sendItems"></div>
         <div class="bitems" id="getItems"></div>
       </div>
+      <div class="suggest" id="suggest"></div>
     </div>
     <div class="sides" id="sides" style="display:none">
       <div class="side">
