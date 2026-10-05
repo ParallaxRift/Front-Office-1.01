@@ -116,7 +116,7 @@ input[type=text],input[type=search],select{background:var(--card);border:1.5px s
 .status{margin:12px 0 0;min-height:0;color:var(--muted);font-size:15px}
 .status:empty{display:none}
 .status.error{color:var(--loss);font-weight:600}
-.appbar{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:6px 0 12px;border-bottom:2px solid var(--ink)}
+.appbar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px 14px;padding:6px 0 12px;border-bottom:2px solid var(--ink)}
 .appbar-r{display:flex;align-items:center;gap:10px;min-width:0}
 .who{display:flex;align-items:center;gap:8px;font-weight:600;min-width:0}
 .who span.nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -346,11 +346,15 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 @media (prefers-color-scheme:dark){.toast{background:#E8EDE9;color:#10171D}}
 
 /* The Basics / Freakshow toggle */
-.modebar{position:relative;display:flex;flex-direction:column;align-items:flex-end;margin:0 0 0 auto;flex:none}
+.modebar{position:relative;display:flex;align-items:center;margin:0 auto 0 14px;flex:none}
+/* compact toggle beside the Front Office name */
+.appbar .mode-toggle{padding:2px}
+.appbar .mode-toggle button{font-size:14px;padding:4px 12px}
+.appbar .mode-note{display:none}
 .modebar[hidden]{display:none}
 /* the note hangs below the toggle so the toggle itself lines up with the league name */
 .mode-note{position:absolute;top:100%;right:4px;margin-top:5px;white-space:nowrap;text-align:right}
-@media (max-width:640px){.leaguehead{flex-wrap:wrap}.leaguehead > div:not(.modebar){flex:1 1 0;min-width:0}.modebar{margin:6px 0 0;align-items:flex-start;width:100%;gap:5px}.mode-note{position:static;margin:0;text-align:left;white-space:normal}}
+@media (max-width:640px){.appbar .modebar{order:3;margin:2px 0 0;width:100%}.appbar .mode-toggle button{font-size:13px;padding:4px 10px}}
 .mode-toggle{display:inline-flex;background:var(--card);border:1.5px solid var(--line);border-radius:999px;padding:3px}
 .mode-toggle button{border:0;background:none;border-radius:999px;padding:7px 16px;font-family:var(--display);font-weight:700;font-size:17px;color:var(--muted);cursor:pointer;transition:background .2s,color .2s}
 .mode-toggle button[aria-checked=true]{background:var(--field);color:#fff}
@@ -449,7 +453,10 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 
 /* Value adjustment line under the last player */
 .badj{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1.5px dashed var(--field);border-radius:10px;padding:7px 12px;color:var(--field);font-weight:600;font-size:15px}
-.badj b{font-family:var(--display);font-weight:800;font-size:17px;margin-right:33px}   /* lines up with the player values above */
+.badj b{font-family:var(--display);font-weight:800;font-size:17px;margin-right:33px}
+.badj > span{display:flex;flex-direction:column;gap:2px}
+.badj > span .info-btn{position:relative;top:-1px}
+.badj-eq{font-weight:500;font-size:13px;color:var(--muted)}   /* lines up with the player values above */
 #getItems .badj{flex-direction:row-reverse}
 #getItems .badj b{margin-right:0;margin-left:33px}
 @media (max-width:600px){#getItems .badj{flex-direction:row}#getItems .badj b{margin-left:0;margin-right:33px}}
@@ -516,6 +523,17 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 .settings-btn:hover{border-color:var(--field);color:var(--field)}
 .settings-btn[aria-pressed=true]{background:var(--ink);border-color:var(--ink);color:var(--paper)}
 .settings-btn[aria-pressed=true] .fb{color:var(--gold)}
+
+/* Click any Contender / Middle / Rebuilding label for its meaning */
+.badge.b-contend,.badge.b-middle,.badge.b-rebuild{cursor:pointer}
+.badge.b-contend:hover,.badge.b-middle:hover,.badge.b-rebuild:hover{text-decoration:underline;text-underline-offset:2px}
+.pop{position:fixed;z-index:60;max-width:340px;background:var(--card);color:var(--ink);border:1.5px solid var(--line);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.18);padding:12px 14px;font-size:14px;line-height:1.45}
+.pop h4{font-family:var(--display);font-size:18px;margin:0 0 4px}
+.pop p{margin:0 0 8px}
+.pop .pop-link{color:var(--field);font-weight:600;background:none;border:0;padding:0;cursor:pointer;font:inherit;text-decoration:underline;text-underline-offset:3px}
+.pop .pop-x{position:absolute;top:6px;right:8px;background:none;border:0;font-size:16px;color:var(--muted);cursor:pointer}
+.status-key.flash{outline:3px solid var(--field);outline-offset:4px;transition:outline-color 1.2s}
+.info-btn{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;border:1.5px solid currentColor;background:none;color:inherit;font-weight:800;font-size:12px;line-height:1;cursor:pointer;margin-left:6px;padding:0;vertical-align:middle}
 
 /* Trade Finder */
 .tf-top{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:14px;margin-bottom:14px;align-items:start}
@@ -726,6 +744,13 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
   <path d="M44 25v14" stroke="#D99A1E" stroke-width="2.3" stroke-linecap="round"/>
   <path d="M40.8 28h6.4M40.8 32h6.4M40.8 36h6.4" stroke="#D99A1E" stroke-width="2" stroke-linecap="round"/>
 </svg><span>Front Office</span></span>
+    <div class="modebar" id="modeBar" hidden>
+        <div class="mode-toggle" id="modeToggle" role="radiogroup" aria-label="How much to show" title="The Basics: just the trade calculator and player values. Freakshow: every tool.">
+          <button type="button" role="radio" data-mode="basics" aria-checked="false">The Basics</button>
+          <button type="button" role="radio" data-mode="freak" aria-checked="true">Freakshow</button>
+        </div>
+        <span class="mode-note" id="modeNote"></span>
+      </div>
     <div class="appbar-r">
       <span class="who" id="whoMini"></span>
       <button class="ghost" id="switchLeague">Switch league</button>
@@ -774,13 +799,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 
   <section class="leaguebar" id="leagueBar">
     <div class="leaguehead"><span id="leagueAv"></span><div><div class="lname-row"><h2 id="leagueName"></h2><span id="champSlot"></span></div><small id="myTeamLine"></small><div class="settings-row"><button type="button" class="settings-btn" id="settingsBtn" aria-pressed="false" aria-controls="panel-settings"><span id="settingsIcon"></span>League settings</button></div></div>
-      <div class="modebar" id="modeBar" hidden>
-        <div class="mode-toggle" id="modeToggle" role="radiogroup" aria-label="How much to show">
-          <button type="button" role="radio" data-mode="basics" aria-checked="false">The Basics</button>
-          <button type="button" role="radio" data-mode="freak" aria-checked="true">Freakshow</button>
-        </div>
-        <span class="mode-note" id="modeNote"></span>
-      </div></div>
+</div>
     <div class="chips" id="chips"></div>
     <p class="source" id="source" hidden></p>
   </section>
@@ -1095,8 +1114,11 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
   <ul>
     <li><b>Each side's best piece counts in full.</b></li>
     <li><b>Every extra piece is discounted</b> by how far it falls below the best piece in the whole trade. A piece half as valuable counts about 80%, a quarter as valuable about 66%, and a tenth about 55%.</li>
-    <li><b>Extra roster spots cost value.</b> If you receive more pieces than you send, each extra spot subtracts about one waiver-level player, since you'd have to cut someone to make room.</li>
+    <li><b>Stars pull further ahead.</b> When the best piece is one of the top players in your league, depth pieces are discounted a little more, since true difference-makers are the hardest thing to replace.</li>
+    <li><b>Pieces that would start count more.</b> An extra player who would crack the receiving team's starting lineup keeps more of his value than one headed for the bench.</li>
+    <li><b>Extra roster spots cost value.</b> If you receive more pieces than you send, each extra spot subtracts about one waiver-level player, since you'd have to cut someone to make room. If that team already has open roster spots, the cost is much smaller.</li>
   </ul>
+  <p>Under the adjustment, the calculator names a player on the other roster worth about the same as the bonus, so you can see what it would take to even the trade. Tap the <b>?</b> next to "Value adjustment" for a quick explanation.</p>
   <p>For example, an early first-round pick worth about 6,000 traded for three veterans worth 2,000, 1,800, and 1,500 looks even on raw totals (6,000 vs. 5,300), but after the adjustment the three veterans count for well under half of the pick. The raw totals are still shown under each side's number, and a note explains the adjustment whenever it makes a real difference. A trade within 5% either way is called fair. The same adjustment is used in Trade Finder and when grading Trade History.</p>
 
   <h2>When Values Update</h2>
@@ -1524,6 +1546,7 @@ function buildValues(){
   for (const a of list){ a.value = a.raw/topRaw*10000; a.market = a.base/topBase*10000; assets.set(a.id, a); }
   // Waiver-level value: roughly the player every team could pick up for free
   const byValue = list.map(a => a.value).sort((a, b) => b - a);
+  S.eliteValue = byValue[Math.min(byValue.length - 1, 11)] || 9000;
   // the first player who wouldn't fit on any roster in this league (starters + bench, every team)
   const rosterSpots = (cfg.rp || []).filter(x => !["IR","TAXI"].includes(x)).length || (cfg.starters + 10);
   S.replacement = Math.min(1200, byValue[Math.min(byValue.length - 1, cfg.teams * rosterSpots)] || 300);
@@ -1701,6 +1724,44 @@ const eq = vals => Math.pow(vals.reduce((s,v) => s + Math.pow(v, STUD_EXPONENT),
 //  3. Each extra roster spot it takes (receiving more pieces than you send) costs about one
 //     waiver-level player (the best player nobody in the league has room for), since someone has to be cut.
 const DEPTH_FLOOR = 0.4, DEPTH_CURVE = 0.6;
+// Team-aware version used by the Trade Calculator. On top of tradeValue's rules it:
+//  - discounts depth more when the best piece is a true star (top of the league),
+//  - discounts less for extra pieces that would crack the receiving team's starting lineup,
+//  - charges less for roster spots when the receiving team actually has open spots.
+const STAR_EXTRA = 0.12;      // up to 12% more depth discount against an elite piece
+const STARTER_RELIEF = 0.5;   // pieces that would start win back half of their depth discount
+const OPEN_SPOT_COST = 0.35;  // a spot that's already open costs 35% of a waiver-level player
+function teamOpenSpots(rid){
+  const r = S.rosters.find(x => x.roster_id === rid); if (!r) return 0;
+  const size = (S.cfg.rp || []).filter(x => !["IR","TAXI"].includes(x)).length;
+  const active = (r.players || []).length - (r.taxi || []).length - (r.reserve || []).length;
+  return Math.max(0, size - active);
+}
+function wouldStart(a, rid, leaving){
+  if (!a || a.kind !== "player" || rid == null) return false;
+  const k = Math.ceil(slotNeeds()[a.pos] || 0); if (!k) return false;
+  const vals = teamAssets(rid).filter(x => x.kind === "player" && x.pos === a.pos && !leaving.has(x.id)).map(x => x.value).sort((x, y) => y - x);
+  return vals.length < k || a.value > vals[k - 1];
+}
+function tradeValueFor(getAssets, giveAssets, receiverRid){
+  if (!getAssets.length) return { total: 0, raw: 0 };
+  const all = getAssets.concat(giveAssets).map(a => a.value), top = Math.max(1, ...all);
+  const eliteLine = S.eliteValue || 9000;
+  const starness = Math.max(0, Math.min(1, (top - eliteLine * 0.75) / (10000 - eliteLine * 0.75)));
+  const leaving = new Set(giveAssets.map(a => a.id));
+  const v = [...getAssets].sort((a, b) => b.value - a.value);
+  let total = v[0].value;
+  for (let i = 1; i < v.length; i++){
+    let w = (DEPTH_FLOOR + (1 - DEPTH_FLOOR) * Math.pow(v[i].value / top, DEPTH_CURVE)) * (1 - STAR_EXTRA * starness);
+    if (wouldStart(v[i], receiverRid, leaving)) w += (1 - w) * STARTER_RELIEF;
+    total += v[i].value * w;
+  }
+  const extra = Math.max(0, getAssets.length - giveAssets.length);
+  const open = receiverRid != null ? teamOpenSpots(receiverRid) : 0;
+  const cheap = Math.min(extra, open), full = extra - cheap;
+  total -= (S.replacement || 0) * (full + cheap * OPEN_SPOT_COST);
+  return { total: Math.max(0, total), raw: getAssets.reduce((t, a) => t + a.value, 0) };
+}
 function tradeValue(getVals, giveVals){
   if (!getVals.length) return 0;
   const all = getVals.concat(giveVals), top = Math.max(1, ...all);
@@ -1728,7 +1789,9 @@ function renderCalc(){
   // math finds. (The comparison comes out exactly the same as discounting the other side.)
   const rawS = send.reduce((a, b) => a + b, 0), rawG = get.reduce((a, b) => a + b, 0);
   const both = send.length && get.length;
-  const adjDiff = both ? (rawG - tradeValue(get, send)) - (rawS - tradeValue(send, get)) : 0;
+  const sendA = [...S.sendIds].map(id => S.assets.get(id)).filter(Boolean), getA = [...S.getIds].map(id => S.assets.get(id)).filter(Boolean);
+  // what you get lands on your team (ra); what you send lands on theirs (rb)
+  const adjDiff = both ? (rawG - tradeValueFor(getA, sendA, ra).total) - (rawS - tradeValueFor(sendA, getA, rb).total) : 0;
   const bonusS = Math.max(0, Math.round(adjDiff)), bonusG = Math.max(0, Math.round(-adjDiff));
   const eS = rawS + bonusS, eG = rawG + bonusG;
   $("sendNum").textContent = fmt(eS); $("getNum").textContent = fmt(eG);
@@ -1745,9 +1808,20 @@ function renderCalc(){
         <span class="bi-val">${fmt(a.value)}</span>
         <button type="button" class="bi-x" data-side="${side}" data-id="${esc(a.id)}" aria-label="Remove ${esc(a.name)} from the trade">✕</button></div>`;
     }).join("");
-  const adjRow = n => n >= 1 ? `<div class="badj"><span>Value adjustment</span><b>+${fmt(n)}</b></div>` : "";
-  $("sendItems").innerHTML = itemsHTML(S.sendIds, "send") + adjRow(bonusS);
-  $("getItems").innerHTML = itemsHTML(S.getIds, "get") + adjRow(bonusG);
+  // The team that would need to add value is the one receiving the bonus's opposite side
+  const equivalent = (n, fromRid, exclude) => {
+    if (n < 300 || fromRid == null) return null;
+    const pool = teamAssets(fromRid).filter(a => !exclude.has(a.id) && a.value > 0);
+    return pool.sort((a, b) => Math.abs(a.value - n) - Math.abs(b.value - n))[0] || null;
+  };
+  const adjRow = (n, fromRid, exclude) => {
+    if (n < 1) return "";
+    const eqA = equivalent(n, fromRid, exclude);
+    return `<div class="badj"><span><span>Value adjustment<button type="button" class="info-btn" data-info="adjust" aria-label="What is the value adjustment?">?</button></span>${eqA ? `<small class="badj-eq">About the same as them adding ${esc(eqA.name)} (${fmt(eqA.value)})</small>` : ""}</span><b>+${fmt(n)}</b></div>`;
+  };
+  // bonus on your side = the other team (rb) would need to add; bonus on their side = you (ra) would
+  $("sendItems").innerHTML = itemsHTML(S.sendIds, "send") + adjRow(bonusS, rb, S.getIds);
+  $("getItems").innerHTML = itemsHTML(S.getIds, "get") + adjRow(bonusG, ra, S.sendIds).replace("them adding", "you adding");
   $("bPlayers").hidden = !S.sendIds.size && !S.getIds.size;
   $("resetTrade").disabled = !S.sendIds.size && !S.getIds.size;
   $("sendRaw").textContent = bonusS ? `+${fmt(bonusS)} value adjustment` : "";
@@ -3182,6 +3256,56 @@ $("hsSeasons").addEventListener("click", e => {
   const b = e.target.closest("button"); if (!b) return;
   trophySeason = Number(b.dataset.season); renderTrophyRoom();
 });
+
+// ============================================================
+// POPOVERS: status meanings and the value adjustment explainer
+// ============================================================
+const STATUS_INFO = {
+  contend: ["Contender", "The strongest third of the league by roster strength. Built to win now, so Front Office steers contenders toward proven starters."],
+  middle:  ["Middle", "The middle third. Close enough to push for a title or start a retool; age and draft picks decide which way Front Office leans."],
+  rebuild: ["Rebuilding", "The weakest third. Better served building for the future, so recommendations favor young players and draft picks."]
+};
+let popEl = null;
+function closePop(){ popEl?.remove(); popEl = null; }
+function showPop(anchor, html){
+  closePop();
+  popEl = document.createElement("div"); popEl.className = "pop"; popEl.setAttribute("role", "dialog");
+  popEl.innerHTML = `<button type="button" class="pop-x" aria-label="Close">✕</button>` + html;
+  document.body.appendChild(popEl);
+  const r = anchor.getBoundingClientRect(), w = popEl.offsetWidth, h = popEl.offsetHeight;
+  let left = Math.min(Math.max(8, r.left), window.innerWidth - w - 8);
+  let top = r.bottom + 8; if (top + h > window.innerHeight - 8) top = Math.max(8, r.top - h - 8);
+  popEl.style.left = left + "px"; popEl.style.top = top + "px";
+  popEl.querySelector(".pop-x").focus();
+}
+function openStatusKey(){
+  closePop();
+  $("tabs").querySelector('[data-tab="standings"]').click();   // works in either mode
+  const key = document.querySelector(".status-key");
+  if (key){ key.scrollIntoView({ behavior: "smooth", block: "center" }); key.classList.add("flash"); setTimeout(() => key.classList.remove("flash"), 1600); }
+}
+document.addEventListener("click", e => {
+  if (popEl && e.target.closest(".pop-x")){ closePop(); return; }
+  if (popEl && e.target.closest(".pop-link")){ openStatusKey(); return; }
+  const badge = e.target.closest(".badge.b-contend, .badge.b-middle, .badge.b-rebuild");
+  if (badge){
+    e.preventDefault(); e.stopPropagation();
+    const k = badge.classList.contains("b-contend") ? "contend" : badge.classList.contains("b-middle") ? "middle" : "rebuild";
+    showPop(badge, `<h4>${STATUS_INFO[k][0]}</h4><p>${STATUS_INFO[k][1]}</p><button type="button" class="pop-link">See What the Team Statuses Mean</button>`);
+    return;
+  }
+  const info = e.target.closest(".info-btn[data-info=adjust]");
+  if (info){ e.preventDefault(); e.stopPropagation(); showPop(info, ADJUST_INFO_HTML); return; }
+  if (popEl && !e.target.closest(".pop")) closePop();
+}, true);
+document.addEventListener("keydown", e => { if (e.key === "Escape") closePop(); });
+window.addEventListener("scroll", closePop, { passive: true });
+
+const ADJUST_INFO_HTML = `<h4>What Is the Value Adjustment?</h4>
+  <p>A fantasy roster has limited spots and limited starters, so one difference-maker is worth more than the same total value spread across several lesser players. Front Office adds a bonus to the side giving up the best piece, so a pile of depth can't "equal" a star.</p>
+  <h4>How Is It Worked Out?</h4>
+  <p>Each side's best piece counts in full. Every extra piece is discounted by how far it falls below the best piece in the trade, and by more when that piece is a true star. Extra pieces that would start for the team receiving them lose less, since they actually help that lineup. Each extra roster spot costs about one waiver-wire player, or much less if that team has open spots. The difference between the two sides becomes the bonus.</p>
+  <p>Front Office also shows a player on the other roster worth about the same as the bonus, so you know what it would take to even things out.</p>`;
 
 // ============================================================
 // TRADE FINDER
