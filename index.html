@@ -196,6 +196,7 @@ input[type=text],input[type=search],select{background:var(--card);border:1.5px s
 .teamline select{flex:1}
 .badge{font-size:13px;font-weight:600;border-radius:6px;padding:3px 8px;white-space:nowrap}
 .b-contend{background:var(--gold-soft);color:var(--gold)}
+.b-high{background:var(--gold-soft);color:var(--gold)}
 .b-middle{background:var(--field-soft);color:var(--field)}
 .b-rebuild{background:var(--loss-soft);color:var(--loss)}
 .list{display:flex;flex-direction:column;max-height:460px;overflow-y:auto;border-top:1px solid var(--line)}
@@ -357,7 +358,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 .modebar[hidden]{display:none}
 /* the note hangs below the toggle so the toggle itself lines up with the league name */
 .mode-note{position:absolute;top:100%;right:4px;margin-top:5px;white-space:nowrap;text-align:right}
-@media (min-width:641px){.leaguehead{margin-bottom:20px}}   /* room for the note under the toggle */
+
 @media (max-width:640px){.leaguehead{flex-wrap:wrap}.leaguehead > div:not(.modebar){flex:1 1 0;min-width:0}.modebar{margin:6px 0 0;align-items:flex-start;width:100%;gap:5px}.mode-note{position:static;margin:0;text-align:left;white-space:normal}}
 .mode-toggle{display:inline-flex;background:var(--card);border:1.5px solid var(--line);border-radius:999px;padding:3px}
 .mode-toggle button{border:0;background:none;border-radius:999px;padding:7px 16px;font-family:var(--display);font-weight:700;font-size:17px;color:var(--muted);cursor:pointer;transition:background .2s,color .2s}
@@ -611,6 +612,16 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 .tf-verdict{font-size:13px;font-weight:700;white-space:nowrap}
 .tf-open{white-space:nowrap;padding:8px 12px;font-size:14px}
 
+/* The Basics vs. Freakshow page */
+.mode-compare{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin:18px 0 8px}
+.mc-card h2{margin:0 0 4px!important;font-size:26px}
+.mc-card h3{font-family:var(--display);font-size:18px;margin:14px 0 6px}
+.mc-card ul{padding-left:20px;margin:0}
+.mc-card li{margin:0 0 8px;font-size:15.5px}
+.mc-who{color:var(--muted);margin:0}
+.mc-freak{border-color:var(--ink);border-width:2px}
+.about .mode-compare + h2{margin-top:28px}
+
 /* Build notes */
 .notes{margin-top:18px}
 .notes-head{display:flex;align-items:center;gap:10px;margin-bottom:4px}
@@ -848,11 +859,10 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
     <div class="leaguehead"><span id="leagueAv"></span><div><div class="lname-row"><h2 id="leagueName"></h2><span class="champ-col"><span id="champSlot"></span></span></div><small id="myTeamLine"></small></div>
       <div class="modebar" id="modeBar" hidden>
         <button type="button" class="settings-btn" id="settingsBtn" aria-pressed="false" aria-controls="panel-settings"><span id="settingsIcon"></span>League settings</button>
-        <div class="mode-toggle" id="modeToggle" role="radiogroup" aria-label="How much to show" title="The Basics: just the trade calculator and player values. Freakshow: every tool.">
+        <div class="mode-toggle" id="modeToggle" role="radiogroup" aria-label="How much to show">
           <button type="button" role="radio" data-mode="basics" aria-checked="false">The Basics</button>
           <button type="button" role="radio" data-mode="freak" aria-checked="true">Freakshow</button>
         </div>
-        <span class="mode-note" id="modeNote"></span>
       </div>
 </div>
     <div class="chips" id="chips"></div>
@@ -909,8 +919,9 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
     <div id="champList" class="champ-list"><p class="empty">Open this tab to load your league's history.</p></div>
     <h3 class="sec-h" style="margin-top:28px">Weekly High Points</h3>
     <div class="trophy-bar"><div class="seg" id="hsSeasons"></div></div>
-    <div id="hsLeaders" class="hs-leaders"></div>
     <div class="tablewrap"><table id="hsTable" class="stand"></table></div>
+    <h3 class="sec-h" style="margin-top:24px">Most Weekly High Points</h3>
+    <div class="tablewrap"><table id="hsLeaders" class="stand"></table></div>
     <p class="note" id="trophyNote"></p>
   </section>
 
@@ -1188,6 +1199,47 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
   <a class="back" href="#">Back to Front Office</a>
 </article>
 
+<article id="modesView" class="about" hidden>
+  <a class="back" href="#">Back to Front Office</a>
+  <h1>The Basics vs. Freakshow</h1>
+  <p class="intro">Front Office has two modes. Switch any time with the toggle on the right side of the league header. Your choice is remembered on each device.</p>
+
+  <div class="mode-compare">
+    <section class="box mc-card">
+      <h2>The Basics</h2>
+      <p class="mc-who">For newer players, or anyone who just wants to check a trade.</p>
+      <h3>What You Get</h3>
+      <ul>
+        <li><b>Trade Calculator:</b> build any trade between two teams and see who wins, with the value adjustment and suggestions to even it out.</li>
+        <li><b>Player Values:</b> every player and pick ranked for your league's settings.</li>
+        <li><b>League Settings:</b> your league's format, lineup, scoring, and how they change values (from the button in the league header).</li>
+      </ul>
+    </section>
+    <section class="box mc-card mc-freak">
+      <h2>Freakshow</h2>
+      <p class="mc-who">For managers who want every edge. This is the default.</p>
+      <h3>Everything in The Basics, Plus</h3>
+      <ul>
+        <li><b>Trade Finder:</b> pick a player and get fair trades that fit your team's direction, or find realistic targets and what it would cost to land them.</li>
+        <li><b>My Team Strategy:</b> a game plan, position report card, trade targets, sell list, and best trade partners.</li>
+        <li><b>Trade History:</b> every league trade graded with today's values, team trade records, and the full trade log.</li>
+        <li><b>League Analysis:</b> standings, power rankings, and what the team statuses mean.</li>
+        <li><b>Trophy Room:</b> past champions and weekly high points.</li>
+        <li><b>Live Scores:</b> every matchup, refreshing every minute on game days.</li>
+        <li><b>Feedback &amp; Build Notes:</b> share feedback and see what's new.</li>
+      </ul>
+    </section>
+  </div>
+
+  <h2>What Stays the Same</h2>
+  <ul>
+    <li><b>The values are identical in both modes.</b> League settings, league tuning, and the value adjustment all work the same, so a trade grades the same way whichever mode you're in.</li>
+    <li><b>Nothing is lost when you switch.</b> The Basics only hides tabs; switch back to Freakshow and everything is right where you left it.</li>
+    <li><b>Each person picks their own mode.</b> It's saved in your browser, so your league mates can use whichever mode they like.</li>
+  </ul>
+  <a class="back" href="#">Back to Front Office</a>
+</article>
+
 <article id="betaView" class="about" hidden>
   <a class="back" href="#">Back to Front Office</a>
   <p><span class="betatag">Beta</span></p>
@@ -1226,7 +1278,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
   <path d="M44 25v14" stroke="#D99A1E" stroke-width="2.3" stroke-linecap="round"/>
   <path d="M40.8 28h6.4M40.8 32h6.4M40.8 36h6.4" stroke="#D99A1E" stroke-width="2" stroke-linecap="round"/>
 </svg><span>Front Office</span></span>
-  <nav><a href="#">Home</a><a href="#about">About</a><a href="#beta">Sleeper Leagues in Beta</a></nav>
+  <nav><a href="#">Home</a><a href="#about">About</a><a href="#modes">The Basics vs. Freakshow</a><a href="#beta">Sleeper Leagues in Beta</a></nav>
   <span class="ver" id="footVersion"></span>
   <p>Expert consensus rankings provided by FantasyPros. Not affiliated with Sleeper or FantasyPros.</p>
 </footer>
@@ -2746,7 +2798,6 @@ function applyMode(mode, quiet){
   store.set("fo_mode", mode);
   for (const b of $("modeToggle").children) b.setAttribute("aria-checked", b.dataset.mode === mode);
   for (const t of $("tabs").children) t.hidden = mode === "basics" && !BASIC_TABS.includes(t.dataset.tab);
-  $("modeNote").textContent = mode === "basics" ? "Just the trade calculator and player values." : "Every tool Front Office has.";
   // If the open tab just got hidden, go back to the calculator
   const open = $("tabs").querySelector('.tab[aria-selected="true"]');
   if (open && open.hidden) $("tabs").querySelector('[data-tab="calc"]').click();
@@ -3299,13 +3350,20 @@ function renderTrophyRoom(){
   // who had the most weekly high points this season
   const tally = {};
   for (const w of cur.weeks){ const k = w.top.owner || w.top.rid; (tally[k] = tally[k] || { t: w.top, n: 0 }).n++; }
-  const leaders = Object.values(tally).sort((a, b) => b.n - a.n).slice(0, 5);
-  $("hsLeaders").innerHTML = `<span class="note" style="align-self:center;margin-right:4px">Most weekly high points:</span>` + leaders.map(l => `<span class="hs-lead">${person(l.t, true)}${esc(l.t.name)} <b>${l.n}</b></span>`).join("");
+  // every team that topped the league at least once, most weeks first (best single week breaks ties)
+  for (const w of cur.weeks){ const k = w.top.owner || w.top.rid; tally[k].best = Math.max(tally[k].best || 0, w.top.pts); }
+  const leaders = Object.values(tally).sort((a, b) => b.n - a.n || b.best - a.best);
+  $("hsLeaders").innerHTML = `<thead><tr><th class="n">#</th><th>Team</th><th class="n">Weeks with high points</th><th class="n">Best week</th></tr></thead>
+    <tbody>${leaders.map((l, i) => `<tr class="${l.t.rid === S.myRid && cur.season === Number(S.league.season) ? "me" : ""}">
+      <td class="n rk">${i + 1}</td>
+      <td><span class="teamcell">${person(l.t, "sm")}<b>${esc(l.t.name)}</b></span></td>
+      <td class="n rec">${l.n}</td>
+      <td class="n">${l.best.toFixed(2)}</td></tr>`).join("")}</tbody>`;
   const best = Math.max(...cur.weeks.map(w => w.top.pts));
   $("hsTable").innerHTML = `<thead><tr><th class="n">Week</th><th>High scorer</th><th class="n">Points</th><th class="n hide-sm">Ahead of 2nd</th><th class="n hide-sm">League average</th></tr></thead>
     <tbody>${cur.weeks.map(w => `<tr class="${w.top.rid === S.myRid && cur.season === Number(S.league.season) ? "me" : ""}">
       <td class="n rk">${w.week}</td>
-      <td><span class="teamcell">${person(w.top, "sm")}<b>${esc(w.top.name)}</b>${w.top.pts === best ? ' <span class="badge b-contend">Season high</span>' : ""}</span></td>
+      <td><span class="teamcell">${person(w.top, "sm")}<b>${esc(w.top.name)}</b>${w.top.pts === best ? ' <span class="badge b-high">Season high</span>' : ""}</span></td>
       <td class="n rec">${w.top.pts.toFixed(2)}</td>
       <td class="n hide-sm">${w.second ? "+" + (w.top.pts - w.second.pts).toFixed(2) : "–"}</td>
       <td class="n hide-sm">${w.avg.toFixed(2)}</td></tr>`).join("")}</tbody>`;
@@ -3827,12 +3885,13 @@ function route(){
   let page = location.hash.slice(1), section = null;
   if (page === "tuning"){ page = "about"; section = "tuning"; }
   if (page !== "about") aboutOpen = false;          // leaving About locks it again
-  const pages = { about: ["aboutView", "About Front Office"], beta: ["betaView", "Sleeper Leagues in Beta | Front Office"] };
+  const pages = { about: ["aboutView", "About Front Office"], beta: ["betaView", "Sleeper Leagues in Beta | Front Office"], modes: ["modesView", "The Basics vs. Freakshow | Front Office"] };
   const locked = page === "about" && !aboutUnlocked();
   $("lockView").hidden = !locked;
-  if (locked){ $("aboutView").hidden = true; $("betaView").hidden = true; $("appView").hidden = true; document.title = "About Front Office"; window.scrollTo({ top: 0 }); setTimeout(() => $("lockPw").focus(), 50); return; }
+  if (locked){ $("aboutView").hidden = true; $("betaView").hidden = true; $("modesView").hidden = true; $("appView").hidden = true; document.title = "About Front Office"; window.scrollTo({ top: 0 }); setTimeout(() => $("lockPw").focus(), 50); return; }
   $("aboutView").hidden = page !== "about";
   $("betaView").hidden = page !== "beta";
+  $("modesView").hidden = page !== "modes";
   $("appView").hidden = !!pages[page];
   document.title = pages[page] ? pages[page][1] : "Front Office";
   if (section) requestAnimationFrame(() => $(section)?.scrollIntoView({ block: "start" }));
