@@ -343,6 +343,12 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 .tabs + .panel, .modebar + .tabs{margin-top:10px}
 @media (prefers-reduced-motion:reduce){.mode-toggle button{transition:none}}
 
+/* League settings button next to the league name */
+.lname-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px}
+.settings-btn{display:inline-flex;align-items:center;gap:6px;background:var(--card);border:1.5px solid var(--line);border-radius:999px;padding:6px 13px;font-weight:600;font-size:14px;color:var(--ink);cursor:pointer;white-space:nowrap}
+.settings-btn:hover{border-color:var(--field);color:var(--field)}
+.settings-btn[aria-pressed=true]{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+
 /* Build notes */
 .notes{margin-top:18px}
 .notes-head{display:flex;align-items:center;gap:10px;margin-bottom:4px}
@@ -528,7 +534,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
   </section>
 
   <section class="leaguebar" id="leagueBar">
-    <div class="leaguehead"><span id="leagueAv"></span><div><h2 id="leagueName"></h2><small id="myTeamLine"></small></div></div>
+    <div class="leaguehead"><span id="leagueAv"></span><div><div class="lname-row"><h2 id="leagueName"></h2><button type="button" class="settings-btn" id="settingsBtn" aria-pressed="false" aria-controls="panel-settings"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>League settings</button></div><small id="myTeamLine"></small></div></div>
     <div class="chips" id="chips"></div>
     <p class="source" id="source"></p>
   </section>
@@ -543,7 +549,6 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
   <div class="tabs" id="tabs" role="tablist">
     <button class="tab" role="tab" aria-selected="true" data-tab="calc">Trade Calculator</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="values">League Values</button>
-    <button class="tab" role="tab" aria-selected="false" data-tab="settings">League Settings</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="strategy">Team Strategy</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="history">Trade History</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="scores">Live Scores</button>
@@ -982,7 +987,8 @@ async function openLeague(leagueId){
     // Return to the tab you were last on
     const lastTab = store.get("tr_tab");
     const tabBtn = lastTab && $("tabs").querySelector(`[data-tab="${lastTab}"]`);
-    if (tabBtn && !tabBtn.hidden && tabBtn.getAttribute("aria-selected") !== "true") tabBtn.click();
+    if (lastTab === "settings") openSettingsPanel();
+    else if (tabBtn && !tabBtn.hidden && tabBtn.getAttribute("aria-selected") !== "true") tabBtn.click();
     setTimeout(() => {
       $("connect").hidden = true; $("appbar").hidden = false; $("progress").hidden = true;
       setStatus("");
@@ -2132,6 +2138,19 @@ function historyInsightsHTML(rid){
   return `<div class="box"><h3>From your league's trade history</h3><ul class="moves">${lines.map(l => `<li>${esc(l)}</li>`).join("")}</ul></div>`;
 }
 
+// League settings now opens from the button beside the league name
+function openSettingsPanel(){
+  for (const t of $("tabs").children) t.setAttribute("aria-selected", "false");
+  for (const name of ["calc","history","feedback","scores","values","settings","strategy"]) $("panel-"+name).classList.toggle("on", name === "settings");
+  $("settingsBtn").setAttribute("aria-pressed", "true");
+  store.set("tr_tab", "settings");
+}
+$("settingsBtn").addEventListener("click", () => {
+  if ($("settingsBtn").getAttribute("aria-pressed") === "true"){ $("tabs").querySelector('[data-tab="calc"]').click(); return; }  // tap again to close
+  openSettingsPanel();
+  $("panel-settings").scrollIntoView({ behavior: "smooth", block: "start" });
+});
+
 // ============================================================
 // THE BASICS / FREAKSHOW
 // The Basics shows only the Trade Calculator and League Values, for newer
@@ -2601,6 +2620,7 @@ $("tabs").addEventListener("click", e => {
   if (b.dataset.tab === "scores") loadScores();
   if (b.dataset.tab === "feedback") loadFeedback();
   store.set("tr_tab", b.dataset.tab);
+  $("settingsBtn").setAttribute("aria-pressed", "false");
 });
 
 // ============================================================
