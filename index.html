@@ -26,7 +26,10 @@ html,body{margin:0}
 body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.45}
 button,input,select{font:inherit;color:inherit}
 :focus-visible{outline:3px solid var(--gold);outline-offset:2px}
-.wrap{max-width:1080px;margin:0 auto;padding:20px 16px 60px}
+.wrap{max-width:1440px;margin:0 auto;padding:20px 16px 60px}
+@media (min-width:1100px){.wrap{padding-left:28px;padding-right:28px}}
+@media (min-width:1600px){html{zoom:1.08}}
+@media (min-width:1900px){html{zoom:1.15}}
 
 /* Connect */
 [hidden]{display:none!important}
@@ -236,6 +239,9 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 .about .tablewrap{margin:6px 0 10px}
 .about table{min-width:520px;font-size:15px}
 .about td,.about th{white-space:normal;vertical-align:top}
+.lock-form{max-width:420px;margin-top:10px}
+.lock-form label{display:block;font-weight:600;font-size:15px;margin-bottom:6px}
+.lock-form input{border:1.5px solid var(--line);border-right:0;border-radius:10px 0 0 10px;padding:11px 12px;flex:1;min-width:0;background:var(--card);font:inherit}
 .back{display:inline-block;color:var(--field);font-weight:600;text-underline-offset:3px;margin-top:8px}
 
 
@@ -378,6 +384,8 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 .tf-chip small{color:var(--muted);font-size:12px}
 .tf-chip .v{font-family:var(--display);font-weight:800;font-size:17px}
 .tf-sending{gap:6px}
+.tf-x{color:var(--muted);font-size:15px;padding:0 2px 0 6px}
+.tf-chip:hover .tf-x{color:var(--loss)}
 .tf-total{display:flex;justify-content:space-between;font-weight:700;margin-top:4px}
 .tf-h{font-family:var(--display);font-size:26px;margin:0 0 4px}
 .tf-results{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
@@ -596,8 +604,8 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 
   <div class="modebar" id="modeBar" hidden>
     <div class="mode-toggle" id="modeToggle" role="radiogroup" aria-label="How much to show">
-      <button type="button" role="radio" data-mode="freak" aria-checked="true">Freakshow</button>
       <button type="button" role="radio" data-mode="basics" aria-checked="false">The Basics</button>
+      <button type="button" role="radio" data-mode="freak" aria-checked="true">Freakshow</button>
     </div>
     <span class="mode-note" id="modeNote"></span>
   </div>
@@ -778,6 +786,17 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
     <div id="strategy"></div>
   </section>
 </div><!-- /appView -->
+
+<article id="lockView" class="about lock" hidden>
+  <a class="back" href="#">Back to Front Office</a>
+  <h1>About Front Office</h1>
+  <p class="intro">This page is password protected.</p>
+  <form id="lockForm" class="lock-form">
+    <label for="lockPw">Password</label>
+    <div class="inputgroup"><input id="lockPw" type="password" autocomplete="current-password" required><button class="btn" type="submit">Unlock</button></div>
+    <p class="status" id="lockStatus" role="status" aria-live="polite"></p>
+  </form>
+</article>
 
 <article id="aboutView" class="about" hidden>
   <a class="back" href="#">Back to Front Office</a>
@@ -2698,7 +2717,7 @@ function renderFinder(){
   const sending = [...tfSend].map(id => S.assets.get(id)).filter(Boolean).sort((a, b) => b.value - a.value);
   const V = eq(sending.map(a => a.value));
   $("tfSending").innerHTML = sending.length ? sending.map(a => `<button type="button" class="tf-chip" data-id="${esc(a.id)}" aria-label="Remove ${esc(a.name)}">
-      ${assetPhoto(a, "sm")}<span class="bi-text"><b>${esc(a.name)}</b><small>${esc(a.kind === "player" ? [a.pos + (a.lgPosRank || ""), a.nfl, a.age ? "age " + a.age : ""].filter(Boolean).join(", ") : a.nfl)}</small></span><span class="v">${fmt(a.value)}</span></button>`).join("")
+      ${assetPhoto(a, "sm")}<span class="bi-text"><b>${esc(a.name)}</b><small>${esc(a.kind === "player" ? [a.pos + (a.lgPosRank || ""), a.nfl, a.age ? "age " + a.age : ""].filter(Boolean).join(", ") : a.nfl)}</small></span><span class="v">${fmt(a.value)}</span><span class="tf-x" aria-hidden="true">✕</span></button>`).join("")
       + (sending.length > 1 ? `<div class="tf-total"><span>Package value</span><span>${fmt(V)}</span></div>` : "")
     : `<p class="empty">Tap a player or pick on the left.</p>`;
   findTrades(me, sending, V);
@@ -2901,10 +2920,29 @@ $("tabs").addEventListener("click", e => {
 // ============================================================
 // ABOUT PAGE: shown when the address ends in #about
 // ============================================================
+// About page password. Only a fingerprint (SHA-256 hash) of the password is stored here, not the password itself.
+// NOTE: this keeps casual visitors out, but it isn't true security: the page's text is still inside this file.
+const ABOUT_PW_HASH = "c0d96d34dea3af284012631b2609a0c7975b92e8178e4cfface8c545d3644a81";
+async function sha256(text){
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
+}
+const aboutUnlocked = () => store.get("fo_about_ok") === ABOUT_PW_HASH;
+$("lockForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const st = $("lockStatus");
+  try {
+    if (await sha256($("lockPw").value) === ABOUT_PW_HASH){ store.set("fo_about_ok", ABOUT_PW_HASH); $("lockPw").value = ""; st.textContent = ""; route(); }
+    else { st.textContent = "That password isn't right."; st.className = "status error"; $("lockPw").select(); }
+  } catch(err){ st.textContent = "Couldn't check the password in this browser."; st.className = "status error"; }
+});
 function route(){
   let page = location.hash.slice(1), section = null;
   if (page === "tuning"){ page = "about"; section = "tuning"; }
   const pages = { about: ["aboutView", "About Front Office"], beta: ["betaView", "Sleeper Leagues in Beta | Front Office"] };
+  const locked = page === "about" && !aboutUnlocked();
+  $("lockView").hidden = !locked;
+  if (locked){ $("aboutView").hidden = true; $("betaView").hidden = true; $("appView").hidden = true; document.title = "About Front Office"; window.scrollTo({ top: 0 }); setTimeout(() => $("lockPw").focus(), 50); return; }
   $("aboutView").hidden = page !== "about";
   $("betaView").hidden = page !== "beta";
   $("appView").hidden = !!pages[page];
