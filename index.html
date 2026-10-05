@@ -126,6 +126,7 @@ input[type=text],input[type=search],select{background:var(--card);border:1.5px s
 .leaguebar{display:none;padding:18px 0 4px}
 .leaguebar h2{font-family:var(--display);font-size:32px;margin:0 0 8px;line-height:1}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 6px}
+.chips:empty{display:none}
 .chip{display:inline-flex;align-items:center;gap:6px;background:var(--field-soft);color:var(--field);border-radius:999px;padding:3px 11px;font-size:14px;font-weight:600}
 .chip.champ{background:var(--gold-soft);color:var(--gold);padding-left:4px}
 .chip.champ .av{width:22px;height:22px}
@@ -454,11 +455,19 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 .browse-in{width:100%;background:var(--card);border:1.5px solid var(--gold);border-radius:8px;padding:9px 12px;font:inherit;margin:0 0 8px}
 
 /* ✕ to clear a League Values search */
+.vsearch{position:relative;flex:0 1 260px}
+.vsearch input{width:100%;padding-right:40px}
+.vsearch input::-webkit-search-cancel-button{-webkit-appearance:none;appearance:none}
+.vsearch .clear-f{position:absolute;right:9px;top:50%;transform:translateY(-50%);margin:0}
 .clear-f{margin-left:8px;background:var(--paper);border:1.5px solid var(--line);border-radius:999px;width:24px;height:24px;display:inline-grid;place-items:center;font-size:12px;color:var(--muted);cursor:pointer;flex:none;padding:0}
 .clear-f:hover{background:var(--loss-soft);border-color:var(--loss);color:var(--loss)}
 
 /* Trade Finder layout: Find a Player on top, then one box with your roster beside the results */
 .tf-findbox{margin-bottom:14px}
+.tf-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.tf-head h3{margin:0!important}
+.tf-reset{padding:6px 16px;font-size:15px;border-radius:999px}
+.tf-reset:disabled{opacity:.4;cursor:default}
 .tf-find-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;align-items:start}
 .tf-find-grid .tf-recs-box{margin-top:0;padding-top:0;border-top:0;padding-left:18px;border-left:1px solid var(--line)}
 .tf-sending:empty{display:none}
@@ -860,7 +869,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 
   <section class="panel" id="panel-finder">
     <div class="box tf-opts tf-findbox">
-      <h3 id="tfOptsTitle">Find a Player</h3>
+      <div class="tf-head"><h3 id="tfOptsTitle">Find a Player</h3><button type="button" class="ghost tf-reset" id="tfReset">Reset</button></div>
       <div class="tf-find-grid">
         <div class="tf-find-main">
           <div id="tfSending" class="tf-sending"></div>
@@ -909,7 +918,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
         <button aria-pressed="false" data-pos="TE">TE</button>
         <button aria-pressed="false" data-pos="PICK">Picks</button>
       </div>
-      <input type="search" id="valueSearch" placeholder="Search players" aria-label="Search players">
+      <div class="vsearch"><input type="search" id="valueSearch" placeholder="Search players" aria-label="Search players"><button type="button" class="clear-f" id="valueClear" title="Clear the search and show everyone" aria-label="Clear search" hidden>✕</button></div>
       <label style="font-size:14px;display:flex;gap:6px;align-items:center"><input type="checkbox" id="rosteredOnly" checked> Only rostered in this league</label>
     </div>
     <div class="tablewrap">
@@ -1533,7 +1542,7 @@ function renderLeague(){
   chips.push(`${c.st.reserve_slots || 0} IR spots`);
   chips.push(`${c.st.taxi_slots || 0} taxi spots`);
   if (!c.dynasty) chips.push("Not a dynasty league");
-  $("chips").innerHTML = chips.map(x => `<span class="chip">${esc(x)}</span>`).join("");
+  $("chips").innerHTML = "";   // league format details now live only on the League Settings tab
   loadChampion(S.league);
   const tuned = S.nudge ? `, and tuned to ${S.nudge.n} of your league's trades` : "";
   $("source").textContent = S.market.kind === "fp"
@@ -1783,6 +1792,7 @@ function renderTuningLight(){
 
 function renderValues(){
   renderTuningLight();
+  $("valueClear").hidden = !$("valueSearch").value;
   const q = normName($("valueSearch").value), pos = S.posFilter, rosteredOnly = $("rosteredOnly").checked;
   const rows = [...S.assets.values()]
     .filter(a => pos === "ALL" ? a.kind === "player" : pos === "PICK" ? a.kind === "pick" : a.pos === pos)
@@ -1794,20 +1804,21 @@ function renderValues(){
     const teamHTML = a.owner != null ? `<span class="teamcell">${teamPhoto(a.owner, true)}${esc(team)}</span>` : "Free agent";
     const ch = a.market ? (a.value/a.market - 1) * 100 : 0;
     const chTxt = a.kind === "pick" || Math.abs(ch) < 1 ? "" : `<span class="${ch>0?"up":"down"}">${ch>0?"+":""}${Math.round(ch)}%</span>`;
-    return `<tr data-id="${esc(a.id)}"${a.id === S.valuesHL ? ' class="hl"' : ""}><td class="n">${a.kind === "player" && a.lgRank ? a.lgRank : i+1}</td><td><span class="teamcell">${assetPhoto(a, true)}${esc(a.name)}${q ? `<button type="button" class="clear-f" data-clear="${esc(a.id)}" title="Clear the filter and show everyone" aria-label="Clear filter">✕</button>` : ""}</span></td><td>${esc(a.pos)}</td><td class="n">${esc(ageText(a.age))}</td>
+    return `<tr data-id="${esc(a.id)}"${a.id === S.valuesHL ? ' class="hl"' : ""}><td class="n">${a.kind === "player" && a.lgRank ? a.lgRank : i+1}</td><td><span class="teamcell">${assetPhoto(a, true)}${esc(a.name)}</span></td><td>${esc(a.pos)}</td><td class="n">${esc(ageText(a.age))}</td>
       <td>${teamHTML}</td><td class="n big">${fmt(a.value)}</td><td class="n">${a.kind==="pick"?"":fmt(a.market)}</td><td class="n">${chTxt}</td></tr>`;
   }).join("") || `<tr><td colspan="8" class="empty">No players match. Try a different search or filter.</td></tr>`;
 }
 $("valueSearch").addEventListener("input", renderValues);
-// ✕ next to a filtered player's name: clear the search, show everyone, and keep that player in view
-$("valuesBody").addEventListener("click", e => {
-  const b = e.target.closest(".clear-f"); if (!b) return;
+// ✕ inside the search box: clear the search, show everyone, and keep the player you were looking at in view
+$("valueClear").addEventListener("click", () => {
+  const keep = S.valuesHL || $("valuesBody").querySelector("tr[data-id]")?.dataset.id;
   $("valueSearch").value = ""; S.posFilter = "ALL";
   for (const x of $("posFilter").children) x.setAttribute("aria-pressed", x.dataset.pos === "ALL");
-  S.valuesHL = b.dataset.clear;
+  S.valuesHL = keep || null;
   renderValues();
-  $("valuesBody").querySelector(`tr[data-id="${CSS.escape(b.dataset.clear)}"]`)?.scrollIntoView({ block: "center" });
+  if (keep) $("valuesBody").querySelector(`tr[data-id="${CSS.escape(keep)}"]`)?.scrollIntoView({ block: "center" });
   setTimeout(() => { S.valuesHL = null; $("valuesBody").querySelector("tr.hl")?.classList.remove("hl"); }, 4000);
+  $("valueSearch").focus();
 });
 $("rosteredOnly").addEventListener("change", renderValues);
 $("posFilter").addEventListener("click", e => {
@@ -2987,6 +2998,7 @@ const FAIR_LOW = 0.88, FAIR_HIGH = 1.12;   // packages within this range of what
 
 function renderFinder(){
   if (!S.league) return;
+  $("tfReset").disabled = !tfSend.size && !tfTarget && $("tfWant").value === "fit" && $("tfPartner").value === "any" && $("tfMax").value === "4" && !$("tfSearch").value;
   syncPicker("tfTeam");
   const me = Number($("tfTeam").value), t = S.teams.get(me);
   $("tfBadge").textContent = statusText[t.status]; $("tfBadge").className = "badge " + badgeClass[t.status];
@@ -3267,6 +3279,12 @@ $("tfSending").addEventListener("click", e => {
 });
 ["tfTeam","tfWant","tfPartner","tfMax"].forEach(id => $(id).addEventListener("change", renderFinder));
 $("tfSearch").addEventListener("input", renderFinder);
+// Reset: clear everything picked and put the filters back to their defaults
+$("tfReset").addEventListener("click", () => {
+  tfSend.clear(); tfTarget = null;
+  $("tfWant").value = "fit"; $("tfPartner").value = "any"; $("tfMax").value = "4"; $("tfSearch").value = "";
+  renderFinder();
+});
 $("tfResults").addEventListener("click", e => {
   const b = e.target.closest(".tf-open"); if (!b) return;
   $("teamA").value = $("tfTeam").value; $("teamB").value = b.dataset.rid;
