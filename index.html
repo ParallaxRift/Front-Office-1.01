@@ -2450,7 +2450,9 @@ const CROWN_NAMES = ["pat", "dev"];
 const CROWN = `<svg class="crown" viewBox="0 0 24 24" width="17" height="17" fill="currentColor" role="img" aria-label="Front Office team"><title>Front Office team</title><path d="M3 7.5l4.6 3.6L12 4l4.4 7.1L21 7.5l-1.8 10.2H4.8L3 7.5zM5 19h14v2H5z"/></svg>`;
 const isCrowned = name => CROWN_NAMES.includes(String(name || "").trim().toLowerCase());
 function renderFeedback(){
-  const all = [...fbPending, ...(fbPosts || [])].filter(p => fbFilter === "All" || p.type === fbFilter);
+  const all = [...fbPending, ...(fbPosts || [])]
+    .map(p => isCrowned(p.name) ? { ...p, type: "Update" } : p)     // your posts are always Updates
+    .filter(p => fbFilter === "All" || p.type === fbFilter);
   if (!all.length){ $("fbList").innerHTML = `<p class="empty">${fbFilter === "All" ? "No feedback yet. Be the first to post." : "Nothing here yet."}</p>`; return; }
   const types = ["Update","Idea","Bug","Other"];
   $("fbList").innerHTML = all.slice(0, 200).map(p => {
@@ -2466,8 +2468,9 @@ $("fbForm").addEventListener("submit", async e => {
   const st = $("fbStatus");
   if (!fbCanPost()){ st.textContent = "The feedback board isn't connected yet."; st.className = "status error"; return; }
   if (msg.length < 3){ st.textContent = "Write a few words of feedback first."; st.className = "status error"; $("fbMsg").focus(); return; }
-  const type = [...$("fbType").children].find(x => x.getAttribute("aria-checked") === "true")?.dataset.type || "Other";
   const name = $("fbName").value.trim(), league = S.league?.name || "";
+  const type = isCrowned(name) ? "Update"
+    : [...$("fbType").children].find(x => x.getAttribute("aria-checked") === "true")?.dataset.type || "Other";
   const body = new URLSearchParams(); // standard form encoding, which Google Forms expects
   const tag = !FEEDBACK.fields.type ? `[${type}${league && !FEEDBACK.fields.league ? " | " + league.replace(/[\[\]]/g, "") : ""}] ` : "";
   body.append(FEEDBACK.fields.message, tag + msg);
