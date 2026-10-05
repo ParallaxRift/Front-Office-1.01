@@ -391,6 +391,19 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 .strk.w{background:var(--field-soft);color:var(--field)}
 .strk.l{background:var(--loss-soft);color:var(--loss)}
 
+/* Players in the trade: white panel under the verdict */
+.bplayers{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;background:var(--card);color:var(--ink);border-radius:12px;padding:10px;margin-top:12px}
+.bplayers .bitems{margin-top:0;align-content:start}
+.bplayers .bitems:empty{display:block;min-height:1px}
+.bplayers .bitem{background:var(--paper);color:var(--ink)}
+.bplayers .bitem:hover{background:var(--field-soft)}
+.bplayers .bitem .bi-text small{opacity:1;color:var(--muted)}
+.bplayers .bitem .bi-x{opacity:1;color:var(--muted)}
+.bplayers .bitem:hover .bi-x{color:var(--loss)}
+.bplayers .bitem .av{background:var(--card)}
+@media (max-width:600px){.bplayers{grid-template-columns:1fr}.bplayers .bitems:empty{display:none}}
+@media (prefers-color-scheme:dark){.bplayers{background:#18222A;color:#E8EDE9}.bplayers .bitem{background:#10171D;color:#E8EDE9}}
+
 /* Trade Finder */
 .tf-top{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:14px;margin-bottom:14px;align-items:start}
 @media (max-width:760px){.tf-top{grid-template-columns:1fr}}
@@ -672,22 +685,24 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
   <section class="panel on" id="panel-calc">
     <div class="board" id="board" style="display:none">
       <div class="totals">
-        <div class="bside"><div class="side-label">You send</div><div class="bteam" id="sendTeam"></div><div class="num" id="sendNum">0</div><div class="raw" id="sendRaw"></div><div class="bitems" id="sendItems"></div></div>
-        <div class="bside right"><div class="side-label">You get</div><div class="bteam" id="getTeam"></div><div class="num" id="getNum">0</div><div class="raw" id="getRaw"></div><div class="bitems" id="getItems"></div></div>
+        <div class="bside"><div class="side-label">You send</div><div class="bteam" id="sendTeam"></div><div class="num" id="sendNum">0</div><div class="raw" id="sendRaw"></div></div>
+        <div class="bside right"><div class="side-label">You get</div><div class="bteam" id="getTeam"></div><div class="num" id="getNum">0</div><div class="raw" id="getRaw"></div></div>
       </div>
       <div class="track" aria-hidden="true"><div class="fill" id="fill" style="width:50%"></div><div class="mid"></div></div>
       <p class="verdict" id="verdict">Tap players and picks to build a trade.</p>
       <p class="hint" id="hint"></p>
       <div class="suggest" id="suggest"></div>
+      <div class="bplayers" id="bPlayers" hidden>
+        <div class="bitems" id="sendItems"></div>
+        <div class="bitems" id="getItems"></div>
+      </div>
     </div>
     <div class="sides" id="sides" style="display:none">
       <div class="side">
-        <h3>You send</h3>
         <div class="teamline"><span id="avA"></span><select id="teamA" aria-label="Your team"></select><span class="badge" id="badgeA"></span></div>
         <div class="list" id="listA"></div>
       </div>
       <div class="side">
-        <h3>You get</h3>
         <div class="teamline"><span id="avB"></span><select id="teamB" aria-label="Trade partner"></select><span class="badge" id="badgeB"></span></div>
         <div class="list" id="listB"></div>
       </div>
@@ -1531,6 +1546,7 @@ function renderCalc(){
     }).join("");
   $("sendItems").innerHTML = itemsHTML(S.sendIds, "send");
   $("getItems").innerHTML = itemsHTML(S.getIds, "get");
+  $("bPlayers").hidden = !S.sendIds.size && !S.getIds.size;
   $("sendRaw").textContent = send.length > 1 ? `raw total ${fmt(send.reduce((a,b)=>a+b,0))}` : "";
   $("getRaw").textContent = get.length > 1 ? `raw total ${fmt(get.reduce((a,b)=>a+b,0))}` : "";
   const total = eS + eG;
