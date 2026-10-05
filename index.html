@@ -493,6 +493,21 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 .luck{font-size:13px;font-weight:700}
 .luck.up{color:var(--field)}.luck.down{color:var(--loss)}
 
+/* Trophy Room */
+.champ-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.tr-champ{background:var(--card);border:1.5px solid var(--line);border-top:5px solid var(--gold);border-radius:14px;padding:14px 16px}
+.tr-champ .yr{font-family:var(--display);font-weight:800;font-size:28px;color:var(--gold);line-height:1}
+.tr-champ .who{display:flex;align-items:center;gap:12px;margin:10px 0 8px}
+.tr-champ .who b{display:block;font-size:19px}
+.tr-champ .who small{color:var(--muted);font-size:13px}
+.tr-champ .rest{font-size:14px;color:var(--muted);display:flex;flex-direction:column;gap:3px}
+.tr-champ .rest span b{color:var(--ink);font-weight:600}
+.tr-champ.pending{border-top-color:var(--line)}
+.trophy-bar{margin:0 0 12px}
+.hs-leaders{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}
+.hs-lead{display:inline-flex;align-items:center;gap:8px;background:var(--gold-soft);border-radius:999px;padding:4px 12px 4px 4px;font-size:14px;font-weight:600}
+.hs-lead b{font-family:var(--display);font-size:17px}
+
 /* Trade Finder */
 .tf-top{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:14px;margin-bottom:14px;align-items:start}
 @media (max-width:760px){.tf-top{grid-template-columns:1fr}}
@@ -764,11 +779,12 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
   <div class="tabs" id="tabs" role="tablist">
     <button class="tab" role="tab" aria-selected="true" data-tab="calc">Trade Calculator</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="finder">Trade Finder</button>
-    <button class="tab" role="tab" aria-selected="false" data-tab="values">League Values</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="values">Player Values</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="settings">League Settings</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="strategy">Team Strategy</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="history">Trade History</button>
-    <button class="tab" role="tab" aria-selected="false" data-tab="standings">Standings</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="standings">League Analysis</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="trophy">Trophy Room</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="scores">Live Scores</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="feedback"><em>Feedback &amp; Build Notes</em></button>
   </div>
@@ -804,6 +820,16 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
         <div class="list" id="listB"></div>
       </div>
     </div>
+  </section>
+
+  <section class="panel" id="panel-trophy">
+    <h3 class="sec-h">🏆 League champions</h3>
+    <div id="champList" class="champ-list"><p class="empty">Open this tab to load your league's history.</p></div>
+    <h3 class="sec-h" style="margin-top:28px">Weekly high scores</h3>
+    <div class="trophy-bar"><div class="seg" id="hsSeasons"></div></div>
+    <div id="hsLeaders" class="hs-leaders"></div>
+    <div class="tablewrap"><table id="hsTable" class="stand"></table></div>
+    <p class="note" id="trophyNote"></p>
   </section>
 
   <section class="panel" id="panel-standings">
@@ -1281,7 +1307,7 @@ async function openLeague(leagueId){
     S.history = null; S.nudge = null; S.historyError = false;
     S.leagueSig = leagueSignature(league, S.rosters, S.traded); lastLeagueCheck = Date.now();
     buildValues();
-    S.sendIds.clear(); S.getIds.clear(); tfSend.clear(); tfTarget = null;
+    S.sendIds.clear(); S.getIds.clear(); tfSend.clear(); tfTarget = null; trophy = null;
     renderLeague();
     loadHistory(league);
     progress(3, "done");
@@ -1705,7 +1731,7 @@ function renderCalc(){
     .map(a => {
       const sub = a.kind === "player" ? [a.pos, a.nfl, a.age ? "age " + ageText(a.age) : ""].filter(Boolean).join(", ") : a.nfl;
       return `<div class="bitem">
-        <button type="button" class="bi-link" data-show="${esc(a.id)}" title="See ${esc(a.name)} in League Values">
+        <button type="button" class="bi-link" data-show="${esc(a.id)}" title="See ${esc(a.name)} in Player Values">
           ${assetPhoto(a, "trade")}<span class="bi-text"><b>${esc(a.name)}</b><small>${esc(sub)}</small></span></button>
         <span class="bi-val">${fmt(a.value)}</span>
         <button type="button" class="bi-x" data-side="${side}" data-id="${esc(a.id)}" aria-label="Remove ${esc(a.name)} from the trade">✕</button></div>`;
@@ -2564,7 +2590,7 @@ function applyMode(mode, quiet){
   store.set("fo_mode", mode);
   for (const b of $("modeToggle").children) b.setAttribute("aria-checked", b.dataset.mode === mode);
   for (const t of $("tabs").children) t.hidden = mode === "basics" && !BASIC_TABS.includes(t.dataset.tab);
-  $("modeNote").textContent = mode === "basics" ? "Just the trade calculator, league values, and league settings." : "Every tool Front Office has.";
+  $("modeNote").textContent = mode === "basics" ? "Just the trade calculator, player values, and league settings." : "Every tool Front Office has.";
   // If the open tab just got hidden, go back to the calculator
   const open = $("tabs").querySelector('.tab[aria-selected="true"]');
   if (open && open.hidden) $("tabs").querySelector('[data-tab="calc"]').click();
@@ -3036,6 +3062,105 @@ function browseClick(side, e){
 }
 
 // ============================================================
+// TROPHY ROOM
+// Champions for every past season Sleeper links to, and the top scorer
+// of every week for this season and the two before it.
+// ============================================================
+let trophy = null, trophySeason = null;
+const HS_SEASONS = 3;   // this season + two previous
+async function loadTrophyRoom(){
+  if (!S.league) return;
+  if (trophy && trophy.leagueId === S.league.league_id){ renderTrophyRoom(); return; }
+  $("champList").innerHTML = `<p class="empty">Loading your league's history...</p>`;
+  $("hsTable").innerHTML = ""; $("hsLeaders").innerHTML = ""; $("hsSeasons").innerHTML = "";
+  const leagueId = S.league.league_id;
+  try {
+    // walk back through every linked season
+    const chain = [S.league];
+    let lg = S.league;
+    while (chain.length < 20 && lg.previous_league_id && lg.previous_league_id !== "0"){
+      lg = await getJSON(`/league/${lg.previous_league_id}`).catch(() => null);
+      if (!lg) break; chain.push(lg);
+    }
+    const seasons = await Promise.all(chain.map(async (L, idx) => {
+      const isCur = idx === 0;
+      const [rosters, users, bracket] = await Promise.all([
+        isCur ? S.rosters : getJSON(`/league/${L.league_id}/rosters`).catch(() => []),
+        isCur ? S.users : getJSON(`/league/${L.league_id}/users`).catch(() => []),
+        getJSON(`/league/${L.league_id}/winners_bracket`).catch(() => [])
+      ]);
+      const team = rid => {
+        const r = (rosters || []).find(x => x.roster_id === rid), owner = r?.owner_id;
+        const now = [...S.teams.values()].find(t => t.owner === owner);
+        const u = (users || []).find(x => x.user_id === owner);
+        return { rid, owner, name: now?.name || u?.metadata?.team_name || u?.display_name || `Team ${rid}`,
+                 manager: u?.display_name || "", photo: now ? now.photo : (u?.metadata?.avatar || u?.avatar || null),
+                 rec: r?.settings ? `${r.settings.wins || 0}-${r.settings.losses || 0}${r.settings.ties ? "-" + r.settings.ties : ""}` : "" };
+      };
+      const final = (bracket || []).find(m => m.p === 1), third = (bracket || []).find(m => m.p === 3);
+      let weeks = [];
+      if (idx < HS_SEASONS){
+        const last = isCur && S.nflState?.season_type === "regular" ? currentWeek() - 1 : 18;   // skip the week still being played
+        const all = await Promise.all(Array.from({ length: Math.max(0, last) }, (_, w) => getJSON(`/league/${L.league_id}/matchups/${w + 1}`).catch(() => [])));
+        weeks = all.map((ms, w) => {
+          const scored = (ms || []).map(m => ({ rid: m.roster_id, pts: Number(m.custom_points ?? m.points ?? 0) })).filter(m => m.pts > 0);
+          if (!scored.length) return null;
+          scored.sort((a, b) => b.pts - a.pts);
+          const avg = scored.reduce((t, m) => t + m.pts, 0) / scored.length;
+          return { week: w + 1, top: { ...team(scored[0].rid), pts: scored[0].pts }, second: scored[1] ? { ...team(scored[1].rid), pts: scored[1].pts } : null, avg };
+        }).filter(Boolean);
+      }
+      return { season: Number(L.season), status: L.status,
+               champ: final?.w ? team(final.w) : null, runner: final?.l ? team(final.l) : null, third: third?.w ? team(third.w) : null, weeks };
+    }));
+    if (S.league?.league_id !== leagueId) return;
+    trophy = { leagueId, seasons };
+    trophySeason = seasons.find(x => x.weeks.length)?.season ?? null;
+    renderTrophyRoom();
+  } catch(e){
+    console.error(e);
+    $("champList").innerHTML = `<p class="empty">Couldn't load your league's history. Reopen this tab to try again.</p>`;
+  }
+}
+function renderTrophyRoom(){
+  const T = trophy; if (!T) return;
+  const person = (t, size) => `${avatar(t.photo, t.name, size)}`;
+  $("champList").innerHTML = T.seasons.map(x => x.champ ? `
+    <article class="tr-champ">
+      <div class="yr">${x.season}</div>
+      <div class="who">${person(x.champ, "lg")}<span><b>${esc(x.champ.name)}</b><small>${esc([x.champ.manager !== x.champ.name ? x.champ.manager : "", x.champ.rec ? x.champ.rec + " regular season" : ""].filter(Boolean).join(", "))}</small></span></div>
+      <div class="rest">
+        ${x.runner ? `<span>Runner-up: <b>${esc(x.runner.name)}</b></span>` : ""}
+        ${x.third ? `<span>Third place: <b>${esc(x.third.name)}</b></span>` : ""}
+      </div>
+    </article>` : `
+    <article class="tr-champ pending"><div class="yr" style="color:var(--muted)">${x.season}</div><p class="note" style="margin:10px 0 0">${x.season === Number(S.league.season) && x.status !== "complete" ? "Season in progress. The champion will appear here once the playoffs finish." : "No champion recorded for this season."}</p></article>`).join("");
+
+  const withWeeks = T.seasons.filter(x => x.weeks.length);
+  if (!withWeeks.length){ $("hsSeasons").innerHTML = ""; $("hsTable").innerHTML = ""; $("hsLeaders").innerHTML = ""; $("trophyNote").textContent = "No completed weeks yet."; return; }
+  $("hsSeasons").innerHTML = withWeeks.map(x => `<button aria-pressed="${x.season === trophySeason}" data-season="${x.season}">${x.season}</button>`).join("");
+  const cur = withWeeks.find(x => x.season === trophySeason) || withWeeks[0];
+  // who had the most weekly high scores this season
+  const tally = {};
+  for (const w of cur.weeks){ const k = w.top.owner || w.top.rid; (tally[k] = tally[k] || { t: w.top, n: 0 }).n++; }
+  const leaders = Object.values(tally).sort((a, b) => b.n - a.n).slice(0, 5);
+  $("hsLeaders").innerHTML = `<span class="note" style="align-self:center;margin-right:4px">Most weekly high scores:</span>` + leaders.map(l => `<span class="hs-lead">${person(l.t, true)}${esc(l.t.name)} <b>${l.n}</b></span>`).join("");
+  const best = Math.max(...cur.weeks.map(w => w.top.pts));
+  $("hsTable").innerHTML = `<thead><tr><th class="n">Week</th><th>High scorer</th><th class="n">Points</th><th class="n">Ahead of 2nd</th><th class="n">League average</th></tr></thead>
+    <tbody>${cur.weeks.map(w => `<tr class="${w.top.rid === S.myRid && cur.season === Number(S.league.season) ? "me" : ""}">
+      <td class="n rk">${w.week}</td>
+      <td><span class="teamcell">${person(w.top, "sm")}<b>${esc(w.top.name)}</b>${w.top.pts === best ? ' <span class="badge b-contend">Season high</span>' : ""}</span></td>
+      <td class="n rec">${w.top.pts.toFixed(2)}</td>
+      <td class="n">${w.second ? "+" + (w.top.pts - w.second.pts).toFixed(2) : "–"}</td>
+      <td class="n">${w.avg.toFixed(2)}</td></tr>`).join("")}</tbody>`;
+  $("trophyNote").textContent = `Weekly high scores cover this season and the two before it${cur.season === Number(S.league.season) && S.nflState?.season_type === "regular" ? "; the week in progress is added once it's final" : ""}. Champions go back as far as Sleeper has your league's history.`;
+}
+$("hsSeasons").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  trophySeason = Number(b.dataset.season); renderTrophyRoom();
+});
+
+// ============================================================
 // TRADE FINDER
 // Pick what you'd trade away. Front Office searches every other roster for
 // fair packages (one to four pieces back) and ranks them by how well they fit
@@ -3419,11 +3544,12 @@ PICKERS.forEach(makePicker);
 $("tabs").addEventListener("click", e => {
   const b = e.target.closest(".tab"); if (!b) return;
   for (const t of $("tabs").children) t.setAttribute("aria-selected", t === b);
-  for (const name of ["calc","finder","standings","history","feedback","scores","values","settings","strategy"]) $("panel-"+name).classList.toggle("on", b.dataset.tab === name);
+  for (const name of ["calc","finder","standings","trophy","history","feedback","scores","values","settings","strategy"]) $("panel-"+name).classList.toggle("on", b.dataset.tab === name);
   if (b.dataset.tab === "scores") loadScores();
   if (b.dataset.tab === "feedback") loadFeedback();
   if (b.dataset.tab === "finder") renderFinder();
   if (b.dataset.tab === "standings") renderStandings();
+  if (b.dataset.tab === "trophy") loadTrophyRoom();
   store.set("tr_tab", b.dataset.tab);
 });
 
