@@ -550,6 +550,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 .tf-rec .tn b{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tf-rec .tn small{color:var(--muted);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tf-rec .why{font-size:12px;color:var(--field);font-weight:600}
+.tf-rec .cost{font-size:12px;color:var(--muted)}
 .tf-rec .v{font-family:var(--display);font-weight:800;font-size:17px}
 .tf-rec .go{padding:5px 10px;font-size:13px;white-space:nowrap}
 .tf-rec.on{background:var(--field-soft)}
@@ -951,7 +952,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 
   <section class="panel" id="panel-finder">
     <div class="box tf-opts tf-findbox">
-      <div class="tf-head"><h3 id="tfOptsTitle">Find a Player</h3><button type="button" class="ghost tf-reset" id="tfReset">Reset</button></div>
+      <div class="tf-head"><h3 id="tfOptsTitle">1.) Find a Player</h3><button type="button" class="ghost tf-reset" id="tfReset">Reset</button></div>
       <div class="tf-find-grid">
         <div class="tf-find-main">
           <div id="tfSending" class="tf-sending"></div>
@@ -976,7 +977,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
     </div>
     <div class="box tf-main">
       <div class="tf-pick">
-        <h3>Who Do You Want to Trade?</h3>
+        <h3>2.) Player to Trade Away</h3>
         <div class="teamline"><select id="tfTeam" aria-label="Team you're trading for"></select><span class="badge" id="tfBadge"></span></div>
         <input type="search" id="tfSearch" placeholder="Search your players and picks" aria-label="Search your roster">
         <div class="list tf-list" id="tfList"></div>
@@ -3341,13 +3342,13 @@ function renderFinder(){
   renderRecs(me);
   if (tfTarget){
     const a = S.assets.get(tfTarget), owner = S.teams.get(a.owner);
-    $("tfOptsTitle").textContent = "Find a Player";
+    $("tfOptsTitle").textContent = "1.) Find a Player";
     $("tfSending").innerHTML = `<button type="button" class="tf-target" id="tfClearTarget" aria-label="Stop looking for ${esc(a.name)}">
       ${assetPhoto(a, "sm")}<span class="bi-text"><b>${esc(a.name)}</b><small>${esc([a.pos + (a.lgPosRank || ""), a.nfl, a.age ? "age " + ageText(a.age) : "", "from " + (owner?.name || "")].filter(Boolean).join(", "))}</small></span><span class="v">${fmt(a.value)}</span><span class="tf-x" aria-hidden="true">✕</span></button>`;
     findForTarget(me, a);
     return;
   }
-  $("tfOptsTitle").textContent = "Find a Player";
+  $("tfOptsTitle").textContent = "1.) Find a Player";
   $("tfSending").innerHTML = sending.length ? sending.map(a => `<button type="button" class="tf-chip" data-id="${esc(a.id)}" aria-label="Remove ${esc(a.name)}">
       ${assetPhoto(a, "sm")}<span class="bi-text"><b>${esc(a.name)}</b><small>${esc(a.kind === "player" ? [a.pos + (a.lgPosRank || ""), a.nfl, a.age ? "age " + ageText(a.age) : ""].filter(Boolean).join(", ") : a.nfl)}</small></span><span class="v">${fmt(a.value)}</span><span class="tf-x" aria-hidden="true">✕</span></button>`).join("")
       + (sending.length > 1 ? `<div class="tf-total"><span>Package value</span><span>${fmt(V)}</span></div>` : "")
@@ -3371,42 +3372,83 @@ function finderContext(me){
   return { prof, my, N, third, need, status, dir, POS, weak, starterSum, futureVal, nowVal };
 }
 
-// Players on other teams who would help this team most, given its direction and weak spots
+// Recommended players to trade for: realistic, impactful targets, not the obvious stars.
+//  - Skips the elite tier (roughly the league's top 2 players per team overall, and each
+//    position's top tier) since everyone already knows those players are worth chasing.
+//  - Only suggests players you could land with your NON-CORE pieces (bench players and
+//    picks, not your starters or your three best players), so a deal won't gut your roster.
+//  - Ranks by impact for the price: how much he'd improve your lineup (or, for a rebuild,
+//    his long-term value), boosted for your weak positions and for young upside.
+//  - Shows a realistic price from your non-core pieces, e.g. "Could cost: 2027 2nd".
+function myCore(me, C){
+  const mine = teamAssets(me).filter(a => a.kind === "player");
+  const core = new Set(mine.slice(0, 3).map(a => a.id));
+  for (const p of C.POS){
+    const k = Math.ceil(C.need[p] || 0);
+    mine.filter(a => a.pos === p).slice(0, k).forEach(a => core.add(a.id));
+  }
+  return core;
+}
+function priceFrom(pool, v){
+  // one piece worth about the same, else the best fair pair
+  const single = pool.filter(a => a.value >= v * 0.9 && a.value <= v * 1.35).sort((x, y) => x.value - y.value)[0];
+  if (single) return [single];
+  let best = null, bestGap = Infinity;
+  const top = pool.slice(0, 20);
+  for (let i = 0; i < top.length; i++) for (let j = i + 1; j < top.length; j++){
+    const t = tradeValue([top[i].value, top[j].value], [v]);
+    if (t >= v * 0.92 && t - v < bestGap){ best = [top[i], top[j]]; bestGap = t - v; }
+  }
+  return best;
+}
 function renderRecs(me){
   const C = finderContext(me), want = $("tfWant").value, partner = $("tfPartner").value;
-  const mine = teamAssets(me), myPlayers = mine.filter(a => a.kind === "player");
-  const budget = eq(mine.slice(0, 3).map(a => a.value)) * 1.05;          // roughly what your top pieces could fetch
+  const myPlayers = teamAssets(me).filter(a => a.kind === "player");
+  const core = myCore(me, C);
+  const spare = teamAssets(me).filter(a => !core.has(a.id) && a.value > 0);          // non-core: bench + picks
+  const budget = spare.length ? tradeValue(spare.slice(0, 2).map(a => a.value), []) : 0;
+  const eliteRank = S.cfg.teams * 2;                                                  // ~top 20-24 overall
+  const posElite = p => Math.max(3, Math.round(S.cfg.teams / 2));                    // ~top 5-6 at each position
   const recs = [];
   for (const [rid, th] of C.prof){
     if (rid === me || (partner !== "any" && String(rid) !== partner)) continue;
     for (const a of teamAssets(rid)){
-      if (a.kind !== "player" || a.value < 800 || a.value > budget) continue;
+      if (a.kind !== "player" || a.value < 500) continue;
       if (want !== "fit" && want !== "PICK" && a.pos !== want) continue;
+      if ((a.lgRank && a.lgRank <= eliteRank) || (a.lgPosRank && a.lgPosRank <= posElite(a.pos))) continue;   // elite tier: a given
+      if (a.value > budget) continue;                                                  // can't afford without gutting the roster
       const add = C.starterSum(myPlayers.concat([a]), a.pos) - C.starterSum(myPlayers, a.pos);
-      const isWeak = C.weak.includes(a.pos), old = a.age && a.age >= (CLIFF[a.pos] || 30) - 1, young = a.age && a.age <= 24;
+      const isWeak = C.weak.includes(a.pos), young = a.age && a.age <= 24.5, old = a.age && a.age >= (CLIFF[a.pos] || 30) - 1;
       let score, why;
       if (C.dir === "win"){
-        if (add <= 0) continue;
-        score = add / 1000 + (isWeak ? 0.8 : 0) - (old ? 0.7 : 0) - (a.age && a.age <= 21 ? 0.2 : 0) + (th.team.status === "rebuild" ? 0.4 : 0);
-        why = isWeak ? `Fills your weak ${a.pos} spot` : `Upgrades your ${a.pos} starters`;
+        if (add <= 0 && !isWeak) continue;                                             // must actually help
+        score = add / 800 + (add / Math.max(1, a.value)) * 1.5 + (isWeak ? 1 : 0) + (young ? 0.3 : 0) - (old ? 0.8 : 0);
+        why = add > 0 ? (isWeak ? `Cheap fix for your thin ${a.pos} room` : `Would start for you at ${a.pos}`) : `Depth at your weak ${a.pos} spot`;
       } else {
         if (old) continue;
-        score = C.futureVal(a) / 2000 + (young ? 0.6 : 0) + (isWeak ? 0.3 : 0) + (th.team.status === "contend" ? 0.4 : 0);
-        why = young ? `Young (${ageText(a.age)}), fits your rebuild` : `Long-term value at ${a.pos}`;
+        score = C.futureVal(a) / 2500 + (young ? 0.9 : 0) + (isWeak ? 0.3 : 0) + (C.futureVal(a) / Math.max(1, a.value) - 1);
+        why = young ? `Young (${ageText(a.age)}) with upside for your rebuild` : `Long-term value at ${a.pos}`;
       }
-      if (th.team.status === "rebuild" && C.dir === "win") why += ", from a rebuilding team";
-      if (th.team.status === "contend" && C.dir === "build") why += ", from a contender";
+      if (young && C.dir === "win") why += ", with upside";
+      if (th.team.status === "rebuild" && C.dir === "win") why += "; his team is rebuilding";
+      if (th.team.status === "contend" && C.dir === "build") why += "; his team is contending";
       recs.push({ a, score, why });
     }
   }
   recs.sort((x, y) => y.score - x.score);
   const per = {}, top = [];
   for (const r of recs){ if ((per[r.a.owner] = (per[r.a.owner] || 0) + 1) <= 2) top.push(r); if (top.length >= 10) break; }
-  $("tfRecsNote").textContent = C.dir === "win" ? "Players who would most improve your starting lineup now." : "Young players with long-term value for your rebuild.";
-  $("tfRecs").innerHTML = top.length ? top.map(r => `<div class="tf-rec${tfTarget === r.a.id ? " on" : ""}">
-      ${assetPhoto(r.a, "md")}<span class="tn"><b>${esc(r.a.name)}</b><small>${esc([r.a.pos + (r.a.lgPosRank || ""), r.a.nfl, r.a.age ? "age " + ageText(r.a.age) : "", S.teams.get(r.a.owner)?.name].filter(Boolean).join(", "))}</small><span class="why">${esc(r.why)}</span></span>
-      <span class="v">${fmt(r.a.value)}</span><button type="button" class="ghost go" data-target="${esc(r.a.id)}">Find a deal</button></div>`).join("")
-    : `<p class="empty">No clear targets right now${partner !== "any" ? " on that team" : ""}.</p>`;
+  $("tfRecsNote").textContent = C.dir === "win"
+    ? "Realistic targets outside the elite tier who would help your lineup, priced against your bench and picks."
+    : "Young, affordable players with upside for your rebuild, priced against your non-core pieces.";
+  $("tfRecs").innerHTML = top.length ? top.map(r => {
+    const cost = priceFrom(spare, r.a.value);
+    const costTxt = cost ? `Could cost: ${cost.map(x => x.name).join(" + ")}` : "";
+    return `<div class="tf-rec${tfTarget === r.a.id ? " on" : ""}">
+      ${assetPhoto(r.a, "md")}<span class="tn"><b>${esc(r.a.name)}</b><small>${esc([r.a.pos + (r.a.lgPosRank || ""), r.a.nfl, r.a.age ? "age " + ageText(r.a.age) : "", S.teams.get(r.a.owner)?.name].filter(Boolean).join(", "))}</small><span class="why">${esc(r.why)}</span>${costTxt ? `<span class="cost">${esc(costTxt)}</span>` : ""}</span>
+      <span class="v">${fmt(r.a.value)}</span><button type="button" class="ghost go" data-target="${esc(r.a.id)}">Find a deal</button></div>`;
+  }).join("")
+    : `<p class="empty">No affordable targets${want !== "fit" && want !== "PICK" ? " at that position" : ""}${partner !== "any" ? " on that team" : ""} right now. Your bench and picks may not stretch that far.</p>`;
 }
 
 // Reverse search: what could you send to land one specific player?
