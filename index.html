@@ -442,6 +442,19 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 #getItems .badj b{margin-right:0;margin-left:33px}
 @media (max-width:600px){#getItems .badj{flex-direction:row}#getItems .badj b{margin-left:0;margin-right:33px}}
 
+/* Search every player in the league from either side of the calculator */
+.pfind{position:relative;margin:0 0 8px}
+.pfind-in{width:100%;background:var(--card);border:1.5px solid var(--line);border-radius:8px;padding:9px 12px;font:inherit}
+.pfind-list{position:absolute;z-index:40;left:0;right:0;top:calc(100% + 4px);background:var(--card);border:1.5px solid var(--line);border-radius:12px;box-shadow:0 10px 28px rgba(0,0,0,.15);max-height:360px;overflow-y:auto;padding:4px}
+.pf-opt{display:flex;align-items:center;gap:10px;width:100%;border:0;background:none;padding:6px 8px;border-radius:8px;text-align:left;cursor:pointer;font:inherit;color:inherit}
+.pf-opt:hover,.pf-opt.act{background:var(--paper)}
+.pf-opt.in{background:var(--gold-soft)}
+.pf-opt .tn{flex:1;min-width:0;display:flex;flex-direction:column}
+.pf-opt .tn b{font-size:15.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pf-opt .tn small{font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pf-opt .v{font-family:var(--display);font-weight:800;font-size:17px}
+.pf-empty{padding:10px;color:var(--muted);font-size:14px}
+
 /* Trade Finder */
 .tf-top{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:14px;margin-bottom:14px;align-items:start}
 @media (max-width:760px){.tf-top{grid-template-columns:1fr}}
@@ -737,11 +750,19 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
     <div class="sides" id="sides" style="display:none">
       <div class="side">
         <div class="teamline"><span id="avA"></span><select id="teamA" aria-label="Your team"></select><span class="badge" id="badgeA"></span></div>
+        <div class="pfind" data-side="A">
+          <input type="search" class="pfind-in" id="findA" placeholder="Search all players and picks in the league" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="findListA" aria-label="Search all players and picks">
+          <div class="pfind-list" id="findListA" role="listbox" hidden></div>
+        </div>
         <div class="side-filter"><label for="posA">Show</label><select id="posA"><option value="EVERY">All players and picks</option><option value="ALL">Players only</option><option value="QB">Quarterbacks</option><option value="RB">Running backs</option><option value="WR">Wide receivers</option><option value="TE">Tight ends</option><option value="PICK">Draft picks</option></select></div>
         <div class="list" id="listA"></div>
       </div>
       <div class="side">
         <div class="teamline"><span id="avB"></span><select id="teamB" aria-label="Trade partner"></select><span class="badge" id="badgeB"></span></div>
+        <div class="pfind" data-side="B">
+          <input type="search" class="pfind-in" id="findB" placeholder="Search all players and picks in the league" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="findListB" aria-label="Search all players and picks">
+          <div class="pfind-list" id="findListB" role="listbox" hidden></div>
+        </div>
         <div class="side-filter"><label for="posB">Show</label><select id="posB"><option value="EVERY">All players and picks</option><option value="ALL">Players only</option><option value="QB">Quarterbacks</option><option value="RB">Running backs</option><option value="WR">Wide receivers</option><option value="TE">Tight ends</option><option value="PICK">Draft picks</option></select></div>
         <div class="list" id="listB"></div>
       </div>
@@ -2904,6 +2925,52 @@ function renderStandings(){
       <td class="n">${ordinal(r.power)}</td>
       <td>${r.t ? `<span class="badge ${badgeClass[r.t.status]}">${statusText[r.t.status]}</span>` : ""}</td></tr>`).join("")}</tbody>`;
   $("standNote").textContent = `${playoff ? `The green line marks the playoff cut (top ${playoff}). ` : ""}Ties go by points for. Power is Front Office's ranking of each roster's strength by player values, not wins.`;
+}
+
+// ============================================================
+// PLAYER SEARCH (calculator)
+// Type in either box to search every player and pick in the league. Picking
+// one adds it to that side of the trade and switches that side to its team.
+// ============================================================
+function findMatches(q){
+  const n = normName(q);
+  return [...S.assets.values()].filter(a => a.owner != null && a.value > 0 && (!n || normName(a.name).includes(n)))
+    .sort((a, b) => b.value - a.value).slice(0, 60);
+}
+function renderFind(side){
+  const inp = $("find" + side), list = $("findList" + side), set = side === "A" ? S.sendIds : S.getIds;
+  const items = findMatches(inp.value);
+  list.innerHTML = items.length ? items.map((a, i) => `<button type="button" class="pf-opt${set.has(a.id) ? " in" : ""}${i === 0 ? " act" : ""}" role="option" data-id="${esc(a.id)}">
+      ${assetPhoto(a, "md")}<span class="tn"><b>${esc(a.name)}</b><small>${esc([a.kind === "player" ? a.pos + (a.lgPosRank || "") : "Pick", a.kind === "player" ? a.nfl : a.nfl, a.age ? "age " + ageText(a.age) : "", S.teams.get(a.owner)?.name].filter(Boolean).join(", "))}</small></span>
+      <span class="v">${fmt(a.value)}</span></button>`).join("")
+    : `<p class="pf-empty">No players or picks match.</p>`;
+  list.hidden = false; inp.setAttribute("aria-expanded", "true");
+}
+function closeFind(side){ $("findList" + side).hidden = true; $("find" + side).setAttribute("aria-expanded", "false"); }
+function pickFound(side, id){
+  const a = S.assets.get(id); if (!a) return;
+  const sel = $(side === "A" ? "teamA" : "teamB"), set = side === "A" ? S.sendIds : S.getIds;
+  if (Number(sel.value) !== a.owner){ sel.value = a.owner; set.clear(); }   // switch this side to the player's team
+  set.has(id) ? set.delete(id) : set.add(id);
+  $("find" + side).value = ""; closeFind(side);
+  renderCalc();
+}
+for (const side of ["A", "B"]){
+  const inp = $("find" + side), list = $("findList" + side);
+  inp.addEventListener("focus", () => renderFind(side));
+  inp.addEventListener("input", () => renderFind(side));
+  inp.addEventListener("keydown", e => {
+    const opts = [...list.querySelectorAll(".pf-opt")], i = opts.findIndex(o => o.classList.contains("act"));
+    if (e.key === "ArrowDown" || e.key === "ArrowUp"){
+      e.preventDefault(); if (!opts.length) return;
+      const n = Math.max(0, Math.min(opts.length - 1, i + (e.key === "ArrowDown" ? 1 : -1)));
+      opts.forEach(o => o.classList.remove("act")); opts[n].classList.add("act"); opts[n].scrollIntoView({ block: "nearest" });
+    } else if (e.key === "Enter"){ e.preventDefault(); if (opts[i]) pickFound(side, opts[i].dataset.id); }
+    else if (e.key === "Escape"){ closeFind(side); inp.blur(); }
+  });
+  list.addEventListener("mousedown", e => e.preventDefault());   // keep focus while clicking
+  list.addEventListener("click", e => { const o = e.target.closest(".pf-opt"); if (o) pickFound(side, o.dataset.id); });
+  document.addEventListener("click", e => { if (!e.target.closest(`.pfind[data-side="${side}"]`)) closeFind(side); });
 }
 
 // ============================================================
