@@ -64,6 +64,9 @@ input[type=text],input[type=search],select{background:var(--card);border:1.5px s
 .av img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:var(--card)}
 .av .fb{width:62%;height:62%;color:var(--field)}
 .av.av-sm{width:28px;height:28px;font-size:14px}
+.av.av-xs{width:22px;height:22px;font-size:11px}
+.av.pl img{object-position:center top}
+.asset .av{flex:none}
 .av.av-md{width:34px;height:34px;font-size:15px}
 .av.av-lg{width:64px;height:64px;font-size:28px}
 .av.av-xl{width:76px;height:76px;font-size:32px}
@@ -1264,11 +1267,20 @@ const badgeClass = { contend:"b-contend", middle:"b-middle", rebuild:"b-rebuild"
 function teamAssets(rid){
   return [...S.assets.values()].filter(a => a.owner === rid && a.value > 0).sort((a,b) => b.value - a.value);
 }
+// Player headshots come from Sleeper's image server (same place the Sleeper app gets them).
+// Picks show the logo of the team the pick originally belonged to. Missing images fall back to the football icon.
+const PLAYER_IMG = pid => `https://sleepercdn.com/content/nfl/players/thumb/${encodeURIComponent(pid)}.jpg`;
+function assetPhoto(a, size){
+  if (a.kind === "player") return avatar(PLAYER_IMG(a.pid), a.name, size).replace('class="av', 'class="av pl');
+  const orig = Number(String(a.id).split("-").pop());
+  return S.teams.has(orig) ? teamPhoto(orig, size) : avatar(null, a.name, size);
+}
 function assetRow(a, sel){
   const sub = a.kind === "pick" ? a.nfl
     : [a.nfl, a.age ? "age " + a.age : "", a.lgPosRank ? a.pos + a.lgPosRank : "", a.lgRank ? "#" + a.lgRank + " overall" : ""].filter(Boolean).join(", ");
   return `<button class="asset${sel?" sel":""}" data-id="${esc(a.id)}" aria-pressed="${sel}">
     <span class="pos">${esc(a.pos)}</span>
+    ${assetPhoto(a, "md")}
     <span class="nm"><b>${esc(a.name)}</b><small>${esc(sub)}</small></span>
     <span class="val">${fmt(a.value)}</span></button>`;
 }
@@ -1300,7 +1312,7 @@ function renderCalc(){
   $("getTeam").innerHTML = tB ? `${teamPhoto(rb, true)}<span class="nm">${esc(tB.name)}</span>` : "";
   const itemsHTML = (ids, side) => [...ids].map(id => S.assets.get(id)).filter(Boolean).sort((a, b) => b.value - a.value)
     .map(a => `<button type="button" class="bitem" data-side="${side}" data-id="${esc(a.id)}" title="Remove ${esc(a.name)} from the trade">
-      <span class="bi-name">${esc(a.name)}${a.kind === "player" ? ` <small>${esc(a.pos)}</small>` : ""}</span><span class="bi-val">${fmt(a.value)}</span><span class="bi-x" aria-hidden="true">✕</span></button>`).join("");
+      ${assetPhoto(a, "xs")}<span class="bi-name">${esc(a.name)}${a.kind === "player" ? ` <small>${esc(a.pos)}</small>` : ""}</span><span class="bi-val">${fmt(a.value)}</span><span class="bi-x" aria-hidden="true">✕</span></button>`).join("");
   $("sendItems").innerHTML = itemsHTML(S.sendIds, "send");
   $("getItems").innerHTML = itemsHTML(S.getIds, "get");
   $("sendRaw").textContent = send.length > 1 ? `raw total ${fmt(send.reduce((a,b)=>a+b,0))}` : "";
