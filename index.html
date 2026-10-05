@@ -130,13 +130,29 @@ input[type=text],input[type=search],select{background:var(--card);border:1.5px s
 
 /* Scoreboard */
 .board{background:var(--ink);color:var(--paper);border-radius:14px;padding:18px 18px 16px;position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
-.board .totals{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.board .totals{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.bside{flex:1 1 0;min-width:0}
+.bteam{display:flex;align-items:center;gap:8px;margin:6px 0 4px;font-weight:600;font-size:16px;min-width:0}
+.bteam span.nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.right .bteam{justify-content:flex-end}
+.bitems{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.right .bitems{justify-content:flex-end}
+.bitem{display:inline-flex;align-items:center;gap:6px;max-width:100%;background:rgba(255,255,255,.12);color:inherit;border:0;border-radius:999px;padding:4px 10px;font-size:14px;cursor:pointer;text-align:left}
+.bitem:hover{background:rgba(255,255,255,.2)}
+.bitem .bi-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.bitem .bi-val{opacity:.7;font-variant-numeric:tabular-nums}
+.bitem .bi-x{opacity:.6;font-size:13px}
+@media (prefers-color-scheme:dark){.bitem{background:rgba(0,0,0,.08)}.bitem:hover{background:rgba(0,0,0,.14)}}
+@media (max-width:720px){.board{position:static}}
 .board .side-label{font-size:13px;opacity:.75}
 .board .num{font-family:var(--display);font-weight:800;font-size:clamp(34px,7vw,52px);line-height:1}
 .board .raw{font-size:12px;opacity:.6}
 .right{text-align:right}
 .track{position:relative;height:14px;border-radius:7px;background:rgba(255,255,255,.14);margin:12px 0 10px;overflow:hidden}
-.fill{position:absolute;top:0;bottom:0;left:0;background:var(--gold);transition:width .35s ease}
+.fill{position:absolute;top:0;bottom:0;left:0;background:var(--gold);transition:width .35s ease,background-color .25s ease}
+.fill.even{background:#3B82F6}
+.fill.win{background:#22A55A}
+.fill.lose{background:#E5484D}
 .mid{position:absolute;left:50%;top:-3px;bottom:-3px;width:2px;background:var(--paper)}
 .verdict{font-family:var(--display);font-weight:700;font-size:24px;margin:0}
 .hint{font-size:14px;opacity:.8;margin:2px 0 0}
@@ -497,8 +513,8 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
   <section class="panel on" id="panel-calc">
     <div class="board" id="board" style="display:none">
       <div class="totals">
-        <div><div class="side-label">You send</div><div class="num" id="sendNum">0</div><div class="raw" id="sendRaw"></div></div>
-        <div class="right"><div class="side-label">You get</div><div class="num" id="getNum">0</div><div class="raw" id="getRaw"></div></div>
+        <div class="bside"><div class="side-label">You send</div><div class="bteam" id="sendTeam"></div><div class="num" id="sendNum">0</div><div class="raw" id="sendRaw"></div><div class="bitems" id="sendItems"></div></div>
+        <div class="bside right"><div class="side-label">You get</div><div class="bteam" id="getTeam"></div><div class="num" id="getNum">0</div><div class="raw" id="getRaw"></div><div class="bitems" id="getItems"></div></div>
       </div>
       <div class="track" aria-hidden="true"><div class="fill" id="fill" style="width:50%"></div><div class="mid"></div></div>
       <p class="verdict" id="verdict">Tap players and picks to build a trade.</p>
@@ -1278,15 +1294,27 @@ function renderCalc(){
   const get = [...S.getIds].map(id => S.assets.get(id).value);
   const eS = eq(send), eG = eq(get);
   $("sendNum").textContent = fmt(eS); $("getNum").textContent = fmt(eG);
+  // Team name + logo on each side, and the players/picks being traded (tap one to remove it)
+  const tA = S.teams.get(ra), tB = S.teams.get(rb);
+  $("sendTeam").innerHTML = tA ? `${teamPhoto(ra, true)}<span class="nm">${esc(tA.name)}</span>` : "";
+  $("getTeam").innerHTML = tB ? `${teamPhoto(rb, true)}<span class="nm">${esc(tB.name)}</span>` : "";
+  const itemsHTML = (ids, side) => [...ids].map(id => S.assets.get(id)).filter(Boolean).sort((a, b) => b.value - a.value)
+    .map(a => `<button type="button" class="bitem" data-side="${side}" data-id="${esc(a.id)}" title="Remove ${esc(a.name)} from the trade">
+      <span class="bi-name">${esc(a.name)}${a.kind === "player" ? ` <small>${esc(a.pos)}</small>` : ""}</span><span class="bi-val">${fmt(a.value)}</span><span class="bi-x" aria-hidden="true">✕</span></button>`).join("");
+  $("sendItems").innerHTML = itemsHTML(S.sendIds, "send");
+  $("getItems").innerHTML = itemsHTML(S.getIds, "get");
   $("sendRaw").textContent = send.length > 1 ? `raw total ${fmt(send.reduce((a,b)=>a+b,0))}` : "";
   $("getRaw").textContent = get.length > 1 ? `raw total ${fmt(get.reduce((a,b)=>a+b,0))}` : "";
   const total = eS + eG;
   $("fill").style.width = (total ? (eS/total*100) : 50) + "%";
+  $("fill").className = "fill";   // gold until both sides have something
 
   const sug = $("suggest"); sug.innerHTML = "";
   if (!send.length && !get.length){ $("verdict").textContent = "Tap players and picks to build a trade."; $("hint").textContent = ""; return; }
   if (!send.length || !get.length){ $("verdict").textContent = "Add something to both sides."; $("hint").textContent = ""; return; }
   const gap = eG - eS, pct = Math.abs(gap) / Math.max(eS, eG);
+  // Bar color: blue = even, green = you win, red = you overpay
+  $("fill").classList.add(pct <= FAIR_BAND ? "even" : gap > 0 ? "win" : "lose");
   if (pct <= FAIR_BAND){ $("verdict").textContent = "Fair trade"; }
   else if (gap > 0){ $("verdict").textContent = `You win by ${fmt(gap)}`; }
   else { $("verdict").textContent = `You overpay by ${fmt(-gap)}`; }
@@ -1325,6 +1353,10 @@ function toggle(set, e){
   const id = btn.dataset.id; set.has(id) ? set.delete(id) : set.add(id); renderCalc();
 }
 $("listA").addEventListener("click", e => toggle(S.sendIds, e));
+$("board").addEventListener("click", e => {
+  const b = e.target.closest(".bitem"); if (!b) return;
+  (b.dataset.side === "send" ? S.sendIds : S.getIds).delete(b.dataset.id); renderCalc();
+});
 $("listB").addEventListener("click", e => toggle(S.getIds, e));
 $("teamA").addEventListener("change", renderCalc);
 $("teamB").addEventListener("change", renderCalc);
