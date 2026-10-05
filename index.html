@@ -401,6 +401,14 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 .board .suggest{margin-top:10px}
 .board .suggest:empty{display:none}
 
+/* Bottom row: suggestions on the left, Reset on the right */
+.brow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px}
+.brow .suggest{margin-top:0;flex:1;min-width:0}
+.reset-btn{flex:none;margin-left:auto;background:transparent;color:inherit;border:1.5px solid rgba(255,255,255,.45);border-radius:999px;padding:6px 16px;font:inherit;font-weight:600;font-size:15px;cursor:pointer}
+.reset-btn:hover{background:rgba(255,255,255,.12);border-color:#fff}
+.reset-btn:disabled{opacity:.35;cursor:default;background:transparent}
+@media (prefers-color-scheme:dark){.reset-btn{border-color:rgba(0,0,0,.35)}.reset-btn:hover{background:rgba(0,0,0,.08);border-color:#10171D}}
+
 /* Players in the trade: white panel under the verdict */
 .bplayers{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;background:var(--card);color:var(--ink);border-radius:12px;padding:10px;margin-top:12px}
 .bplayers .bitems{margin-top:0;align-content:start}
@@ -444,6 +452,10 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 
 /* All Players mode search box */
 .browse-in{width:100%;background:var(--card);border:1.5px solid var(--gold);border-radius:8px;padding:9px 12px;font:inherit;margin:0 0 8px}
+
+/* ✕ to clear a League Values search */
+.clear-f{margin-left:8px;background:var(--paper);border:1.5px solid var(--line);border-radius:999px;width:24px;height:24px;display:inline-grid;place-items:center;font-size:12px;color:var(--muted);cursor:pointer;flex:none;padding:0}
+.clear-f:hover{background:var(--loss-soft);border-color:var(--loss);color:var(--loss)}
 
 /* Trade Finder */
 .tf-top{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:14px;margin-bottom:14px;align-items:start}
@@ -736,7 +748,10 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
         <div class="bitems" id="sendItems"></div>
         <div class="bitems" id="getItems"></div>
       </div>
-      <div class="suggest" id="suggest"></div>
+      <div class="brow">
+        <div class="suggest" id="suggest"></div>
+        <button type="button" class="reset-btn" id="resetTrade">Reset</button>
+      </div>
     </div>
     <div class="sides" id="sides" style="display:none">
       <div class="side">
@@ -1642,6 +1657,7 @@ function renderCalc(){
   $("sendItems").innerHTML = itemsHTML(S.sendIds, "send") + adjRow(bonusS);
   $("getItems").innerHTML = itemsHTML(S.getIds, "get") + adjRow(bonusG);
   $("bPlayers").hidden = !S.sendIds.size && !S.getIds.size;
+  $("resetTrade").disabled = !S.sendIds.size && !S.getIds.size;
   $("sendRaw").textContent = bonusS ? `+${fmt(bonusS)} value adjustment` : "";
   $("getRaw").textContent = bonusG ? `+${fmt(bonusG)} value adjustment` : "";
   const total = eS + eG;
@@ -1696,6 +1712,7 @@ function toggle(set, e){
   const id = btn.dataset.id; set.has(id) ? set.delete(id) : set.add(id); renderCalc();
 }
 $("listA").addEventListener("click", e => browseAll.A ? browseClick("A", e) : toggle(S.sendIds, e));
+$("resetTrade").addEventListener("click", () => { S.sendIds.clear(); S.getIds.clear(); renderCalc(); });
 $("board").addEventListener("click", e => {
   const x = e.target.closest(".bi-x");
   if (x){ (x.dataset.side === "send" ? S.sendIds : S.getIds).delete(x.dataset.id); renderCalc(); return; }
@@ -1713,6 +1730,7 @@ function showInValues(id){
   if (a.owner == null) $("rosteredOnly").checked = false;
   renderValues();
   const row = $("valuesBody").querySelector(`tr[data-id="${CSS.escape(id)}"]`);
+  S.valuesHL = id;
   if (row){ row.classList.add("hl"); row.scrollIntoView({ behavior: "smooth", block: "center" }); }
 }
 $("listB").addEventListener("click", e => browseAll.B ? browseClick("B", e) : toggle(S.getIds, e));
@@ -1758,11 +1776,21 @@ function renderValues(){
     const teamHTML = a.owner != null ? `<span class="teamcell">${teamPhoto(a.owner, true)}${esc(team)}</span>` : "Free agent";
     const ch = a.market ? (a.value/a.market - 1) * 100 : 0;
     const chTxt = a.kind === "pick" || Math.abs(ch) < 1 ? "" : `<span class="${ch>0?"up":"down"}">${ch>0?"+":""}${Math.round(ch)}%</span>`;
-    return `<tr data-id="${esc(a.id)}"><td class="n">${a.kind === "player" && a.lgRank ? a.lgRank : i+1}</td><td><span class="teamcell">${assetPhoto(a, true)}${esc(a.name)}</span></td><td>${esc(a.pos)}</td><td class="n">${esc(ageText(a.age))}</td>
+    return `<tr data-id="${esc(a.id)}"${a.id === S.valuesHL ? ' class="hl"' : ""}><td class="n">${a.kind === "player" && a.lgRank ? a.lgRank : i+1}</td><td><span class="teamcell">${assetPhoto(a, true)}${esc(a.name)}${q ? `<button type="button" class="clear-f" data-clear="${esc(a.id)}" title="Clear the filter and show everyone" aria-label="Clear filter">✕</button>` : ""}</span></td><td>${esc(a.pos)}</td><td class="n">${esc(ageText(a.age))}</td>
       <td>${teamHTML}</td><td class="n big">${fmt(a.value)}</td><td class="n">${a.kind==="pick"?"":fmt(a.market)}</td><td class="n">${chTxt}</td></tr>`;
   }).join("") || `<tr><td colspan="8" class="empty">No players match. Try a different search or filter.</td></tr>`;
 }
 $("valueSearch").addEventListener("input", renderValues);
+// ✕ next to a filtered player's name: clear the search, show everyone, and keep that player in view
+$("valuesBody").addEventListener("click", e => {
+  const b = e.target.closest(".clear-f"); if (!b) return;
+  $("valueSearch").value = ""; S.posFilter = "ALL";
+  for (const x of $("posFilter").children) x.setAttribute("aria-pressed", x.dataset.pos === "ALL");
+  S.valuesHL = b.dataset.clear;
+  renderValues();
+  $("valuesBody").querySelector(`tr[data-id="${CSS.escape(b.dataset.clear)}"]`)?.scrollIntoView({ block: "center" });
+  setTimeout(() => { S.valuesHL = null; $("valuesBody").querySelector("tr.hl")?.classList.remove("hl"); }, 4000);
+});
 $("rosteredOnly").addEventListener("change", renderValues);
 $("posFilter").addEventListener("click", e => {
   const b = e.target.closest("button"); if (!b) return;
