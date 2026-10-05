@@ -392,6 +392,8 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 .lineups > div{min-width:0}
 .lu{display:flex;justify-content:space-between;gap:6px;padding:5px 0;border-bottom:1px solid var(--line);min-width:0}
 .lu span:first-child{flex:1 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lu .av{vertical-align:middle;margin-right:6px}
+.lu{align-items:center}
 .lu i{font-style:normal;color:var(--muted);font-size:12px;margin-right:5px;font-family:var(--display);font-weight:700}
 .lu b{flex:none;font-variant-numeric:tabular-nums}
 .lu.empty{color:var(--muted)}
@@ -1410,7 +1412,7 @@ function renderValues(){
     const teamHTML = a.owner != null ? `<span class="teamcell">${teamPhoto(a.owner, true)}${esc(team)}</span>` : "Free agent";
     const ch = a.market ? (a.value/a.market - 1) * 100 : 0;
     const chTxt = a.kind === "pick" || Math.abs(ch) < 1 ? "" : `<span class="${ch>0?"up":"down"}">${ch>0?"+":""}${Math.round(ch)}%</span>`;
-    return `<tr><td class="n">${i+1}</td><td>${esc(a.name)}</td><td>${esc(a.pos)}</td><td class="n">${esc(a.age||"")}</td>
+    return `<tr><td class="n">${i+1}</td><td><span class="teamcell">${assetPhoto(a, true)}${esc(a.name)}</span></td><td>${esc(a.pos)}</td><td class="n">${esc(a.age||"")}</td>
       <td>${teamHTML}</td><td class="n big">${fmt(a.value)}</td><td class="n">${a.kind==="pick"?"":fmt(a.market)}</td><td class="n">${chTxt}</td></tr>`;
   }).join("") || `<tr><td colspan="8" class="empty">No players match. Try a different search or filter.</td></tr>`;
 }
@@ -1661,6 +1663,12 @@ document.addEventListener("visibilitychange", () => { if (!document.hidden && $(
 
 // Exact fantasy points, shown with both decimal places (e.g. 1.52, 18.50) so nothing is cut off
 const ptsText = v => (Math.round(Number(v || 0) * 100) / 100).toFixed(2);
+// Headshot for a player, or the NFL team logo for team defenses (their ID is the team abbreviation)
+function scorePhoto(pid, pl){
+  const isDef = pl?.pos === "DEF" || /^[A-Z]{2,3}$/.test(pid);
+  const url = isDef ? `https://sleepercdn.com/images/team_logos/nfl/${String(pid).toLowerCase()}.png` : PLAYER_IMG(pid);
+  return avatar(url, pl?.name || "", "xs").replace('class="av', 'class="av pl');
+}
 function playerLabel(pid){
   if (!pid || pid === "0") return null;
   const p = S.sleeperPlayers?.[pid];
@@ -1713,7 +1721,7 @@ function renderScores(data, week){
     const lineup = m => (m.starters || []).map((pid, i) => {
       const pl = playerLabel(pid), sp = m.starters_points?.[i];
       const slot = slotName[slots[i]] || slots[i] || "";
-      return pl ? `<div class="lu"><span><i>${esc(slot)}</i>${esc(pl.name)}</span><b>${ptsText(sp ?? m.players_points?.[pid])}</b></div>`
+      return pl ? `<div class="lu"><span><i>${esc(slot)}</i>${scorePhoto(pid, pl)}${esc(pl.name)}</span><b>${ptsText(sp ?? m.players_points?.[pid])}</b></div>`
                 : `<div class="lu empty"><span><i>${esc(slot)}</i>Empty</span><b>0.00</b></div>`;
     }).join("");
     // Bench = everyone on the roster who isn't starting, highest scorers first
@@ -1724,7 +1732,7 @@ function renderScores(data, week){
         .filter(x => x.pl).sort((a, b) => b.p - a.p);
     };
     const bench = m => { const b = benchOf(m);
-      return b.length ? b.map(x => `<div class="lu"><span><i>${esc(x.pl.pos || "BN")}</i>${esc(x.pl.name)}</span><b>${ptsText(x.p)}</b></div>`).join("")
+      return b.length ? b.map(x => `<div class="lu"><span><i>${esc(x.pl.pos || "BN")}</i>${scorePhoto(x.pid, x.pl)}${esc(x.pl.name)}</span><b>${ptsText(x.p)}</b></div>`).join("")
         + `<div class="lu total"><span>Bench total</span><b>${ptsText(b.reduce((s, x) => s + x.p, 0))}</b></div>`
         : `<div class="lu empty"><span>No bench players</span><b></b></div>`; };
     return `<article class="mu${mine ? " mine" : ""}">${mine ? `<div class="mu-tag">Your matchup</div>` : ""}
