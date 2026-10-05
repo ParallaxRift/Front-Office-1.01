@@ -367,7 +367,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 .board{padding:13px 14px 12px}
 .board .side-label{font-size:14px}
 .board .num{font-size:clamp(26px,5.25vw,39px)}
-.board .raw{font-size:11px;min-height:13px}
+.board .raw{font-family:var(--display);font-weight:700;font-size:clamp(19px,3.6vw,27px);line-height:1.15;min-height:0;opacity:.85}
 .board .track{height:10px;margin:9px 0 8px}
 .board .verdict{font-size:25px}
 .board .hint{font-size:15.5px}
@@ -1632,8 +1632,8 @@ function renderCalc(){
   $("sendItems").innerHTML = itemsHTML(S.sendIds, "send") + adjRow(bonusS);
   $("getItems").innerHTML = itemsHTML(S.getIds, "get") + adjRow(bonusG);
   $("bPlayers").hidden = !S.sendIds.size && !S.getIds.size;
-  $("sendRaw").textContent = bonusS ? `includes +${fmt(bonusS)} value adjustment` : "";
-  $("getRaw").textContent = bonusG ? `includes +${fmt(bonusG)} value adjustment` : "";
+  $("sendRaw").textContent = bonusS ? `+${fmt(bonusS)} value adjustment` : "";
+  $("getRaw").textContent = bonusG ? `+${fmt(bonusG)} value adjustment` : "";
   const total = eS + eG;
   $("fill").style.width = (total ? (eS/total*100) : 50) + "%";
   $("fill").className = "fill";   // gold until both sides have something
