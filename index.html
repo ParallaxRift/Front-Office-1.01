@@ -435,6 +435,13 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 #getItems .bi-text{align-items:flex-end}
 @media (max-width:600px){#getItems .bitem,#getItems .bi-link{flex-direction:row;text-align:left}#getItems .bi-text{align-items:flex-start}}
 
+/* Value adjustment line under the last player */
+.badj{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1.5px dashed var(--field);border-radius:10px;padding:7px 12px;color:var(--field);font-weight:600;font-size:15px}
+.badj b{font-family:var(--display);font-weight:800;font-size:17px;margin-right:33px}   /* lines up with the player values above */
+#getItems .badj{flex-direction:row-reverse}
+#getItems .badj b{margin-right:0;margin-left:33px}
+@media (max-width:600px){#getItems .badj{flex-direction:row}#getItems .badj b{margin-left:0;margin-right:33px}}
+
 /* Trade Finder */
 .tf-top{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:14px;margin-bottom:14px;align-items:start}
 @media (max-width:760px){.tf-top{grid-template-columns:1fr}}
@@ -972,7 +979,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
   <p>Team Strategy uses the same history to show each team's trade record by today's values, their most frequent trade partner, managers who have traded away several of their own picks, and managers who tend to come out behind.</p>
 
   <h2>How trades are scored</h2>
-  <p>Several lesser pieces never add up to one difference-maker, so the calculator applies a <b>value adjustment</b> before comparing the two sides:</p>
+  <p>Several lesser pieces never add up to one difference-maker, so the calculator adds a <b>value adjustment</b>. No player's value is ever reduced. Instead, the side giving up fewer, better pieces gets a bonus added to its total, shown as its own line under that side's players. The bonus is the difference worked out like this:</p>
   <ul>
     <li><b>Each side's best piece counts in full.</b></li>
     <li><b>Every extra piece is discounted</b> by how far it falls below the best piece in the whole trade. A piece half as valuable counts about 80%, a quarter as valuable about 66%, and a tenth about 55%.</li>
@@ -1599,7 +1606,14 @@ function renderCalc(){
 
   const send = [...S.sendIds].map(id => S.assets.get(id).value);
   const get = [...S.getIds].map(id => S.assets.get(id).value);
-  const eS = tradeValue(send, get), eG = tradeValue(get, send);   // adjusted for depth and roster spots
+  // Value adjustment, shown KeepTradeCut-style: nobody's players lose value. Instead, the side with
+  // the fewer, better pieces gets a bonus added on top, worth the difference the depth/roster-spot
+  // math finds. (The comparison comes out exactly the same as discounting the other side.)
+  const rawS = send.reduce((a, b) => a + b, 0), rawG = get.reduce((a, b) => a + b, 0);
+  const both = send.length && get.length;
+  const adjDiff = both ? (rawG - tradeValue(get, send)) - (rawS - tradeValue(send, get)) : 0;
+  const bonusS = Math.max(0, Math.round(adjDiff)), bonusG = Math.max(0, Math.round(-adjDiff));
+  const eS = rawS + bonusS, eG = rawG + bonusG;
   $("sendNum").textContent = fmt(eS); $("getNum").textContent = fmt(eG);
   // Team name + logo on each side, and the players/picks being traded (tap one to remove it)
   const tA = S.teams.get(ra), tB = S.teams.get(rb);
@@ -1614,11 +1628,12 @@ function renderCalc(){
         <span class="bi-val">${fmt(a.value)}</span>
         <button type="button" class="bi-x" data-side="${side}" data-id="${esc(a.id)}" aria-label="Remove ${esc(a.name)} from the trade">✕</button></div>`;
     }).join("");
-  $("sendItems").innerHTML = itemsHTML(S.sendIds, "send");
-  $("getItems").innerHTML = itemsHTML(S.getIds, "get");
+  const adjRow = n => n >= 1 ? `<div class="badj"><span>Value adjustment</span><b>+${fmt(n)}</b></div>` : "";
+  $("sendItems").innerHTML = itemsHTML(S.sendIds, "send") + adjRow(bonusS);
+  $("getItems").innerHTML = itemsHTML(S.getIds, "get") + adjRow(bonusG);
   $("bPlayers").hidden = !S.sendIds.size && !S.getIds.size;
-  $("sendRaw").textContent = send.length > 1 ? `raw total ${fmt(send.reduce((a,b)=>a+b,0))}` : "";
-  $("getRaw").textContent = get.length > 1 ? `raw total ${fmt(get.reduce((a,b)=>a+b,0))}` : "";
+  $("sendRaw").textContent = bonusS ? `includes +${fmt(bonusS)} value adjustment` : "";
+  $("getRaw").textContent = bonusG ? `includes +${fmt(bonusG)} value adjustment` : "";
   const total = eS + eG;
   $("fill").style.width = (total ? (eS/total*100) : 50) + "%";
   $("fill").className = "fill";   // gold until both sides have something
@@ -1641,10 +1656,9 @@ function renderCalc(){
   if (me.status === "rebuild" && (getPicks || getYoung)) hint = "Picks and young players fit your rebuild.";
   else if (me.status === "contend" && (getPicks || getYoung) && !(gap > 0)) hint = "You're contending, so trading proven players for futures could hurt this season.";
   // Explain the value adjustment when it changes the picture noticeably
-  const rawS = send.reduce((a, b) => a + b, 0), rawG = get.reduce((a, b) => a + b, 0);
-  const many = get.length > send.length ? ["You get", get.length, send.length, rawG, eG] : send.length > get.length ? ["They get", send.length, get.length, rawS, eS] : null;
-  if (many && many[3] - many[4] > 0.08 * many[3])
-    hint = (hint ? hint + " " : "") + `Value adjustment: ${many[1]} pieces for ${many[2]} counts ${fmt(many[3] - many[4])} less than the raw total, because depth pieces don't add up to a difference-maker and take roster spots.`;
+  const bonus = Math.max(bonusS, bonusG);
+  if (bonus > 0.05 * Math.max(rawS, rawG))
+    hint = (hint ? hint + " " : "") + `The ${bonusS ? "side you send" : "side you get"} gets a +${fmt(bonus)} value adjustment, because one difference-maker is worth more than several smaller pieces that take up roster spots.`;
   $("hint").textContent = hint;
 
   // suggest assets to even it out
