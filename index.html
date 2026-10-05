@@ -65,6 +65,8 @@ input[type=text],input[type=search],select{background:var(--card);border:1.5px s
 .av .fb{width:62%;height:62%;color:var(--field)}
 .av.av-sm{width:28px;height:28px;font-size:14px}
 .av.av-xs{width:22px;height:22px;font-size:11px}
+.av.av-row{width:46px;height:46px;font-size:20px}
+.av.av-trade{width:48px;height:48px;font-size:20px}
 .av.pl img{object-position:center top}
 .asset .av{flex:none}
 .av.av-md{width:34px;height:34px;font-size:15px}
@@ -138,14 +140,28 @@ input[type=text],input[type=search],select{background:var(--card);border:1.5px s
 .bteam{display:flex;align-items:center;gap:8px;margin:6px 0 4px;font-weight:600;font-size:16px;min-width:0}
 .bteam span.nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .right .bteam{justify-content:flex-end}
-.bitems{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
-.right .bitems{justify-content:flex-end}
-.bitem{display:inline-flex;align-items:center;gap:6px;max-width:100%;background:rgba(255,255,255,.12);color:inherit;border:0;border-radius:999px;padding:4px 10px;font-size:14px;cursor:pointer;text-align:left}
-.bitem:hover{background:rgba(255,255,255,.2)}
-.bitem .bi-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
-.bitem .bi-val{opacity:.7;font-variant-numeric:tabular-nums}
-.bitem .bi-x{opacity:.6;font-size:13px}
-@media (prefers-color-scheme:dark){.bitem{background:rgba(0,0,0,.08)}.bitem:hover{background:rgba(0,0,0,.14)}}
+.bitems{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.bitems:empty{display:none}
+.bitem{display:flex;align-items:center;gap:12px;width:100%;background:rgba(255,255,255,.08);color:inherit;border:0;border-radius:12px;padding:8px 12px 8px 8px;cursor:pointer;text-align:left}
+.bitem:hover{background:rgba(255,255,255,.15)}
+.bitem .av{flex:none;background:rgba(255,255,255,.9)}
+.bitem .bi-text{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.bitem .bi-text b{font-size:17px;font-weight:700;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bitem .bi-text small{font-size:13px;opacity:.7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bitem .bi-val{font-family:var(--display);font-weight:800;font-size:20px;font-variant-numeric:tabular-nums}
+.bitem .bi-x{opacity:.55;font-size:14px;padding-left:2px}
+.bitem:hover .bi-x{opacity:1}
+.right .bitem{text-align:left}
+.board .raw{min-height:17px}
+@media (max-width:600px){
+  .board .totals{flex-direction:column;align-items:stretch;gap:16px}
+  .bside{flex:none}
+  .board .bside.right{text-align:left}
+  .right .bteam{justify-content:flex-start}
+  .bside + .bside{padding-top:14px;border-top:1px solid rgba(255,255,255,.12)}
+}
+@media (max-width:600px) and (prefers-color-scheme:dark){.bside + .bside{border-top-color:rgba(0,0,0,.12)}}
+@media (prefers-color-scheme:dark){.bitem{background:rgba(0,0,0,.06)}.bitem:hover{background:rgba(0,0,0,.12)}.bitem .av{background:#fff}}
 @media (max-width:720px){.board{position:static}}
 .board .side-label{font-size:13px;opacity:.75}
 .board .num{font-family:var(--display);font-weight:800;font-size:clamp(34px,7vw,52px);line-height:1}
@@ -1282,7 +1298,7 @@ function assetRow(a, sel){
     : [a.nfl, a.age ? "age " + a.age : "", a.lgPosRank ? a.pos + a.lgPosRank : "", a.lgRank ? "#" + a.lgRank + " overall" : ""].filter(Boolean).join(", ");
   return `<button class="asset${sel?" sel":""}" data-id="${esc(a.id)}" aria-pressed="${sel}">
     <span class="pos">${esc(a.pos)}</span>
-    ${assetPhoto(a, "md")}
+    ${assetPhoto(a, "row")}
     <span class="nm"><b>${esc(a.name)}</b><small>${esc(sub)}</small></span>
     <span class="val">${fmt(a.value)}</span></button>`;
 }
@@ -1313,8 +1329,13 @@ function renderCalc(){
   $("sendTeam").innerHTML = tA ? `${teamPhoto(ra, true)}<span class="nm">${esc(tA.name)}</span>` : "";
   $("getTeam").innerHTML = tB ? `${teamPhoto(rb, true)}<span class="nm">${esc(tB.name)}</span>` : "";
   const itemsHTML = (ids, side) => [...ids].map(id => S.assets.get(id)).filter(Boolean).sort((a, b) => b.value - a.value)
-    .map(a => `<button type="button" class="bitem" data-side="${side}" data-id="${esc(a.id)}" title="Remove ${esc(a.name)} from the trade">
-      ${assetPhoto(a, "xs")}<span class="bi-name">${esc(a.name)}${a.kind === "player" ? ` <small>${esc(a.pos)}</small>` : ""}</span><span class="bi-val">${fmt(a.value)}</span><span class="bi-x" aria-hidden="true">✕</span></button>`).join("");
+    .map(a => {
+      const sub = a.kind === "player" ? [a.pos, a.nfl, a.age ? "age " + a.age : ""].filter(Boolean).join(", ") : a.nfl;
+      return `<button type="button" class="bitem" data-side="${side}" data-id="${esc(a.id)}" aria-label="Remove ${esc(a.name)} from the trade">
+        ${assetPhoto(a, "trade")}
+        <span class="bi-text"><b>${esc(a.name)}</b><small>${esc(sub)}</small></span>
+        <span class="bi-val">${fmt(a.value)}</span><span class="bi-x" aria-hidden="true">✕</span></button>`;
+    }).join("");
   $("sendItems").innerHTML = itemsHTML(S.sendIds, "send");
   $("getItems").innerHTML = itemsHTML(S.getIds, "get");
   $("sendRaw").textContent = send.length > 1 ? `raw total ${fmt(send.reduce((a,b)=>a+b,0))}` : "";
