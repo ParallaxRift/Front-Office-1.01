@@ -798,7 +798,8 @@ function renderLeagueList(){
   $("step2").classList.remove("off");
 }
 
-async function loadUser(){
+async function loadUser(opts){
+  const auto = opts && opts.auto === true;   // true only when reopening the site
   const name = $("username").value.trim();
   if (!name){ setStatus("Enter your Sleeper username to find your leagues.", true); $("username").focus(); return; }
   $("loadUser").disabled = true; $("loadUser").textContent = "Finding...";
@@ -822,6 +823,12 @@ async function loadUser(){
     $("userForm").hidden = true; $("userChip").hidden = false;
     if (!S.leagues.length){ setStatus(`${user.display_name || name} isn't in any Sleeper leagues this season.`, true); return; }
     renderLeagueList();
+    // Reopen the league you were last in, if it's still one of yours this season
+    const last = store.get("tr_league");
+    if (auto && last && S.leagues.some(l => l.league_id === last)){
+      setStatus("Opening your last league...");
+      openLeague(last);
+    }
   } catch(err){
     setStatus(err.message === "NOUSER"
       ? `No Sleeper account named "${name}". Usernames are case-sensitive in some apps, so check the spelling in your Sleeper profile.`
@@ -872,8 +879,13 @@ async function openLeague(leagueId){
 
     store.set("tr_league", leagueId);
     $("whoMini").innerHTML = `${avatar(league.avatar, league.name, true)}<span class="nm">${esc(league.name)}</span>${teamPhoto(S.myRid, true)}`;
+    // Return to the tab you were last on
+    const lastTab = store.get("tr_tab");
+    const tabBtn = lastTab && $("tabs").querySelector(`[data-tab="${lastTab}"]`);
+    if (tabBtn && tabBtn.getAttribute("aria-selected") !== "true") tabBtn.click();
     setTimeout(() => {
       $("connect").hidden = true; $("appbar").hidden = false; $("progress").hidden = true;
+      setStatus("");
       window.scrollTo({ top: 0 });
     }, 350);
   } catch(err){
@@ -887,7 +899,7 @@ async function openLeague(leagueId){
 
 // Pick up where you left off
 const savedName = store.get("tr_username");
-if (savedName){ $("username").value = savedName; loadUser(); }
+if (savedName){ $("username").value = savedName; loadUser({ auto: true }); }
 
 // ============================================================
 // STEP 3: MARKET (BASE) VALUES
@@ -2151,6 +2163,7 @@ $("tabs").addEventListener("click", e => {
   for (const name of ["calc","history","feedback","scores","values","settings","strategy"]) $("panel-"+name).classList.toggle("on", b.dataset.tab === name);
   if (b.dataset.tab === "scores") loadScores();
   if (b.dataset.tab === "feedback") loadFeedback();
+  store.set("tr_tab", b.dataset.tab);
 });
 
 // ============================================================
