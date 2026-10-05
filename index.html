@@ -177,7 +177,7 @@ input[type=text],input[type=search],select{background:var(--card);border:1.5px s
 .board .raw{font-size:12px;opacity:.6}
 .right{text-align:right}
 .track{position:relative;height:14px;border-radius:7px;background:rgba(255,255,255,.14);margin:12px 0 10px;overflow:hidden}
-.fill{position:absolute;top:0;bottom:0;left:0;background:var(--field);transition:width .35s ease,background-color .25s ease}
+.fill{position:absolute;top:0;bottom:0;left:0;background:#9AA3AB;transition:width .35s ease,background-color .25s ease}
 .fill.even{background:#3B82F6}
 .fill.win{background:#22A55A}
 .fill.lose{background:#E5484D}
@@ -304,6 +304,10 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 .titem:last-child{border-bottom:0}
 .titem .tn{min-width:0}
 .titem .tn small{display:block;color:var(--muted);font-size:12px}
+.titem .tn small.used{color:var(--field);font-weight:600}
+.titem{align-items:center}
+.titem .av{flex:none;margin-right:8px}
+.titem .tn{flex:1}
 .titem .tv{font-family:var(--display);font-weight:700;font-size:17px;white-space:nowrap}
 .ttotal{display:flex;justify-content:space-between;margin-top:8px;font-weight:600}
 .ttotal span:last-child{font-family:var(--display);font-size:20px;font-weight:800}
@@ -346,15 +350,14 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 @media (prefers-color-scheme:dark){.toast{background:#E8EDE9;color:#10171D}}
 
 /* The Basics / Freakshow toggle */
-.modebar{position:relative;display:flex;align-items:center;margin:0 auto 0 14px;flex:none}
+.modebar{position:relative;display:flex;flex-direction:column;align-items:flex-end;margin:0 0 0 auto;flex:none}
 /* compact toggle beside the Front Office name */
-.appbar .mode-toggle{padding:2px}
-.appbar .mode-toggle button{font-size:14px;padding:4px 12px}
-.appbar .mode-note{display:none}
+.modebar .mode-toggle{padding:2px}
+.modebar .mode-toggle button{font-size:14px;padding:4px 12px}
 .modebar[hidden]{display:none}
 /* the note hangs below the toggle so the toggle itself lines up with the league name */
 .mode-note{position:absolute;top:100%;right:4px;margin-top:5px;white-space:nowrap;text-align:right}
-@media (max-width:640px){.appbar .modebar{order:3;margin:2px 0 0;width:100%}.appbar .mode-toggle button{font-size:13px;padding:4px 10px}}
+@media (max-width:640px){.leaguehead{flex-wrap:wrap}.leaguehead > div:not(.modebar){flex:1 1 0;min-width:0}.modebar{margin:6px 0 0;align-items:flex-start;width:100%;gap:5px}.mode-note{position:static;margin:0;text-align:left;white-space:normal}}
 .mode-toggle{display:inline-flex;background:var(--card);border:1.5px solid var(--line);border-radius:999px;padding:3px}
 .mode-toggle button{border:0;background:none;border-radius:999px;padding:7px 16px;font-family:var(--display);font-weight:700;font-size:17px;color:var(--muted);cursor:pointer;transition:background .2s,color .2s}
 .mode-toggle button[aria-checked=true]{background:var(--field);color:#fff}
@@ -517,7 +520,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 .hs-lead b{font-family:var(--display);font-size:17px}
 
 /* League settings button (football icon), under your team name */
-.settings-row{margin-top:6px}
+.champ-col{display:inline-flex;flex-direction:column;align-items:flex-start;gap:5px}
 .settings-btn{display:inline-flex;align-items:center;gap:6px;background:var(--card);border:1.5px solid var(--line);border-radius:999px;padding:3px 11px 3px 6px;font-weight:600;font-size:13px;line-height:1.4;color:var(--ink);cursor:pointer;white-space:nowrap}
 .settings-btn .fb{width:17px;height:17px;color:var(--field);display:block}
 .settings-btn:hover{border-color:var(--field);color:var(--field)}
@@ -745,13 +748,6 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
   <path d="M44 25v14" stroke="#D99A1E" stroke-width="2.3" stroke-linecap="round"/>
   <path d="M40.8 28h6.4M40.8 32h6.4M40.8 36h6.4" stroke="#D99A1E" stroke-width="2" stroke-linecap="round"/>
 </svg><span>Front Office</span></span>
-    <div class="modebar" id="modeBar" hidden>
-        <div class="mode-toggle" id="modeToggle" role="radiogroup" aria-label="How much to show" title="The Basics: just the trade calculator and player values. Freakshow: every tool.">
-          <button type="button" role="radio" data-mode="basics" aria-checked="false">The Basics</button>
-          <button type="button" role="radio" data-mode="freak" aria-checked="true">Freakshow</button>
-        </div>
-        <span class="mode-note" id="modeNote"></span>
-      </div>
     <div class="appbar-r">
       <span class="who" id="whoMini"></span>
       <button class="ghost" id="switchLeague">Switch league</button>
@@ -799,7 +795,14 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
   </section>
 
   <section class="leaguebar" id="leagueBar">
-    <div class="leaguehead"><span id="leagueAv"></span><div><div class="lname-row"><h2 id="leagueName"></h2><span id="champSlot"></span></div><small id="myTeamLine"></small><div class="settings-row"><button type="button" class="settings-btn" id="settingsBtn" aria-pressed="false" aria-controls="panel-settings"><span id="settingsIcon"></span>League settings</button></div></div>
+    <div class="leaguehead"><span id="leagueAv"></span><div><div class="lname-row"><h2 id="leagueName"></h2><span class="champ-col"><span id="champSlot"></span><button type="button" class="settings-btn" id="settingsBtn" aria-pressed="false" aria-controls="panel-settings"><span id="settingsIcon"></span>League settings</button></span></div><small id="myTeamLine"></small></div>
+      <div class="modebar" id="modeBar" hidden>
+        <div class="mode-toggle" id="modeToggle" role="radiogroup" aria-label="How much to show" title="The Basics: just the trade calculator and player values. Freakshow: every tool.">
+          <button type="button" role="radio" data-mode="basics" aria-checked="false">The Basics</button>
+          <button type="button" role="radio" data-mode="freak" aria-checked="true">Freakshow</button>
+        </div>
+        <span class="mode-note" id="modeNote"></span>
+      </div>
 </div>
     <div class="chips" id="chips"></div>
     <p class="source" id="source" hidden></p>
@@ -2355,7 +2358,7 @@ async function loadHistory(league){
       const slotMap = d.slot_to_roster_id || {};
       for (const pk of ps || []){
         const orig = slotMap[pk.draft_slot];
-        if (orig != null && pk.player_id) pickResult.set(`${d.season}-${pk.round}-${orig}`, pk.player_id);
+        if (orig != null && pk.player_id) pickResult.set(`${d.season}-${pk.round}-${orig}`, { pid: pk.player_id, slot: pk.draft_slot, no: pk.pick_no });
       }
     }
 
@@ -2410,16 +2413,19 @@ function valueItem(it){
   if (it.kind === "player"){
     const a = S.assets.get("p:" + it.pid), p = S.sleeperPlayers?.[it.pid] || {};
     const name = a?.name || p.full_name || `${p.first_name||""} ${p.last_name||""}`.trim() || "Unknown player";
-    return { name, pos: a?.pos || p.position || "", value: a?.value || 0, sub: a ? `${a.pos}, ${a.nfl}` : (p.position || "No longer rostered") , cat: a?.pos || p.position };
+    return { photoPid: it.pid, name, pos: a?.pos || p.position || "", value: a?.value || 0, sub: a ? `${a.pos}, ${a.nfl}` : (p.position || "No longer rostered") , cat: a?.pos || p.position };
   }
   const label = `${it.season} Round ${it.round} pick`;
   const live = S.assets.get(`k:${it.season}-${it.round}-${it.orig}`);
   if (live) return { name: live.name, pos: "PICK", value: live.value, sub: "Pick still to be made", cat: "PICK" };
-  const pid = S.history?.pickResult.get(`${it.season}-${it.round}-${it.orig}`);
-  if (pid){
+  const used = S.history?.pickResult.get(`${it.season}-${it.round}-${it.orig}`);
+  if (used){
+    const pid = used.pid || used;   // older format stored just the id
     const a = S.assets.get("p:" + pid), p = S.sleeperPlayers?.[pid] || {};
-    const pname = a?.name || p.full_name || "a player";
-    return { name: label, pos: "PICK", value: a?.value || 0, sub: `Became ${pname}`, cat: "PICK" };
+    const pname = a?.name || p.full_name || `${p.first_name || ""} ${p.last_name || ""}`.trim() || "a player";
+    const slotTxt = used.slot ? `${it.season} Pick ${it.round}.${String(used.slot).padStart(2, "0")}` : label;
+    const detail = [a?.pos || p.position, a?.nfl || p.team].filter(Boolean).join(", ");
+    return { name: slotTxt, pos: "PICK", value: a?.value || 0, sub: `Used on ${pname}${detail ? " (" + detail + ")" : ""}`, cat: "PICK", photoPid: pid, usedOn: pname };
   }
   const teams = S.cfg?.teams || 12;
   const est = 7000 * Math.exp(-0.06 * (((it.round-1)*teams + (teams+1)/2 - 1) * 12/teams)) * (S.nudge ? S.nudge.PICK : 1);
@@ -2599,7 +2605,7 @@ function renderHistory(){
       <div class="trade-sides">${sides.map(x => `
         <div class="tside${team !== "all" && x.owner === team ? " focus" : ""}">
           <div class="tside-head">${avatar(x.photo, x.name, "md")}<span class="nm"><b>${esc(x.name)}</b><small>Received</small></span>${tagFor(x)}</div>
-          ${x.items.map(i => `<div class="titem"><span class="tn">${esc(i.name)}<small>${esc(i.sub)}</small></span><span class="tv">${fmt(i.value)}</span></div>`).join("") || `<div class="titem"><span class="tn">Nothing but FAAB</span></div>`}
+          ${x.items.map(i => `<div class="titem">${i.photoPid ? avatar(PLAYER_IMG(i.photoPid), i.usedOn || i.name, "sm").replace('class="av', 'class="av pl') : ""}<span class="tn">${esc(i.name)}<small class="${i.usedOn ? "used" : ""}">${esc(i.sub)}</small></span><span class="tv">${fmt(i.value)}</span></div>`).join("") || `<div class="titem"><span class="tn">Nothing but FAAB</span></div>`}
           ${x.faab ? `<div class="titem"><span class="tn">$${x.faab} FAAB<small>Not valued</small></span><span class="tv">–</span></div>` : ""}
           <div class="ttotal"><span>Received, value today</span><span>${fmt(x.total)}</span></div>
           <div class="ttotal gave"><span>Gave up, value today</span><span>${fmt(x.sentTotal)}</span></div>
