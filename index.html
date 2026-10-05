@@ -333,6 +333,16 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 .toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:999px;font-size:14px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.2);z-index:50;max-width:calc(100% - 32px)}
 @media (prefers-color-scheme:dark){.toast{background:#E8EDE9;color:#10171D}}
 
+/* The Basics / Freakshow toggle */
+.modebar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin:18px 0 0}
+.mode-toggle{display:inline-flex;background:var(--card);border:1.5px solid var(--line);border-radius:999px;padding:3px}
+.mode-toggle button{border:0;background:none;border-radius:999px;padding:7px 16px;font-family:var(--display);font-weight:700;font-size:17px;color:var(--muted);cursor:pointer;transition:background .2s,color .2s}
+.mode-toggle button[aria-checked=true]{background:var(--field);color:#fff}
+.mode-toggle button[data-mode=freak][aria-checked=true]{background:var(--ink);color:var(--gold)}
+.mode-note{font-size:14px;color:var(--muted)}
+.tabs + .panel, .modebar + .tabs{margin-top:10px}
+@media (prefers-reduced-motion:reduce){.mode-toggle button{transition:none}}
+
 /* Build notes */
 .notes{margin-top:18px}
 .notes-head{display:flex;align-items:center;gap:10px;margin-bottom:4px}
@@ -523,6 +533,13 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
     <p class="source" id="source"></p>
   </section>
 
+  <div class="modebar" id="modeBar" hidden>
+    <div class="mode-toggle" id="modeToggle" role="radiogroup" aria-label="How much to show">
+      <button type="button" role="radio" data-mode="basics" aria-checked="false">The Basics</button>
+      <button type="button" role="radio" data-mode="freak" aria-checked="true">Freakshow</button>
+    </div>
+    <span class="mode-note" id="modeNote"></span>
+  </div>
   <div class="tabs" id="tabs" role="tablist">
     <button class="tab" role="tab" aria-selected="true" data-tab="calc">Trade Calculator</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="values">League Values</button>
@@ -965,7 +982,7 @@ async function openLeague(leagueId){
     // Return to the tab you were last on
     const lastTab = store.get("tr_tab");
     const tabBtn = lastTab && $("tabs").querySelector(`[data-tab="${lastTab}"]`);
-    if (tabBtn && tabBtn.getAttribute("aria-selected") !== "true") tabBtn.click();
+    if (tabBtn && !tabBtn.hidden && tabBtn.getAttribute("aria-selected") !== "true") tabBtn.click();
     setTimeout(() => {
       $("connect").hidden = true; $("appbar").hidden = false; $("progress").hidden = true;
       setStatus("");
@@ -1219,6 +1236,7 @@ function renderLeague(){
   const c = S.cfg;
   $("leagueBar").style.display = "block";
   $("tabs").style.display = "flex";
+  $("modeBar").hidden = false; applyMode(currentMode(), true);
   $("leagueName").textContent = S.league.name;
   $("leagueAv").innerHTML = avatar(S.league.avatar, S.league.name, "lg");
   const myT = S.teams.get(S.myRid);
@@ -2113,6 +2131,33 @@ function historyInsightsHTML(rid){
   if (giver) lines.push(`${nameOf(giver[0])} has come out behind in ${giver[1]} of ${trades[giver[0]]} trades by today's values. Worth checking in with.`);
   return `<div class="box"><h3>From your league's trade history</h3><ul class="moves">${lines.map(l => `<li>${esc(l)}</li>`).join("")}</ul></div>`;
 }
+
+// ============================================================
+// THE BASICS / FREAKSHOW
+// The Basics shows only the Trade Calculator and League Values, for newer
+// players. Freakshow shows every tab. The choice is remembered per device.
+// ============================================================
+const BASIC_TABS = ["calc", "values"];
+const currentMode = () => store.get("fo_mode") === "basics" ? "basics" : "freak";
+function applyMode(mode, quiet){
+  store.set("fo_mode", mode);
+  for (const b of $("modeToggle").children) b.setAttribute("aria-checked", b.dataset.mode === mode);
+  for (const t of $("tabs").children) t.hidden = mode === "basics" && !BASIC_TABS.includes(t.dataset.tab);
+  $("modeNote").textContent = mode === "basics" ? "Just the trade calculator and league values." : "Every tool Front Office has.";
+  // If the open tab just got hidden, go back to the calculator
+  const open = $("tabs").querySelector('.tab[aria-selected="true"]');
+  if (open && open.hidden) $("tabs").querySelector('[data-tab="calc"]').click();
+}
+$("modeToggle").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  applyMode(b.dataset.mode);
+});
+$("modeToggle").addEventListener("keydown", e => {
+  if (!["ArrowLeft","ArrowRight"].includes(e.key)) return;
+  e.preventDefault();
+  const next = currentMode() === "basics" ? "freak" : "basics";
+  applyMode(next); $("modeToggle").querySelector(`[data-mode="${next}"]`).focus();
+});
 
 // ============================================================
 // AUTO REFRESH
