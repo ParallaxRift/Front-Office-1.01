@@ -350,13 +350,14 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 @media (prefers-color-scheme:dark){.toast{background:#E8EDE9;color:#10171D}}
 
 /* The Basics / Freakshow toggle */
-.modebar{position:relative;display:flex;flex-direction:column;align-items:flex-end;margin:0 0 0 auto;flex:none}
+.modebar{position:relative;display:flex;flex-direction:column;align-items:flex-end;gap:6px;margin:0 0 0 auto;flex:none}
 /* compact toggle beside the Front Office name */
 .modebar .mode-toggle{padding:2px}
 .modebar .mode-toggle button{font-size:14px;padding:4px 12px}
 .modebar[hidden]{display:none}
 /* the note hangs below the toggle so the toggle itself lines up with the league name */
 .mode-note{position:absolute;top:100%;right:4px;margin-top:5px;white-space:nowrap;text-align:right}
+@media (min-width:641px){.leaguehead{margin-bottom:20px}}   /* room for the note under the toggle */
 @media (max-width:640px){.leaguehead{flex-wrap:wrap}.leaguehead > div:not(.modebar){flex:1 1 0;min-width:0}.modebar{margin:6px 0 0;align-items:flex-start;width:100%;gap:5px}.mode-note{position:static;margin:0;text-align:left;white-space:normal}}
 .mode-toggle{display:inline-flex;background:var(--card);border:1.5px solid var(--line);border-radius:999px;padding:3px}
 .mode-toggle button{border:0;background:none;border-radius:999px;padding:7px 16px;font-family:var(--display);font-weight:700;font-size:17px;color:var(--muted);cursor:pointer;transition:background .2s,color .2s}
@@ -844,8 +845,9 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
   </section>
 
   <section class="leaguebar" id="leagueBar">
-    <div class="leaguehead"><span id="leagueAv"></span><div><div class="lname-row"><h2 id="leagueName"></h2><span class="champ-col"><span id="champSlot"></span><button type="button" class="settings-btn" id="settingsBtn" aria-pressed="false" aria-controls="panel-settings"><span id="settingsIcon"></span>League settings</button></span></div><small id="myTeamLine"></small></div>
+    <div class="leaguehead"><span id="leagueAv"></span><div><div class="lname-row"><h2 id="leagueName"></h2><span class="champ-col"><span id="champSlot"></span></span></div><small id="myTeamLine"></small></div>
       <div class="modebar" id="modeBar" hidden>
+        <button type="button" class="settings-btn" id="settingsBtn" aria-pressed="false" aria-controls="panel-settings"><span id="settingsIcon"></span>League settings</button>
         <div class="mode-toggle" id="modeToggle" role="radiogroup" aria-label="How much to show" title="The Basics: just the trade calculator and player values. Freakshow: every tool.">
           <button type="button" role="radio" data-mode="basics" aria-checked="false">The Basics</button>
           <button type="button" role="radio" data-mode="freak" aria-checked="true">Freakshow</button>
@@ -940,6 +942,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
       <p class="note" style="margin:0 0 10px">Tap a column to sort. Tap a team to see only its trades.</p>
       <div class="tablewrap"><table id="histTable"></table></div>
     </div>
+    <h3 class="sec-h" style="margin-top:6px">Trade Log</h3>
     <div class="hfilters">
       <div class="field"><label for="histTeam">Team</label><select id="histTeam"></select></div>
       <div class="field"><label for="histResult">Result for that team</label><select id="histResult">
