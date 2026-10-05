@@ -457,6 +457,20 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 .clear-f{margin-left:8px;background:var(--paper);border:1.5px solid var(--line);border-radius:999px;width:24px;height:24px;display:inline-grid;place-items:center;font-size:12px;color:var(--muted);cursor:pointer;flex:none;padding:0}
 .clear-f:hover{background:var(--loss-soft);border-color:var(--loss);color:var(--loss)}
 
+/* Trade Finder layout: Find a Player on top, then one box with your roster beside the results */
+.tf-findbox{margin-bottom:14px}
+.tf-find-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;align-items:start}
+.tf-find-grid .tf-recs-box{margin-top:0;padding-top:0;border-top:0;padding-left:18px;border-left:1px solid var(--line)}
+.tf-sending:empty{display:none}
+.tf-sending:not(:empty) + .tf-filters{margin-top:10px}
+.tf-filters{margin-top:0}
+.tf-main{display:grid;grid-template-columns:minmax(260px,0.9fr) minmax(0,2fr);gap:18px;align-items:start}
+.tf-main .tf-pick h3,.tf-findbox h3{font-size:20px;margin:0 0 8px}
+.tf-main .tf-list{max-height:620px}
+.tf-out .tf-h{margin-top:0}
+.tf-out .tf-results{grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
+@media (max-width:860px){.tf-find-grid,.tf-main{grid-template-columns:1fr}.tf-find-grid .tf-recs-box{padding-left:0;border-left:0;padding-top:12px;border-top:1px solid var(--line)}}
+
 /* Trade Finder */
 .tf-top{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:14px;margin-bottom:14px;align-items:start}
 @media (max-width:760px){.tf-top{grid-template-columns:1fr}}
@@ -479,7 +493,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 .tf-target .bi-text{flex:1;min-width:0;display:flex;flex-direction:column}
 .tf-target small{color:var(--muted);font-size:12px}
 #panel-finder .box{padding:12px 14px}
-#panel-finder .tf-pick h3,#panel-finder .tf-opts h3{font-size:20px;margin:0 0 8px}
+#panel-finder h3{font-size:20px;margin:0 0 8px}
 #panel-finder .teamline{margin-bottom:8px}
 #panel-finder .pk-btn{padding:4px 8px}
 #tfSearch{padding:8px 10px;margin-bottom:6px}
@@ -713,7 +727,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
   </section>
 
   <section class="leaguebar" id="leagueBar">
-    <div class="leaguehead"><span id="leagueAv"></span><div><div class="lname-row"><h2 id="leagueName"></h2><button type="button" class="settings-btn" id="settingsBtn" aria-pressed="false" aria-controls="panel-settings"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>League settings</button></div><small id="myTeamLine"></small></div>
+    <div class="leaguehead"><span id="leagueAv"></span><div><div class="lname-row"><h2 id="leagueName"></h2></div><small id="myTeamLine"></small></div>
       <div class="modebar" id="modeBar" hidden>
         <div class="mode-toggle" id="modeToggle" role="radiogroup" aria-label="How much to show">
           <button type="button" role="radio" data-mode="basics" aria-checked="false">The Basics</button>
@@ -729,6 +743,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
     <button class="tab" role="tab" aria-selected="true" data-tab="calc">Trade Calculator</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="finder">Trade Finder</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="values">League Values</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="settings">League Settings</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="strategy">Team Strategy</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="history">Trade History</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="standings">Standings</button>
@@ -844,29 +859,23 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
   </section>
 
   <section class="panel" id="panel-finder">
-    <div class="tf-top">
-      <div class="tf-left">
-      <div class="box tf-pick">
-        <h3>What do you want to trade?</h3>
-        <div class="teamline"><select id="tfTeam" aria-label="Team you're trading for"></select><span class="badge" id="tfBadge"></span></div>
-        <input type="search" id="tfSearch" placeholder="Search your players and picks" aria-label="Search your roster">
-        <div class="list tf-list" id="tfList"></div>
-      </div>
-      </div>
-      <div class="box tf-opts">
-        <h3 id="tfOptsTitle">Trading away</h3>
-        <div id="tfSending" class="tf-sending"><p class="empty">Tap a player or pick on the left.</p></div>
-        <div class="tf-filters">
-        <div class="field"><label for="tfWant">Looking for</label>
-          <select id="tfWant">
-            <option value="fit">Best fit</option><option value="QB">A quarterback</option><option value="RB">A running back</option>
-            <option value="WR">A wide receiver</option><option value="TE">A tight end</option><option value="PICK">Draft picks</option>
-          </select></div>
-        <div class="field"><label for="tfPartner">Trade partner</label><select id="tfPartner"></select></div>
-        <div class="field"><label for="tfMax">Pieces back</label>
-          <select id="tfMax"><option value="4">Up to 4</option><option value="3">Up to 3</option><option value="2">Up to 2</option><option value="1">Just 1</option></select></div>
+    <div class="box tf-opts tf-findbox">
+      <h3 id="tfOptsTitle">Find a Player</h3>
+      <div class="tf-find-grid">
+        <div class="tf-find-main">
+          <div id="tfSending" class="tf-sending"></div>
+          <div class="tf-filters">
+          <div class="field"><label for="tfWant">Looking for</label>
+            <select id="tfWant">
+              <option value="fit">Best fit</option><option value="QB">A quarterback</option><option value="RB">A running back</option>
+              <option value="WR">A wide receiver</option><option value="TE">A tight end</option><option value="PICK">Draft picks</option>
+            </select></div>
+          <div class="field"><label for="tfPartner">Trade partner</label><select id="tfPartner"></select></div>
+          <div class="field"><label for="tfMax">Pieces back</label>
+            <select id="tfMax"><option value="4">Up to 4</option><option value="3">Up to 3</option><option value="2">Up to 2</option><option value="1">Just 1</option></select></div>
+          </div>
+          <p class="note" id="tfPlan" style="margin:10px 0 0"></p>
         </div>
-        <p class="note" id="tfPlan" style="margin:10px 0 0"></p>
         <div class="tf-recs-box">
           <h3>Recommended players to trade for</h3>
           <p class="note" id="tfRecsNote" style="margin:0 0 8px"></p>
@@ -874,9 +883,19 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
         </div>
       </div>
     </div>
-    <h3 class="tf-h" id="tfHeading">Trades that make sense</h3>
-    <p class="note" id="tfNote" style="margin:0 0 12px"></p>
-    <div id="tfResults" class="tf-results"></div>
+    <div class="box tf-main">
+      <div class="tf-pick">
+        <h3>Who do you want to trade?</h3>
+        <div class="teamline"><select id="tfTeam" aria-label="Team you're trading for"></select><span class="badge" id="tfBadge"></span></div>
+        <input type="search" id="tfSearch" placeholder="Search your players and picks" aria-label="Search your roster">
+        <div class="list tf-list" id="tfList"></div>
+      </div>
+      <div class="tf-out">
+        <h3 class="tf-h" id="tfHeading">Trades that make sense</h3>
+        <p class="note" id="tfNote" style="margin:0 0 12px"></p>
+        <div id="tfResults" class="tf-results"></div>
+      </div>
+    </div>
   </section>
 
   <section class="panel" id="panel-values">
@@ -1234,8 +1253,7 @@ async function openLeague(leagueId){
     // Return to the tab you were last on
     const lastTab = store.get("tr_tab");
     const tabBtn = lastTab && $("tabs").querySelector(`[data-tab="${lastTab}"]`);
-    if (lastTab === "settings") openSettingsPanel();
-    else if (tabBtn && !tabBtn.hidden && tabBtn.getAttribute("aria-selected") !== "true") tabBtn.click();
+    if (tabBtn && !tabBtn.hidden && tabBtn.getAttribute("aria-selected") !== "true") tabBtn.click();
     setTimeout(() => {
       $("connect").hidden = true; $("appbar").hidden = false; $("progress").hidden = true;
       setStatus("");
@@ -2494,31 +2512,18 @@ function historyInsightsHTML(rid){
   return `<div class="box"><h3>From your league's trade history</h3><ul class="moves">${lines.map(l => `<li>${esc(l)}</li>`).join("")}</ul></div>`;
 }
 
-// League settings now opens from the button beside the league name
-function openSettingsPanel(){
-  for (const t of $("tabs").children) t.setAttribute("aria-selected", "false");
-  for (const name of ["calc","finder","standings","history","feedback","scores","values","settings","strategy"]) $("panel-"+name).classList.toggle("on", name === "settings");
-  $("settingsBtn").setAttribute("aria-pressed", "true");
-  store.set("tr_tab", "settings");
-}
-$("settingsBtn").addEventListener("click", () => {
-  if ($("settingsBtn").getAttribute("aria-pressed") === "true"){ $("tabs").querySelector('[data-tab="calc"]').click(); return; }  // tap again to close
-  openSettingsPanel();
-  $("panel-settings").scrollIntoView({ behavior: "smooth", block: "start" });
-});
-
 // ============================================================
 // THE BASICS / FREAKSHOW
 // The Basics shows only the Trade Calculator and League Values, for newer
 // players. Freakshow shows every tab. The choice is remembered per device.
 // ============================================================
-const BASIC_TABS = ["calc", "values"];
+const BASIC_TABS = ["calc", "values", "settings"];
 const currentMode = () => store.get("fo_mode") === "basics" ? "basics" : "freak";
 function applyMode(mode, quiet){
   store.set("fo_mode", mode);
   for (const b of $("modeToggle").children) b.setAttribute("aria-checked", b.dataset.mode === mode);
   for (const t of $("tabs").children) t.hidden = mode === "basics" && !BASIC_TABS.includes(t.dataset.tab);
-  $("modeNote").textContent = mode === "basics" ? "Just the trade calculator and league values." : "Every tool Front Office has.";
+  $("modeNote").textContent = mode === "basics" ? "Just the trade calculator, league values, and league settings." : "Every tool Front Office has.";
   // If the open tab just got hidden, go back to the calculator
   const open = $("tabs").querySelector('.tab[aria-selected="true"]');
   if (open && open.hidden) $("tabs").querySelector('[data-tab="calc"]').click();
@@ -3002,17 +3007,17 @@ function renderFinder(){
   renderRecs(me);
   if (tfTarget){
     const a = S.assets.get(tfTarget), owner = S.teams.get(a.owner);
-    $("tfOptsTitle").textContent = "Trying to get";
+    $("tfOptsTitle").textContent = "Find a Player";
     $("tfSending").innerHTML = `<button type="button" class="tf-target" id="tfClearTarget" aria-label="Stop looking for ${esc(a.name)}">
       ${assetPhoto(a, "sm")}<span class="bi-text"><b>${esc(a.name)}</b><small>${esc([a.pos + (a.lgPosRank || ""), a.nfl, a.age ? "age " + ageText(a.age) : "", "from " + (owner?.name || "")].filter(Boolean).join(", "))}</small></span><span class="v">${fmt(a.value)}</span><span class="tf-x" aria-hidden="true">✕</span></button>`;
     findForTarget(me, a);
     return;
   }
-  $("tfOptsTitle").textContent = "Trading away";
+  $("tfOptsTitle").textContent = "Find a Player";
   $("tfSending").innerHTML = sending.length ? sending.map(a => `<button type="button" class="tf-chip" data-id="${esc(a.id)}" aria-label="Remove ${esc(a.name)}">
       ${assetPhoto(a, "sm")}<span class="bi-text"><b>${esc(a.name)}</b><small>${esc(a.kind === "player" ? [a.pos + (a.lgPosRank || ""), a.nfl, a.age ? "age " + ageText(a.age) : ""].filter(Boolean).join(", ") : a.nfl)}</small></span><span class="v">${fmt(a.value)}</span><span class="tf-x" aria-hidden="true">✕</span></button>`).join("")
       + (sending.length > 1 ? `<div class="tf-total"><span>Package value</span><span>${fmt(V)}</span></div>` : "")
-    : `<p class="empty">Tap a player or pick on the left.</p>`;
+    : "";
   findTrades(me, sending, V);
 }
 
@@ -3352,7 +3357,6 @@ $("tabs").addEventListener("click", e => {
   if (b.dataset.tab === "finder") renderFinder();
   if (b.dataset.tab === "standings") renderStandings();
   store.set("tr_tab", b.dataset.tab);
-  $("settingsBtn").setAttribute("aria-pressed", "false");
 });
 
 // ============================================================
@@ -3365,18 +3369,22 @@ async function sha256(text){
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
   return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
 }
-const aboutUnlocked = () => store.get("fo_about_ok") === ABOUT_PW_HASH;
+// Unlocks only for this visit to the About page. Leaving the page locks it again.
+let aboutOpen = false;
+const aboutUnlocked = () => aboutOpen;
+try { localStorage.removeItem("fo_about_ok"); } catch(e){}   // forget unlocks saved by older versions
 $("lockForm").addEventListener("submit", async e => {
   e.preventDefault();
   const st = $("lockStatus");
   try {
-    if (await sha256($("lockPw").value) === ABOUT_PW_HASH){ store.set("fo_about_ok", ABOUT_PW_HASH); $("lockPw").value = ""; st.textContent = ""; route(); }
+    if (await sha256($("lockPw").value) === ABOUT_PW_HASH){ aboutOpen = true; $("lockPw").value = ""; st.textContent = ""; route(); }
     else { st.textContent = "That password isn't right."; st.className = "status error"; $("lockPw").select(); }
   } catch(err){ st.textContent = "Couldn't check the password in this browser."; st.className = "status error"; }
 });
 function route(){
   let page = location.hash.slice(1), section = null;
   if (page === "tuning"){ page = "about"; section = "tuning"; }
+  if (page !== "about") aboutOpen = false;          // leaving About locks it again
   const pages = { about: ["aboutView", "About Front Office"], beta: ["betaView", "Sleeper Leagues in Beta | Front Office"] };
   const locked = page === "about" && !aboutUnlocked();
   $("lockView").hidden = !locked;
