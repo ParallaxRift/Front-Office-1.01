@@ -137,7 +137,7 @@ input[type=text],input[type=search],select{background:var(--card);border:1.5px s
 .panel.on{display:block}
 
 /* Scoreboard */
-.board{background:var(--ink);color:var(--paper);border-radius:14px;padding:18px 18px 16px;position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+.board{background:var(--ink);color:var(--paper);border-radius:14px;padding:18px 18px 16px;position:relative}
 .board .totals{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
 .bside{flex:1 1 0;min-width:0}
 .bteam{display:flex;align-items:center;gap:8px;margin:6px 0 4px;font-weight:600;font-size:16px;min-width:0}
@@ -165,7 +165,7 @@ input[type=text],input[type=search],select{background:var(--card);border:1.5px s
 }
 @media (max-width:600px) and (prefers-color-scheme:dark){.bside + .bside{border-top-color:rgba(0,0,0,.12)}}
 @media (prefers-color-scheme:dark){.bitem{background:rgba(0,0,0,.06)}.bitem:hover{background:rgba(0,0,0,.12)}.bitem .av{background:#fff}}
-@media (max-width:720px){.board{position:static}}
+
 .board .side-label{font-size:13px;opacity:.75}
 .board .num{font-family:var(--display);font-weight:800;font-size:clamp(34px,7vw,52px);line-height:1}
 .board .raw{font-size:12px;opacity:.6}
