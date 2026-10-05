@@ -833,7 +833,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
   <section class="panel" id="panel-trophy">
     <h3 class="sec-h">🏆 League Champions</h3>
     <div id="champList" class="champ-list"><p class="empty">Open this tab to load your league's history.</p></div>
-    <h3 class="sec-h" style="margin-top:28px">Weekly High Scores</h3>
+    <h3 class="sec-h" style="margin-top:28px">Weekly High Points</h3>
     <div class="trophy-bar"><div class="seg" id="hsSeasons"></div></div>
     <div id="hsLeaders" class="hs-leaders"></div>
     <div class="tablewrap"><table id="hsTable" class="stand"></table></div>
@@ -3163,11 +3163,11 @@ function renderTrophyRoom(){
   if (!withWeeks.length){ $("hsSeasons").innerHTML = ""; $("hsTable").innerHTML = ""; $("hsLeaders").innerHTML = ""; $("trophyNote").textContent = "No completed weeks yet."; return; }
   $("hsSeasons").innerHTML = withWeeks.map(x => `<button aria-pressed="${x.season === trophySeason}" data-season="${x.season}">${x.season}</button>`).join("");
   const cur = withWeeks.find(x => x.season === trophySeason) || withWeeks[0];
-  // who had the most weekly high scores this season
+  // who had the most weekly high points this season
   const tally = {};
   for (const w of cur.weeks){ const k = w.top.owner || w.top.rid; (tally[k] = tally[k] || { t: w.top, n: 0 }).n++; }
   const leaders = Object.values(tally).sort((a, b) => b.n - a.n).slice(0, 5);
-  $("hsLeaders").innerHTML = `<span class="note" style="align-self:center;margin-right:4px">Most weekly high scores:</span>` + leaders.map(l => `<span class="hs-lead">${person(l.t, true)}${esc(l.t.name)} <b>${l.n}</b></span>`).join("");
+  $("hsLeaders").innerHTML = `<span class="note" style="align-self:center;margin-right:4px">Most weekly high points:</span>` + leaders.map(l => `<span class="hs-lead">${person(l.t, true)}${esc(l.t.name)} <b>${l.n}</b></span>`).join("");
   const best = Math.max(...cur.weeks.map(w => w.top.pts));
   $("hsTable").innerHTML = `<thead><tr><th class="n">Week</th><th>High scorer</th><th class="n">Points</th><th class="n">Ahead of 2nd</th><th class="n">League average</th></tr></thead>
     <tbody>${cur.weeks.map(w => `<tr class="${w.top.rid === S.myRid && cur.season === Number(S.league.season) ? "me" : ""}">
@@ -3176,7 +3176,7 @@ function renderTrophyRoom(){
       <td class="n rec">${w.top.pts.toFixed(2)}</td>
       <td class="n">${w.second ? "+" + (w.top.pts - w.second.pts).toFixed(2) : "–"}</td>
       <td class="n">${w.avg.toFixed(2)}</td></tr>`).join("")}</tbody>`;
-  $("trophyNote").textContent = `Weekly high scores cover this season and the two before it${cur.season === Number(S.league.season) && S.nflState?.season_type === "regular" ? "; the week in progress is added once it's final" : ""}. Champions go back as far as Sleeper has your league's history.`;
+  $("trophyNote").textContent = `Weekly high points cover this season and the two before it${cur.season === Number(S.league.season) && S.nflState?.season_type === "regular" ? "; the week in progress is added once it's final" : ""}. Champions go back as far as Sleeper has your league's history.`;
 }
 $("hsSeasons").addEventListener("click", e => {
   const b = e.target.closest("button"); if (!b) return;
