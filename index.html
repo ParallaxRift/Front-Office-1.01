@@ -377,12 +377,14 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 .fb-meta{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin-bottom:6px}
 .fb-meta b{color:var(--ink);font-size:15px}
 .fb-msg{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.fb-name{display:inline-flex;align-items:center;gap:4px}
+.crown{color:#D99A1E;flex:none}
 .fb-type{font-size:12px;font-weight:700;border-radius:999px;padding:2px 9px}
 .t-Bug{background:var(--loss-soft);color:var(--loss)}
 .t-Idea{background:var(--field-soft);color:var(--field)}
-.t-Question{background:#E4ECF7;color:#2D5C99}
-.t-Praise{background:var(--gold-soft);color:var(--gold)}
-@media (prefers-color-scheme:dark){.t-Question{background:#1B2A3D;color:#8DB4EA}}
+.t-Update{background:#E4ECF7;color:#2D5C99}
+.t-Other{background:var(--gold-soft);color:var(--gold)}
+@media (prefers-color-scheme:dark){.t-Update{background:#1B2A3D;color:#8DB4EA}}
 
 /* Live scores tab */
 .scorebar{display:flex;flex-wrap:wrap;align-items:end;gap:10px 14px;margin-bottom:14px}
@@ -589,10 +591,10 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
         <div class="field" style="max-width:none"><label for="fbName">Your name or team (optional)</label><input id="fbName" type="text" maxlength="60" autocomplete="nickname"></div>
         <div class="field" style="max-width:none;margin-top:10px"><span class="fb-label" id="fbTypeLabel">Type</span>
           <div class="seg" id="fbType" role="radiogroup" aria-labelledby="fbTypeLabel">
-            <button type="button" role="radio" aria-checked="true" data-type="Bug">Bug</button>
-            <button type="button" role="radio" aria-checked="false" data-type="Idea">Idea</button>
-            <button type="button" role="radio" aria-checked="false" data-type="Question">Question</button>
-            <button type="button" role="radio" aria-checked="false" data-type="Praise">Praise</button>
+            <button type="button" role="radio" aria-checked="false" data-type="Update">Update</button>
+            <button type="button" role="radio" aria-checked="true" data-type="Idea">Idea</button>
+            <button type="button" role="radio" aria-checked="false" data-type="Bug">Bug</button>
+            <button type="button" role="radio" aria-checked="false" data-type="Other">Other</button>
           </div></div>
         <div class="field" style="max-width:none;margin-top:10px"><label for="fbMsg">Feedback</label><textarea id="fbMsg" rows="5" maxlength="1000" placeholder="What happened, or what would you like to see?"></textarea><small class="fb-count" id="fbCount">0 / 1000</small></div>
         <button class="btn" type="submit" id="fbSend" style="margin-top:12px">Post feedback</button>
@@ -601,7 +603,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
       </form>
       <div class="fb-board">
         <div class="fb-head"><h3>Feedback board</h3><div class="seg" id="fbFilter">
-          <button aria-pressed="true" data-type="All">All</button><button aria-pressed="false" data-type="Bug">Bugs</button><button aria-pressed="false" data-type="Idea">Ideas</button><button aria-pressed="false" data-type="Question">Questions</button><button aria-pressed="false" data-type="Praise">Praise</button>
+          <button aria-pressed="true" data-type="All">All</button><button aria-pressed="false" data-type="Update">Updates</button><button aria-pressed="false" data-type="Idea">Ideas</button><button aria-pressed="false" data-type="Bug">Bugs</button><button aria-pressed="false" data-type="Other">Other</button>
         </div></div>
         <div id="fbList" class="fb-list"><p class="empty">Loading feedback...</p></div>
       </div>
@@ -2429,9 +2431,10 @@ async function loadFeedback(){
       .map(r => {
         let msg = r[iMsg], type = iType >= 0 ? (r[iType] || "").trim() : "", league = iLeague >= 0 ? r[iLeague] : "";
         // Unpack "[Bug | League name] message" written by Front Office
-        const m = msg.match(/^\[(Bug|Idea|Question|Praise)(?: \| ([^\]]*))?\]\s*/);
+        const m = msg.match(/^\[(Update|Idea|Bug|Other|Question|Praise)(?: \| ([^\]]*))?\]\s*/);
         if (m){ type = type || m[1]; league = league || m[2] || ""; msg = msg.slice(m[0].length); }
-        return { time: r[iTime] || "", name: r[iName] || "", type: type || "Idea", msg, league };
+        if (type === "Question" || type === "Praise") type = "Other";   // older posts
+        return { time: r[iTime] || "", name: r[iName] || "", type: type || "Other", msg, league };
       });
     fbPosts.reverse(); // newest first
     // Drop local "just posted" items once they show up on the board
@@ -2442,14 +2445,18 @@ async function loadFeedback(){
     $("fbList").innerHTML = `<p class="empty">Couldn't load the feedback board. Check your connection and reopen this tab.</p>`;
   }
 }
+// Posts from these names get a crown (not case-sensitive)
+const CROWN_NAMES = ["pat", "dev"];
+const CROWN = `<svg class="crown" viewBox="0 0 24 24" width="17" height="17" fill="currentColor" role="img" aria-label="Front Office team"><title>Front Office team</title><path d="M3 7.5l4.6 3.6L12 4l4.4 7.1L21 7.5l-1.8 10.2H4.8L3 7.5zM5 19h14v2H5z"/></svg>`;
+const isCrowned = name => CROWN_NAMES.includes(String(name || "").trim().toLowerCase());
 function renderFeedback(){
   const all = [...fbPending, ...(fbPosts || [])].filter(p => fbFilter === "All" || p.type === fbFilter);
   if (!all.length){ $("fbList").innerHTML = `<p class="empty">${fbFilter === "All" ? "No feedback yet. Be the first to post." : "Nothing here yet."}</p>`; return; }
-  const types = ["Bug","Idea","Question","Praise"];
+  const types = ["Update","Idea","Bug","Other"];
   $("fbList").innerHTML = all.slice(0, 200).map(p => {
-    const type = types.includes(p.type) ? p.type : "Idea";
+    const type = types.includes(p.type) ? p.type : "Other";
     return `<article class="fb-item${p.pending ? " pending" : ""}">
-      <div class="fb-meta"><span class="fb-type t-${type}">${type}</span><b>${esc(p.name || "Anonymous")}</b>${p.league ? `<span>${esc(p.league)}</span>` : ""}<span>${esc(p.pending ? "Just posted, visible to everyone within a few minutes" : p.time)}</span></div>
+      <div class="fb-meta"><span class="fb-type t-${type}">${type}</span><b class="fb-name">${esc(p.name || "Anonymous")}${isCrowned(p.name) ? CROWN : ""}</b>${p.league ? `<span>${esc(p.league)}</span>` : ""}<span>${esc(p.pending ? "Just posted, visible to everyone within a few minutes" : p.time)}</span></div>
       <p class="fb-msg">${esc(p.msg)}</p></article>`;
   }).join("");
 }
@@ -2459,7 +2466,7 @@ $("fbForm").addEventListener("submit", async e => {
   const st = $("fbStatus");
   if (!fbCanPost()){ st.textContent = "The feedback board isn't connected yet."; st.className = "status error"; return; }
   if (msg.length < 3){ st.textContent = "Write a few words of feedback first."; st.className = "status error"; $("fbMsg").focus(); return; }
-  const type = [...$("fbType").children].find(x => x.getAttribute("aria-checked") === "true")?.dataset.type || "Idea";
+  const type = [...$("fbType").children].find(x => x.getAttribute("aria-checked") === "true")?.dataset.type || "Other";
   const name = $("fbName").value.trim(), league = S.league?.name || "";
   const body = new URLSearchParams(); // standard form encoding, which Google Forms expects
   const tag = !FEEDBACK.fields.type ? `[${type}${league && !FEEDBACK.fields.league ? " | " + league.replace(/[\[\]]/g, "") : ""}] ` : "";
