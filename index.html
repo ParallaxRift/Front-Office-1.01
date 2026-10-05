@@ -508,6 +508,13 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 .hs-lead{display:inline-flex;align-items:center;gap:8px;background:var(--gold-soft);border-radius:999px;padding:4px 12px 4px 4px;font-size:14px;font-weight:600}
 .hs-lead b{font-family:var(--display);font-size:17px}
 
+/* League settings button (football icon) beside last year's champ */
+.settings-btn{display:inline-flex;align-items:center;gap:6px;background:var(--card);border:1.5px solid var(--line);border-radius:999px;padding:3px 11px 3px 6px;font-weight:600;font-size:13px;line-height:1.4;color:var(--ink);cursor:pointer;white-space:nowrap}
+.settings-btn .fb{width:17px;height:17px;color:var(--field);display:block}
+.settings-btn:hover{border-color:var(--field);color:var(--field)}
+.settings-btn[aria-pressed=true]{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.settings-btn[aria-pressed=true] .fb{color:var(--gold)}
+
 /* Trade Finder */
 .tf-top{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:14px;margin-bottom:14px;align-items:start}
 @media (max-width:760px){.tf-top{grid-template-columns:1fr}}
@@ -733,7 +740,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
   <path d="M44 25v14" stroke="#D99A1E" stroke-width="2.3" stroke-linecap="round"/>
   <path d="M40.8 28h6.4M40.8 32h6.4M40.8 36h6.4" stroke="#D99A1E" stroke-width="2" stroke-linecap="round"/>
 </svg><span>Front Office</span></p>
-      <h1>Values built for your league.</h1>
+      <h1>Values Built for Your League.</h1>
       <p class="lede">Every player and pick re-valued for your league's scoring, lineup, and size, with a trade calculator and a game plan for every team.</p>
       <p class="fine">Free. Reads your league from Sleeper, no sign-up or password needed.</p>
     </div>
@@ -764,7 +771,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
   </section>
 
   <section class="leaguebar" id="leagueBar">
-    <div class="leaguehead"><span id="leagueAv"></span><div><div class="lname-row"><h2 id="leagueName"></h2><span id="champSlot"></span></div><small id="myTeamLine"></small></div>
+    <div class="leaguehead"><span id="leagueAv"></span><div><div class="lname-row"><h2 id="leagueName"></h2><span id="champSlot"></span><button type="button" class="settings-btn" id="settingsBtn" aria-pressed="false" aria-controls="panel-settings"><span id="settingsIcon"></span>League settings</button></div><small id="myTeamLine"></small></div>
       <div class="modebar" id="modeBar" hidden>
         <div class="mode-toggle" id="modeToggle" role="radiogroup" aria-label="How much to show">
           <button type="button" role="radio" data-mode="basics" aria-checked="false">The Basics</button>
@@ -784,7 +791,6 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
     <button class="tab" role="tab" aria-selected="false" data-tab="history">Trade History</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="standings">League Analysis</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="trophy">Trophy Room</button>
-    <button class="tab" role="tab" aria-selected="false" data-tab="settings">League Settings</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="scores">Live Scores</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="feedback"><em>Feedback &amp; Build Notes</em></button>
   </div>
@@ -823,9 +829,9 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
   </section>
 
   <section class="panel" id="panel-trophy">
-    <h3 class="sec-h">🏆 League champions</h3>
+    <h3 class="sec-h">🏆 League Champions</h3>
     <div id="champList" class="champ-list"><p class="empty">Open this tab to load your league's history.</p></div>
-    <h3 class="sec-h" style="margin-top:28px">Weekly high scores</h3>
+    <h3 class="sec-h" style="margin-top:28px">Weekly High Scores</h3>
     <div class="trophy-bar"><div class="seg" id="hsSeasons"></div></div>
     <div id="hsLeaders" class="hs-leaders"></div>
     <div class="tablewrap"><table id="hsTable" class="stand"></table></div>
@@ -842,7 +848,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
     <div class="tablewrap"><table id="powerTable" class="stand"></table></div>
 
     <div class="box status-key">
-      <h3>What the team statuses mean</h3>
+      <h3>What the Team Statuses Mean</h3>
       <p class="note" style="margin:0 0 10px">Every team is sorted by roster strength, the same number behind the Power Rankings, and split into thirds.</p>
       <dl>
         <dt><span class="badge b-contend">Contender</span></dt><dd><b>The strongest third of the league.</b> Built to win now. Team Strategy and Trade Finder steer contenders toward proven starters and away from trading them for futures.</dd>
@@ -856,7 +862,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
   <section class="panel" id="panel-history">
     <div class="histstats" id="histStats"></div>
     <div class="box hrec">
-      <h3>Team trade records</h3>
+      <h3>Team Trade Records</h3>
       <p class="note" style="margin:0 0 10px">Tap a column to sort. Tap a team to see only its trades.</p>
       <div class="tablewrap"><table id="histTable"></table></div>
     </div>
@@ -881,7 +887,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
   <section class="panel" id="panel-feedback">
     <div class="fb-wrap">
       <form class="box fb-form" id="fbForm" novalidate>
-        <h3>Share feedback</h3>
+        <h3>Share Feedback</h3>
         <p class="note" style="margin:0 0 12px">You're testing Front Office while it's in beta. Spotted a bug, have an idea, or love something? Post it here for everyone to see.</p>
         <div class="field" style="max-width:none"><label for="fbName">Your name or team (optional)</label><input id="fbName" type="text" maxlength="60" autocomplete="nickname"></div>
         <div class="field" style="max-width:none;margin-top:10px"><span class="fb-label" id="fbTypeLabel">Type</span>
@@ -897,14 +903,14 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
         <p class="note" style="margin:8px 0 0">Posts are public to anyone using Front Office. Don't include passwords or private info.</p>
       </form>
       <div class="fb-board">
-        <div class="fb-head"><h3>Feedback board</h3><div class="seg" id="fbFilter">
+        <div class="fb-head"><h3>Feedback Board</h3><div class="seg" id="fbFilter">
           <button aria-pressed="true" data-type="All">All</button><button aria-pressed="false" data-type="Update">Updates</button><button aria-pressed="false" data-type="Idea">Ideas</button><button aria-pressed="false" data-type="Bug">Bugs</button><button aria-pressed="false" data-type="Other">Other</button>
         </div></div>
         <div id="fbList" class="fb-list"><p class="empty">Loading feedback...</p></div>
       </div>
     </div>
     <section class="box notes" aria-labelledby="notesTitle">
-      <div class="notes-head"><h3 id="notesTitle">Build notes</h3><span class="betatag" id="notesVersion"></span>
+      <div class="notes-head"><h3 id="notesTitle">Build Notes</h3><span class="betatag" id="notesVersion"></span>
         <button class="ghost notes-edit" id="notesEditBtn" type="button">Edit</button></div>
       <p class="note" style="margin:0 0 10px">What's changed in each beta build, newest first.</p>
       <div id="notesAuth" hidden></div>
@@ -941,7 +947,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
           <p class="note" id="tfPlan" style="margin:10px 0 0"></p>
         </div>
         <div class="tf-recs-box">
-          <h3>Recommended players to trade for</h3>
+          <h3>Recommended Players to Trade For</h3>
           <p class="note" id="tfRecsNote" style="margin:0 0 8px"></p>
           <div class="tf-recs" id="tfRecs"></div>
         </div>
@@ -949,13 +955,13 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
     </div>
     <div class="box tf-main">
       <div class="tf-pick">
-        <h3>Who do you want to trade?</h3>
+        <h3>Who Do You Want to Trade?</h3>
         <div class="teamline"><select id="tfTeam" aria-label="Team you're trading for"></select><span class="badge" id="tfBadge"></span></div>
         <input type="search" id="tfSearch" placeholder="Search your players and picks" aria-label="Search your roster">
         <div class="list tf-list" id="tfList"></div>
       </div>
       <div class="tf-out">
-        <h3 class="tf-h" id="tfHeading">Trades that make sense</h3>
+        <h3 class="tf-h" id="tfHeading">Trades That Make Sense</h3>
         <p class="note" id="tfNote" style="margin:0 0 12px"></p>
         <div id="tfResults" class="tf-results"></div>
       </div>
@@ -988,10 +994,10 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
   <section class="panel" id="panel-settings">
     <div class="grid2">
       <div class="box"><h3>Format</h3><dl class="kv" id="setFormat"></dl></div>
-      <div class="box"><h3>Starting lineup</h3><div class="slots" id="setSlots"></div><dl class="kv" id="setRoster" style="margin-top:14px"></dl></div>
+      <div class="box"><h3>Starting Lineup</h3><div class="slots" id="setSlots"></div><dl class="kv" id="setRoster" style="margin-top:14px"></dl></div>
       <div class="box"><h3>Scoring</h3><dl class="kv" id="setScoring"></dl></div>
-      <div class="box"><h3>How these settings change values</h3><ul class="rules" id="setRules"></ul></div>
-      <div class="box"><h3>Where the value lives</h3>
+      <div class="box"><h3>How These Settings Change Values</h3><ul class="rules" id="setRules"></ul></div>
+      <div class="box"><h3>Where the Value Lives</h3>
         <p class="note" style="margin:0 0 10px">Share of the top 150 players' value held by each position.</p>
         <div class="share" id="setShare"></div>
         <div class="legend"><span><i style="background:var(--field)"></i>This league</span><span><i style="background:var(--line)"></i>Market</span></div>
@@ -1020,14 +1026,14 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 
 <article id="aboutView" class="about" hidden>
   <a class="back" href="#">Back to Front Office</a>
-  <h1>How Front Office works</h1>
+  <h1>How Front Office Works</h1>
   <p class="intro">Most trade value charts give every league the same numbers. Front Office starts from the dynasty market, rebuilds those values around your league's rules, and gives every team its own read on what to do next.</p>
 
-  <h2>Where the values start</h2>
+  <h2>Where the Values Start</h2>
   <p>Every player begins with a <b>market value</b> on a 0–10,000 scale, built from <b>expert consensus</b>: the combined dynasty rankings of the country's top fantasy football analysts. Once a day, Front Office downloads the latest consensus and turns each ranking into a value. The top-ranked player is 10,000, and value drops smoothly down the list (rank 50 is about 5,400 and rank 100 about 2,900). There are separate rankings for 1QB and Superflex leagues, and Front Office uses whichever matches your league.</p>
   <p>Players the experts don't rank, such as deep bench and taxi-squad players, are filled in from DynastyProcess open data, always valued below the lowest expert-ranked player. If neither source can be reached, Front Office falls back to an estimate built from Sleeper's own player rankings, adjusted for age: running backs lose value fastest after 25, wide receivers and tight ends after their late 20s, and quarterbacks hold value into their 30s.</p>
 
-  <h2>How values are customized for your league</h2>
+  <h2>How Values Are Customized for Your League</h2>
   <ol class="steps">
     <li><b>Read your league from Sleeper.</b> Team count, starting lineup, scoring, bench, IR and taxi spots, rosters, and traded picks all come straight from your league. Nothing is typed in by hand.</li>
     <li><b>Apply your league's adjustments.</b> Each player's market value is multiplied by every rule below that matches your settings.</li>
@@ -1053,11 +1059,11 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
   </div>
   <p class="small">The baseline is a 12-team, 1QB, full-PPR league with one flex. A league that matches it exactly gets pure market values. The League Settings tab lists the adjustments applied to your league.</p>
 
-  <h2>How draft picks are valued</h2>
+  <h2>How Draft Picks Are Valued</h2>
   <p>Picks aren't in the market data, so Front Office calculates them. Each team's strength is the combined value of its best players. The weakest team is projected to pick first, the strongest last. A projected 1.01 is worth about 7,000, and value drops quickly through the first round before leveling off in later rounds.</p>
   <p>Next year's picks get a specific slot, like 1.04. Picks two years out are only half-projected and labeled Early, Mid, or Late, and picks three years out are treated as middle-of-the-round, because rosters change. Each year further out also loses 8% for uncertainty. Traded picks show on the team that owns them now.</p>
 
-  <h2>What's different for each team</h2>
+  <h2>What's Different for Each Team</h2>
   <p>Within a league, every manager sees the <b>same player values</b>, so trades are judged on one consistent scale. What changes from team to team is the context around those values:</p>
   <ul>
     <li><b>Picks</b> are valued by the original owner's projected finish, so a pick from a weak team is worth more than one from a strong team.</li>
@@ -1066,10 +1072,10 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
     <li><b>The trade calculator</b> adds hints based on your situation, like noting when picks and young players fit a rebuild.</li>
   </ul>
 
-  <h2>Your league's trade history</h2>
+  <h2>Your League's Trade History</h2>
   <p>Front Office reads every completed trade from the current season and up to three earlier seasons, following Sleeper's links between seasons. The Trade History tab lists each deal and grades it with today's values, so you can see who won and how each trade has aged. Picks still to be made show their projected slot, and picks that were already used show the player they became.</p>
 
-  <h2 id="tuning">How your league's trades tune values</h2>
+  <h2 id="tuning">How Your League's Trades Tune Values</h2>
   <p>Every league has its own habits. Some overpay for running backs, some hoard rookie picks. Once your league has enough trading history, Front Office learns those habits and adjusts values to match, without letting them override the expert market.</p>
   <ol class="steps">
     <li><b>Collect the trades.</b> Every completed trade from the last four seasons is included, from simple two-team swaps to 3- and 4-team deals.</li>
@@ -1082,7 +1088,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
   <p>The tuning only switches on once your league has at least <b>15 trades</b> of any size. When it's active, the line under your league name says how many trades it's based on, and the League Settings tab shows the exact adjustment for each position. Because there are no records of past market values, trades are measured against today's values, so the tuning reflects your league's long-run tendencies rather than any single moment.</p>
   <p>Team Strategy uses the same history to show each team's trade record by today's values, their most frequent trade partner, managers who have traded away several of their own picks, and managers who tend to come out behind.</p>
 
-  <h2>How trades are scored</h2>
+  <h2>How Trades Are Scored</h2>
   <p>Several lesser pieces never add up to one difference-maker, so the calculator adds a <b>value adjustment</b>. No player's value is ever reduced. Instead, the side giving up fewer, better pieces gets a bonus added to its total, shown as its own line under that side's players. The bonus is the difference worked out like this:</p>
   <ul>
     <li><b>Each side's best piece counts in full.</b></li>
@@ -1091,13 +1097,13 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
   </ul>
   <p>For example, an early first-round pick worth about 6,000 traded for three veterans worth 2,000, 1,800, and 1,500 looks even on raw totals (6,000 vs. 5,300), but after the adjustment the three veterans count for well under half of the pick. The raw totals are still shown under each side's number, and a note explains the adjustment whenever it makes a real difference. A trade within 5% either way is called fair. The same adjustment is used in Trade Finder and when grading Trade History.</p>
 
-  <h2>When values update</h2>
+  <h2>When Values Update</h2>
   <p>Nothing is stored on a Front Office server. Each time you open a league, it pulls your league fresh from Sleeper and loads the latest market values, so roster moves, trades, and pick swaps show up as soon as you reload. Market values refresh automatically once a day, each morning, and the date of the last update is shown under your league name. On game days, Live Scores refreshes every minute for the current week.</p>
 
-  <h2>Your privacy</h2>
+  <h2>Your Privacy</h2>
   <p>Front Office only needs your public Sleeper username, never a password. Your username and last-opened league are remembered in your own browser so you don't have to retype them, and they aren't sent anywhere else.</p>
 
-  <h2>Fine print</h2>
+  <h2>Fine Print</h2>
   <p class="small">Values are estimates to help you think through trades, not guarantees. Expert consensus rankings are provided by FantasyPros and used here for personal, non-commercial purposes, with DynastyProcess open data for players the experts don't rank. League data comes from Sleeper's public API. Front Office isn't affiliated with Sleeper, FantasyPros, or DynastyProcess.</p>
   <a class="back" href="#">Back to Front Office</a>
 </article>
@@ -1108,10 +1114,10 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
   <h1>Sleeper Leagues in Beta</h1>
   <p class="intro">Front Office currently works with Sleeper leagues only. Support for Yahoo, ESPN, and other platforms is slated for future development.</p>
 
-  <h2>Why Sleeper first</h2>
+  <h2>Why Sleeper First</h2>
   <p>Sleeper makes league data publicly available with nothing more than a username. That means Front Office can read your rosters, settings, traded picks, and live scores without asking for a password or a login, which made it the best place to build and test everything.</p>
 
-  <h2>What "beta" means</h2>
+  <h2>What "Beta" Means</h2>
   <ul>
     <li><b>Everything works today</b> for Sleeper leagues: league-specific values, the trade calculator, league settings, team strategy, and live scores.</li>
     <li><b>Values are still being tuned.</b> The league adjustments are starting estimates and will be refined as more real trade data comes in, so numbers may shift.</li>
@@ -1119,7 +1125,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
     <li><b>Dynasty leagues come first.</b> Redraft and keeper leagues load, but the values and strategy are built for dynasty.</li>
   </ul>
 
-  <h2>Coming later</h2>
+  <h2>Coming Later</h2>
   <div class="roadmap">
     <div class="rm now"><b>Sleeper</b><span>Available now</span></div>
     <div class="rm"><b>Yahoo</b><span>Planned</span></div>
@@ -1317,7 +1323,8 @@ async function openLeague(leagueId){
     // Return to the tab you were last on
     const lastTab = store.get("tr_tab");
     const tabBtn = lastTab && $("tabs").querySelector(`[data-tab="${lastTab}"]`);
-    if (tabBtn && !tabBtn.hidden && tabBtn.getAttribute("aria-selected") !== "true") tabBtn.click();
+    if (lastTab === "settings") openSettingsPanel();
+    else if (tabBtn && !tabBtn.hidden && tabBtn.getAttribute("aria-selected") !== "true") tabBtn.click();
     setTimeout(() => {
       $("connect").hidden = true; $("appbar").hidden = false; $("progress").hidden = true;
       setStatus("");
@@ -1827,22 +1834,22 @@ function renderTuningLight(){
   const el = $("tuningLight"); if (!el || !S.league) return;
   const link = `<a class="tlink" href="#tuning">How tuning works</a>`;
   if (S.historyError){
-    el.innerHTML = `<span class="light off" aria-hidden="true"></span><div class="tuning-text"><b>League tuning is off</b><p>Couldn't check your league's trade history, so values use expert consensus and your league settings only. Reopen the league to try again.</p>${link}</div>`;
+    el.innerHTML = `<span class="light off" aria-hidden="true"></span><div class="tuning-text"><b>League Tuning Is Off</b><p>Couldn't check your league's trade history, so values use expert consensus and your league settings only. Reopen the league to try again.</p>${link}</div>`;
     return;
   }
   if (!S.history){
-    el.innerHTML = `<span class="light wait" aria-hidden="true"></span><div class="tuning-text"><b>Checking your league's trade history...</b><p>Values may adjust slightly in a moment.</p>${link}</div>`;
+    el.innerHTML = `<span class="light wait" aria-hidden="true"></span><div class="tuning-text"><b>Checking Your League's Trade History...</b><p>Values may adjust slightly in a moment.</p>${link}</div>`;
     return;
   }
   const twoTeam = S.history.trades.filter(t => t.sides.length >= 2).length;
   if (S.nudge){
     const adj = ["QB","RB","WR","TE","PICK"].map(k => ({ k, m: S.nudge[k] }))
       .map(x => `<span class="chip">${x.k === "PICK" ? "Picks" : x.k + "s"} ×${(Math.round(x.m*100)/100).toFixed(2)}</span>`).join("");
-    el.innerHTML = `<span class="light on" aria-hidden="true"></span><div class="tuning-text"><b>League tuning is on</b><p>These values include your league's trade habits, learned from ${S.nudge.n} trades.</p><div class="chips">${adj}</div>${link}</div>`;
+    el.innerHTML = `<span class="light on" aria-hidden="true"></span><div class="tuning-text"><b>League Tuning Is On</b><p>These values include your league's trade habits, learned from ${S.nudge.n} trades.</p><div class="chips">${adj}</div>${link}</div>`;
   } else {
     const left = Math.max(0, NUDGE_MIN_TRADES - twoTeam);
     const pct = Math.min(100, Math.round(twoTeam / NUDGE_MIN_TRADES * 100));
-    el.innerHTML = `<span class="light off" aria-hidden="true"></span><div class="tuning-text"><b>League tuning is off for now: ${left} more trade${left === 1 ? "" : "s"} to go</b><p>Your league has ${twoTeam} of the ${NUDGE_MIN_TRADES} trades needed. Until then, values use expert consensus and your league settings only.</p><div class="tprog" role="progressbar" aria-valuemin="0" aria-valuemax="${NUDGE_MIN_TRADES}" aria-valuenow="${twoTeam}" aria-label="Trades toward league tuning"><span style="width:${pct}%"></span></div><small class="tprog-label">${twoTeam} / ${NUDGE_MIN_TRADES} trades</small>${link}</div>`;
+    el.innerHTML = `<span class="light off" aria-hidden="true"></span><div class="tuning-text"><b>League Tuning Is Off for Now: ${left} More Trade${left === 1 ? "" : "s"} to Go</b><p>Your league has ${twoTeam} of the ${NUDGE_MIN_TRADES} trades needed. Until then, values use expert consensus and your league settings only.</p><div class="tprog" role="progressbar" aria-valuemin="0" aria-valuemax="${NUDGE_MIN_TRADES}" aria-valuenow="${twoTeam}" aria-label="Trades toward league tuning"><span style="width:${pct}%"></span></div><small class="tprog-label">${twoTeam} / ${NUDGE_MIN_TRADES} trades</small>${link}</div>`;
   }
 }
 
@@ -2001,12 +2008,12 @@ function renderStrategy(){
   const young = me.ageRank <= third, old = me.ageRank > N - third;
 
   let plan, why;
-  if (t.status === "contend"){ plan = "Win now"; why = `Your starters rank ${ordinal(me.strengthRank)} of ${N}. Spend future value to fill holes this season.`; }
+  if (t.status === "contend"){ plan = "Win Now"; why = `Your starters rank ${ordinal(me.strengthRank)} of ${N}. Spend future value to fill holes this season.`; }
   else if (t.status === "rebuild"){ plan = "Rebuild"; why = `Your starters rank ${ordinal(me.strengthRank)} of ${N}. Turn veterans into picks and young players before they lose value.`; }
-  else if (young || me.pickRank <= third){ plan = "Build toward next year"; why = "You're in the middle, but young and well stocked with picks. Add rising players rather than chasing this season."; }
-  else if (old){ plan = "Pick a lane"; why = "Middle of the pack with an older roster is the riskiest spot. Either push in now or sell veterans before they decline."; }
-  else { plan = "Push to contend"; why = "You're close. One or two targeted upgrades at your weakest spots could make you a contender."; }
-  const buying = plan === "Win now" || plan === "Push to contend";
+  else if (young || me.pickRank <= third){ plan = "Build Toward Next Year"; why = "You're in the middle, but young and well stocked with picks. Add rising players rather than chasing this season."; }
+  else if (old){ plan = "Pick a Lane"; why = "Middle of the pack with an older roster is the riskiest spot. Either push in now or sell veterans before they decline."; }
+  else { plan = "Push to Contend"; why = "You're close. One or two targeted upgrades at your weakest spots could make you a contender."; }
+  const buying = plan === "Win Now" || plan === "Push to Contend";
 
   // targets for needs
   const otherProfiles = [...prof.values()].filter(x => x.team.rid !== rid);
@@ -2074,14 +2081,14 @@ function renderStrategy(){
     <div class="posgrid">${POS.map(cell).join("")}<div class="pg ${pickCls}"><b>Picks</b><span>${ordinal(me.pickRank)}</span><small>${fmt(me.picks)} value</small></div></div>
     <p class="facts" style="margin-bottom:14px">Starter ranks out of ${N} teams. Roster age ranks ${ordinal(me.ageRank)} youngest (value-weighted average ${me.age ? me.age.toFixed(1) : "?"}).</p>
     <div class="grid2">
-      <div class="box"><h3>Recommended moves</h3><ul class="moves">${moves.concat(tips).map(m=>`<li>${esc(m)}</li>`).join("") || "<li>Your roster is balanced. Look for value trades rather than filling holes.</li>"}</ul></div>
-      ${needs.map(p => { const list = targetsFor(p); return `<div class="box"><h3>${buying ? "Targets" : "Young targets"} at ${p}</h3>${list.length ? `<p class="note" style="margin:0">${buying ? "Proven players on non-contending teams. Tap to open in the trade calculator." : "Young players with upside. Tap to open in the trade calculator."}</p><div class="targets">${list.map(tgtBtn).join("")}</div>` : `<p class="note">No clear targets in range.</p>`}</div>`; }).join("")}
-      ${sells.length ? `<div class="box"><h3>${buying ? "Sell for help now" : "Sell before they decline"}</h3><div class="targets">${sells.map(a => { const buyers = !buying ? buyersFor(a) : []; return `<div class="tgt" style="cursor:default"><span class="info">
+      <div class="box"><h3>Recommended Moves</h3><ul class="moves">${moves.concat(tips).map(m=>`<li>${esc(m)}</li>`).join("") || "<li>Your roster is balanced. Look for value trades rather than filling holes.</li>"}</ul></div>
+      ${needs.map(p => { const list = targetsFor(p); return `<div class="box"><h3>${buying ? "Targets" : "Young Targets"} at ${p}</h3>${list.length ? `<p class="note" style="margin:0">${buying ? "Proven players on non-contending teams. Tap to open in the trade calculator." : "Young players with upside. Tap to open in the trade calculator."}</p><div class="targets">${list.map(tgtBtn).join("")}</div>` : `<p class="note">No clear targets in range.</p>`}</div>`; }).join("")}
+      ${sells.length ? `<div class="box"><h3>${buying ? "Sell for Help Now" : "Sell Before They Decline"}</h3><div class="targets">${sells.map(a => { const buyers = !buying ? buyersFor(a) : []; return `<div class="tgt" style="cursor:default"><span class="info">
       <span class="l1">${esc(a.name)}<small>${esc(a.pos)}, ${esc(ageText(a.age)||"?")}</small></span>
       <span class="l2">${buyers.length ? `<span>Possible buyers: ${esc(buyers.join(", "))}</span>` : `<span>${buying ? "Bench piece to package" : "Aging, sell soon"}</span>`}</span>
     </span><span class="val">${fmt(a.value)}</span></div>`; }).join("")}</div></div>` : ""}
       ${historyInsightsHTML(t.rid)}
-      ${partners.length ? `<div class="box"><h3>Best trade partners</h3><ul class="moves">${partners.map(p => `<li><span class="teamcell" style="vertical-align:middle">${teamPhoto(p.x.team.rid, true)}<b>${esc(p.x.team.name)}</b></span> (${statusText[p.x.team.status].toLowerCase()})${p.fit.length ? `: deep at ${andList(p.fit)}` : ""}${p.give.length ? `${p.fit.length?",":":"} needs ${andList(p.give)}, where you're deep` : ""}.</li>`).join("")}</ul></div>` : ""}
+      ${partners.length ? `<div class="box"><h3>Best Trade Partners</h3><ul class="moves">${partners.map(p => `<li><span class="teamcell" style="vertical-align:middle">${teamPhoto(p.x.team.rid, true)}<b>${esc(p.x.team.name)}</b></span> (${statusText[p.x.team.status].toLowerCase()})${p.fit.length ? `: deep at ${andList(p.fit)}` : ""}${p.give.length ? `${p.fit.length?",":":"} needs ${andList(p.give)}, where you're deep` : ""}.</li>`).join("")}</ul></div>` : ""}
     </div>`;
 }
 $("stratTeam").addEventListener("change", renderStrategy);
@@ -2223,7 +2230,7 @@ function renderScores(data, week){
         : `<div class="lu empty"><span>No bench players</span><b></b></div>`; };
     return `<article class="mu${mine ? " mine" : ""}">${mine ? `<div class="mu-tag">Your matchup</div>` : ""}
       ${pair.map(row).join("")}
-      ${pair.length === 2 ? `<details${mine ? " open" : ""}><summary>Starting lineups</summary><div class="lineups"><div>${lineup(pair[0])}</div><div>${lineup(pair[1])}</div></div></details>
+      ${pair.length === 2 ? `<details${mine ? " open" : ""}><summary>Starting Lineups</summary><div class="lineups"><div>${lineup(pair[0])}</div><div>${lineup(pair[1])}</div></div></details>
       <details><summary>Bench</summary><div class="lineups"><div>${bench(pair[0])}</div><div>${bench(pair[1])}</div></div></details>` : ""}
     </article>`;
   }).join("");
@@ -2576,21 +2583,35 @@ function historyInsightsHTML(rid){
   if (seller) lines.push(`${nameOf(seller[0])} has traded away ${seller[1]} of their own draft picks. They may part with picks for the right player.`);
   const giver = Object.entries(losses).filter(([o, n]) => nameOf(o) && n >= 2 && n / trades[o] >= 0.6).sort((a,b) => b[1]-a[1])[0];
   if (giver) lines.push(`${nameOf(giver[0])} has come out behind in ${giver[1]} of ${trades[giver[0]]} trades by today's values. Worth checking in with.`);
-  return `<div class="box"><h3>From your league's trade history</h3><ul class="moves">${lines.map(l => `<li>${esc(l)}</li>`).join("")}</ul></div>`;
+  return `<div class="box"><h3>From Your League's Trade History</h3><ul class="moves">${lines.map(l => `<li>${esc(l)}</li>`).join("")}</ul></div>`;
 }
+
+// League settings opens from the football button beside the league name (not a tab)
+$("settingsIcon").innerHTML = FOOTBALL;
+function openSettingsPanel(){
+  for (const t of $("tabs").children) t.setAttribute("aria-selected", "false");
+  for (const name of ["calc","finder","standings","trophy","history","feedback","scores","values","settings","strategy"]) $("panel-"+name).classList.toggle("on", name === "settings");
+  $("settingsBtn").setAttribute("aria-pressed", "true");
+  store.set("tr_tab", "settings");
+}
+$("settingsBtn").addEventListener("click", () => {
+  if ($("settingsBtn").getAttribute("aria-pressed") === "true"){ $("tabs").querySelector('[data-tab="calc"]').click(); return; }   // tap again to close
+  openSettingsPanel();
+  $("panel-settings").scrollIntoView({ behavior: "smooth", block: "start" });
+});
 
 // ============================================================
 // THE BASICS / FREAKSHOW
 // The Basics shows only the Trade Calculator and League Values, for newer
 // players. Freakshow shows every tab. The choice is remembered per device.
 // ============================================================
-const BASIC_TABS = ["calc", "values", "settings"];
+const BASIC_TABS = ["calc", "values"];
 const currentMode = () => store.get("fo_mode") === "basics" ? "basics" : "freak";
 function applyMode(mode, quiet){
   store.set("fo_mode", mode);
   for (const b of $("modeToggle").children) b.setAttribute("aria-checked", b.dataset.mode === mode);
   for (const t of $("tabs").children) t.hidden = mode === "basics" && !BASIC_TABS.includes(t.dataset.tab);
-  $("modeNote").textContent = mode === "basics" ? "Just the trade calculator, player values, and league settings." : "Every tool Front Office has.";
+  $("modeNote").textContent = mode === "basics" ? "Just the trade calculator and player values." : "Every tool Front Office has.";
   // If the open tab just got hidden, go back to the calculator
   const open = $("tabs").querySelector('.tab[aria-selected="true"]');
   if (open && open.hidden) $("tabs").querySelector('[data-tab="calc"]').click();
@@ -3267,7 +3288,7 @@ function findForTarget(me, target){
   const out = $("tfResults"), note = $("tfNote"), plan = $("tfPlan");
   const C = finderContext(me), T = target.value, rid = target.owner, th = C.prof.get(rid);
   plan.textContent = `Looking for ways to get ${target.name} from ${th.team.name}${C.dir === "win" ? " while keeping your starting lineup as strong as possible" : " without giving up your best young pieces"}.`;
-  $("tfHeading").textContent = `Ways to get ${target.name}`;
+  $("tfHeading").textContent = `Ways to Get ${target.name}`;
   const mine = teamAssets(me), myPlayers = mine.filter(a => a.kind === "player");
   const before = {}; C.POS.forEach(p => before[p] = C.starterSum(myPlayers, p));
   const theirPlayers = teamAssets(rid).filter(a => a.kind === "player");
@@ -3326,7 +3347,7 @@ function findForTarget(me, target){
 }
 
 function findTrades(me, sending, V){
-  $("tfHeading").textContent = "Trades that make sense";
+  $("tfHeading").textContent = "Trades That Make Sense";
   const out = $("tfResults"), note = $("tfNote"), plan = $("tfPlan");
   const prof = teamProfiles(), my = prof.get(me), N = S.teams.size, third = N / 3, need = slotNeeds();
   const status = S.teams.get(me).status;
@@ -3551,6 +3572,7 @@ $("tabs").addEventListener("click", e => {
   if (b.dataset.tab === "standings") renderStandings();
   if (b.dataset.tab === "trophy") loadTrophyRoom();
   store.set("tr_tab", b.dataset.tab);
+  $("settingsBtn").setAttribute("aria-pressed", "false");
 });
 
 // ============================================================
