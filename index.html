@@ -379,8 +379,8 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 .bitems{gap:6px;margin-top:9px}
 .bitem{padding:5px 10px 5px 6px;gap:9px;border-radius:10px}
 .av.av-trade{width:36px;height:36px;font-size:15px}
-.bitem .bi-text b{font-size:14px}
-.bitem .bi-text small{font-size:11.5px}
+.bitem .bi-text b{font-size:17px}
+.bitem .bi-text small{font-size:14px}
 .bitem .bi-val{font-size:15px}
 .bitem .bi-x{font-size:12px}
 
@@ -413,6 +413,17 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 .bplayers .bitem .av{background:var(--card)}
 @media (max-width:600px){.bplayers{grid-template-columns:1fr}.bplayers .bitems:empty{display:none}}
 @media (prefers-color-scheme:dark){.bplayers{background:#18222A;color:#E8EDE9}.bplayers .bitem{background:#10171D;color:#E8EDE9}}
+
+/* Trade calculator roster lists: larger names and details */
+#listA .asset .nm b,#listB .asset .nm b{font-size:17.5px}
+#listA .asset .nm small,#listB .asset .nm small{font-size:14px}
+/* Scoreboard rows: tap the player to see their value, tap X to remove */
+.bitem{cursor:default}
+.bitem .bi-link{display:flex;align-items:center;gap:9px;flex:1;min-width:0;background:none;border:0;padding:0;color:inherit;text-align:left;cursor:pointer;font:inherit}
+.bitem .bi-link:hover .bi-text b{text-decoration:underline;text-underline-offset:3px}
+.bitem .bi-x{background:none;border:0;cursor:pointer;padding:4px 6px;border-radius:6px;color:inherit}
+.bitem .bi-x:hover{background:var(--loss-soft);color:var(--loss)}
+#valuesBody tr.hl{background:var(--gold-soft);outline:2px solid var(--gold);outline-offset:-2px}
 
 /* Trade Finder */
 .tf-top{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:14px;margin-bottom:14px;align-items:start}
@@ -686,10 +697,10 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
     <button class="tab" role="tab" aria-selected="false" data-tab="finder">Trade Finder</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="values">League Values</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="strategy">Team Strategy</button>
-    <button class="tab" role="tab" aria-selected="false" data-tab="standings">Standings</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="history">Trade History</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="standings">Standings</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="scores">Live Scores</button>
-    <button class="tab" role="tab" aria-selected="false" data-tab="feedback">Feedback &amp; Build Notes</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="feedback"><em>Feedback &amp; Build Notes</em></button>
   </div>
 
   <section class="panel on" id="panel-calc">
@@ -949,7 +960,13 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
   <p>Team Strategy uses the same history to show each team's trade record by today's values, their most frequent trade partner, managers who have traded away several of their own picks, and managers who tend to come out behind.</p>
 
   <h2>How trades are scored</h2>
-  <p>Two good players shouldn't automatically equal one great one. Before adding up each side, the calculator gives extra weight to higher values, so one 8,000 player beats two 4,000 players, roughly 8,000 to 6,800. The simple totals are shown underneath for comparison. A trade within 5% either way is called fair.</p>
+  <p>Several lesser pieces never add up to one difference-maker, so the calculator applies a <b>value adjustment</b> before comparing the two sides:</p>
+  <ul>
+    <li><b>Each side's best piece counts in full.</b></li>
+    <li><b>Every extra piece is discounted</b> by how far it falls below the best piece in the whole trade. A piece half as valuable counts about 80%, a quarter as valuable about 66%, and a tenth about 55%.</li>
+    <li><b>Extra roster spots cost value.</b> If you receive more pieces than you send, each extra spot subtracts about one waiver-level player, since you'd have to cut someone to make room.</li>
+  </ul>
+  <p>For example, an early first-round pick worth about 6,000 traded for three veterans worth 2,000, 1,800, and 1,500 looks even on raw totals (6,000 vs. 5,300), but after the adjustment the three veterans count for well under half of the pick. The raw totals are still shown under each side's number, and a note explains the adjustment whenever it makes a real difference. A trade within 5% either way is called fair. The same adjustment is used in Trade Finder and when grading Trade History.</p>
 
   <h2>When values update</h2>
   <p>Nothing is stored on a Front Office server. Each time you open a league, it pulls your league fresh from Sleeper and loads the latest market values, so roster moves, trades, and pick swaps show up as soon as you reload. Market values refresh automatically once a day, each morning, and the date of the last update is shown under your league name. On game days, Live Scores refreshes every minute for the current week.</p>
@@ -1296,6 +1313,13 @@ function readSettings(league, rosters){
 // ============================================================
 // STEP 5: BUILD LEAGUE-SPECIFIC VALUES
 // ============================================================
+// Age to one decimal (e.g. 26.4), worked out from the birth date; falls back to Sleeper's whole-number age
+function exactAge(p){
+  const born = p?.birth_date ? Date.parse(p.birth_date) : NaN;
+  if (!isNaN(born)) return Math.round((Date.now() - born) / 31557600000 * 10) / 10;
+  return p?.age ? Number(p.age) : null;
+}
+const ageText = a => a == null || a === "" ? "" : Number(a).toFixed(1);
 function buildValues(){
   const cfg = S.cfg, P = S.sleeperPlayers, assets = new Map();
   const owner = new Map();
@@ -1318,7 +1342,7 @@ function buildValues(){
       if (rk && rk < 2000) base = 10000 * Math.exp(-0.011*(rk-1)) * ageFactor(pos, p.age);
     }
     if (!base && !rostered) continue;
-    list.push({ id:"p:"+pid, pid, kind:"player", name, pos, nfl:p.team||"FA", age:p.age, base, owner: owner.get(pid) });
+    list.push({ id:"p:"+pid, pid, kind:"player", name, pos, nfl:p.team||"FA", age:exactAge(p), base, owner: owner.get(pid) });
   }
 
   // rank by base, overall and per position
@@ -1367,6 +1391,11 @@ function buildValues(){
   const topRaw = Math.max(1, ...list.map(a => a.raw));
   const topBase = Math.max(1, ...list.map(a => a.base));
   for (const a of list){ a.value = a.raw/topRaw*10000; a.market = a.base/topBase*10000; assets.set(a.id, a); }
+  // Waiver-level value: roughly the player every team could pick up for free
+  const byValue = list.map(a => a.value).sort((a, b) => b - a);
+  // the first player who wouldn't fit on any roster in this league (starters + bench, every team)
+  const rosterSpots = (cfg.rp || []).filter(x => !["IR","TAXI"].includes(x)).length || (cfg.starters + 10);
+  S.replacement = Math.min(1200, byValue[Math.min(byValue.length - 1, cfg.teams * rosterSpots)] || 300);
 
   // Ranks by this league's values: overall (#1, #2...) and by position (WR1, WR2...)
   const posSeen = {};
@@ -1512,7 +1541,7 @@ function assetPhoto(a, size){
 }
 function assetRow(a, sel){
   const sub = a.kind === "pick" ? a.nfl
-    : [a.nfl, a.age ? "age " + a.age : "", a.lgPosRank ? a.pos + a.lgPosRank : "", a.lgRank ? "#" + a.lgRank + " overall" : ""].filter(Boolean).join(", ");
+    : [a.nfl, a.age ? "age " + ageText(a.age) : "", a.lgPosRank ? a.pos + a.lgPosRank : "", a.lgRank ? "#" + a.lgRank + " overall" : ""].filter(Boolean).join(", ");
   return `<button class="asset${sel?" sel":""}" data-id="${esc(a.id)}" aria-pressed="${sel}">
     <span class="pos">${esc(a.pos)}</span>
     ${assetPhoto(a, "row")}
@@ -1527,6 +1556,24 @@ function renderSide(rid, listEl, badgeEl, set){
 }
 const eq = vals => Math.pow(vals.reduce((s,v) => s + Math.pow(v, STUD_EXPONENT), 0), 1/STUD_EXPONENT);
 
+// ---------- Trade value adjustment ----------
+// Several lesser pieces never add up to one difference-maker. For one side of a trade:
+//  1. Its best piece counts in full.
+//  2. Every extra piece is discounted by how far it falls below the best piece in the whole trade
+//     (half as valuable counts about 80%, a quarter as valuable about 66%, a tenth about 55%).
+//  3. Each extra roster spot it takes (receiving more pieces than you send) costs about one
+//     waiver-level player (the best player nobody in the league has room for), since someone has to be cut.
+const DEPTH_FLOOR = 0.4, DEPTH_CURVE = 0.6;
+function tradeValue(getVals, giveVals){
+  if (!getVals.length) return 0;
+  const all = getVals.concat(giveVals), top = Math.max(1, ...all);
+  const v = [...getVals].sort((a, b) => b - a);
+  let total = v[0];
+  for (let i = 1; i < v.length; i++) total += v[i] * (DEPTH_FLOOR + (1 - DEPTH_FLOOR) * Math.pow(v[i] / top, DEPTH_CURVE));
+  const extraSpots = Math.max(0, getVals.length - giveVals.length);
+  return Math.max(0, total - extraSpots * (S.replacement || 0));
+}
+
 function renderCalc(){
   const ra = Number($("teamA").value), rb = Number($("teamB").value);
   syncPicker("teamA"); syncPicker("teamB");
@@ -1539,7 +1586,7 @@ function renderCalc(){
 
   const send = [...S.sendIds].map(id => S.assets.get(id).value);
   const get = [...S.getIds].map(id => S.assets.get(id).value);
-  const eS = eq(send), eG = eq(get);
+  const eS = tradeValue(send, get), eG = tradeValue(get, send);   // adjusted for depth and roster spots
   $("sendNum").textContent = fmt(eS); $("getNum").textContent = fmt(eG);
   // Team name + logo on each side, and the players/picks being traded (tap one to remove it)
   const tA = S.teams.get(ra), tB = S.teams.get(rb);
@@ -1547,11 +1594,12 @@ function renderCalc(){
   $("getTeam").innerHTML = tB ? `${teamPhoto(rb, true)}<span class="nm">${esc(tB.name)}</span>` : "";
   const itemsHTML = (ids, side) => [...ids].map(id => S.assets.get(id)).filter(Boolean).sort((a, b) => b.value - a.value)
     .map(a => {
-      const sub = a.kind === "player" ? [a.pos, a.nfl, a.age ? "age " + a.age : ""].filter(Boolean).join(", ") : a.nfl;
-      return `<button type="button" class="bitem" data-side="${side}" data-id="${esc(a.id)}" aria-label="Remove ${esc(a.name)} from the trade">
-        ${assetPhoto(a, "trade")}
-        <span class="bi-text"><b>${esc(a.name)}</b><small>${esc(sub)}</small></span>
-        <span class="bi-val">${fmt(a.value)}</span><span class="bi-x" aria-hidden="true">✕</span></button>`;
+      const sub = a.kind === "player" ? [a.pos, a.nfl, a.age ? "age " + ageText(a.age) : ""].filter(Boolean).join(", ") : a.nfl;
+      return `<div class="bitem">
+        <button type="button" class="bi-link" data-show="${esc(a.id)}" title="See ${esc(a.name)} in League Values">
+          ${assetPhoto(a, "trade")}<span class="bi-text"><b>${esc(a.name)}</b><small>${esc(sub)}</small></span></button>
+        <span class="bi-val">${fmt(a.value)}</span>
+        <button type="button" class="bi-x" data-side="${side}" data-id="${esc(a.id)}" aria-label="Remove ${esc(a.name)} from the trade">✕</button></div>`;
     }).join("");
   $("sendItems").innerHTML = itemsHTML(S.sendIds, "send");
   $("getItems").innerHTML = itemsHTML(S.getIds, "get");
@@ -1579,6 +1627,11 @@ function renderCalc(){
   let hint = "";
   if (me.status === "rebuild" && (getPicks || getYoung)) hint = "Picks and young players fit your rebuild.";
   else if (me.status === "contend" && (getPicks || getYoung) && !(gap > 0)) hint = "You're contending, so trading proven players for futures could hurt this season.";
+  // Explain the value adjustment when it changes the picture noticeably
+  const rawS = send.reduce((a, b) => a + b, 0), rawG = get.reduce((a, b) => a + b, 0);
+  const many = get.length > send.length ? ["You get", get.length, send.length, rawG, eG] : send.length > get.length ? ["They get", send.length, get.length, rawS, eS] : null;
+  if (many && many[3] - many[4] > 0.08 * many[3])
+    hint = (hint ? hint + " " : "") + `Value adjustment: ${many[1]} pieces for ${many[2]} counts ${fmt(many[3] - many[4])} less than the raw total, because depth pieces don't add up to a difference-maker and take roster spots.`;
   $("hint").textContent = hint;
 
   // suggest assets to even it out
@@ -1607,9 +1660,24 @@ function toggle(set, e){
 }
 $("listA").addEventListener("click", e => toggle(S.sendIds, e));
 $("board").addEventListener("click", e => {
-  const b = e.target.closest(".bitem"); if (!b) return;
-  (b.dataset.side === "send" ? S.sendIds : S.getIds).delete(b.dataset.id); renderCalc();
+  const x = e.target.closest(".bi-x");
+  if (x){ (x.dataset.side === "send" ? S.sendIds : S.getIds).delete(x.dataset.id); renderCalc(); return; }
+  const l = e.target.closest(".bi-link");
+  if (l) showInValues(l.dataset.show);
 });
+// Jump to a player's (or pick's) row in League Values and highlight it
+function showInValues(id){
+  const a = S.assets.get(id); if (!a) return;
+  const valuesTab = $("tabs").querySelector('[data-tab="values"]');
+  valuesTab.click();
+  S.posFilter = a.kind === "pick" ? "PICK" : "ALL";
+  for (const x of $("posFilter").children) x.setAttribute("aria-pressed", x.dataset.pos === S.posFilter);
+  $("valueSearch").value = a.name;
+  if (a.owner == null) $("rosteredOnly").checked = false;
+  renderValues();
+  const row = $("valuesBody").querySelector(`tr[data-id="${CSS.escape(id)}"]`);
+  if (row){ row.classList.add("hl"); row.scrollIntoView({ behavior: "smooth", block: "center" }); }
+}
 $("listB").addEventListener("click", e => toggle(S.getIds, e));
 $("teamA").addEventListener("change", renderCalc);
 $("teamB").addEventListener("change", renderCalc);
@@ -1651,7 +1719,7 @@ function renderValues(){
     const teamHTML = a.owner != null ? `<span class="teamcell">${teamPhoto(a.owner, true)}${esc(team)}</span>` : "Free agent";
     const ch = a.market ? (a.value/a.market - 1) * 100 : 0;
     const chTxt = a.kind === "pick" || Math.abs(ch) < 1 ? "" : `<span class="${ch>0?"up":"down"}">${ch>0?"+":""}${Math.round(ch)}%</span>`;
-    return `<tr><td class="n">${i+1}</td><td><span class="teamcell">${assetPhoto(a, true)}${esc(a.name)}</span></td><td>${esc(a.pos)}</td><td class="n">${esc(a.age||"")}</td>
+    return `<tr data-id="${esc(a.id)}"><td class="n">${a.kind === "player" && a.lgRank ? a.lgRank : i+1}</td><td><span class="teamcell">${assetPhoto(a, true)}${esc(a.name)}</span></td><td>${esc(a.pos)}</td><td class="n">${esc(ageText(a.age))}</td>
       <td>${teamHTML}</td><td class="n big">${fmt(a.value)}</td><td class="n">${a.kind==="pick"?"":fmt(a.market)}</td><td class="n">${chTxt}</td></tr>`;
   }).join("") || `<tr><td colspan="8" class="empty">No players match. Try a different search or filter.</td></tr>`;
 }
@@ -1832,7 +1900,7 @@ function renderStrategy(){
 
   // Line 1: player name with position and age. Line 2: the fantasy team that owns him.
   const tgtBtn = a => `<button class="tgt" data-id="${esc(a.id)}"><span class="info">
-      <span class="l1">${esc(a.name)}<small>${esc(a.pos)}, ${esc(a.age||"?")}</small></span>
+      <span class="l1">${esc(a.name)}<small>${esc(a.pos)}, ${esc(ageText(a.age)||"?")}</small></span>
       <span class="l2">${teamPhoto(a.owner, true)}<span>${esc(S.teams.get(a.owner)?.name)}</span></span>
     </span><span class="val">${fmt(a.value)}</span></button>`;
   const cell = p => { const r = me.pos[p].rank, cls = r <= third ? "good" : r > N-third ? "bad" : ""; return `<div class="pg ${cls}"><b>${p}</b><span>${ordinal(r)}</span><small>depth ${ordinal(me.pos[p].depthRank)}</small></div>`; };
@@ -1857,7 +1925,7 @@ function renderStrategy(){
       <div class="box"><h3>Recommended moves</h3><ul class="moves">${moves.concat(tips).map(m=>`<li>${esc(m)}</li>`).join("") || "<li>Your roster is balanced. Look for value trades rather than filling holes.</li>"}</ul></div>
       ${needs.map(p => { const list = targetsFor(p); return `<div class="box"><h3>${buying ? "Targets" : "Young targets"} at ${p}</h3>${list.length ? `<p class="note" style="margin:0">${buying ? "Proven players on non-contending teams. Tap to open in the trade calculator." : "Young players with upside. Tap to open in the trade calculator."}</p><div class="targets">${list.map(tgtBtn).join("")}</div>` : `<p class="note">No clear targets in range.</p>`}</div>`; }).join("")}
       ${sells.length ? `<div class="box"><h3>${buying ? "Sell for help now" : "Sell before they decline"}</h3><div class="targets">${sells.map(a => { const buyers = !buying ? buyersFor(a) : []; return `<div class="tgt" style="cursor:default"><span class="info">
-      <span class="l1">${esc(a.name)}<small>${esc(a.pos)}, ${esc(a.age||"?")}</small></span>
+      <span class="l1">${esc(a.name)}<small>${esc(a.pos)}, ${esc(ageText(a.age)||"?")}</small></span>
       <span class="l2">${buyers.length ? `<span>Possible buyers: ${esc(buyers.join(", "))}</span>` : `<span>${buying ? "Bench piece to package" : "Aging, sell soon"}</span>`}</span>
     </span><span class="val">${fmt(a.value)}</span></div>`; }).join("")}</div></div>` : ""}
       ${historyInsightsHTML(t.rid)}
@@ -2124,12 +2192,14 @@ function valueItem(it){
 function gradeTrade(tr){
   const sides = tr.sides.map(sd => {
     const items = sd.gets.map(it => ({ ...valueItem(it), from: it.from })).sort((a,b) => b.value - a.value);
-    return { ...sd, items, total: eq(items.map(i => i.value)), raw: items.reduce((s,i) => s + i.value, 0) };
+    return { ...sd, items, raw: items.reduce((s,i) => s + i.value, 0) };
   });
   for (const x of sides){
     // What this team gave up = everything other teams received from it
     x.sentItems = sides.filter(y => y !== x).flatMap(y => y.items.filter(i => i.from === x.rid));
-    x.sentTotal = eq(x.sentItems.map(i => i.value));
+    const got = x.items.map(i => i.value), gave = x.sentItems.map(i => i.value);
+    x.total = tradeValue(got, gave);
+    x.sentTotal = tradeValue(gave, got);
     x.margin = x.total - x.sentTotal;
     x.result = Math.abs(x.margin) <= FAIR_BAND * Math.max(x.total, x.sentTotal, 1) ? "even" : x.margin > 0 ? "won" : "lost";
   }
@@ -2835,20 +2905,20 @@ function renderFinder(){
   pSel.value = [...pSel.options].some(o => o.value === prevP) ? prevP : "any";
   // sending summary
   const sending = [...tfSend].map(id => S.assets.get(id)).filter(Boolean).sort((a, b) => b.value - a.value);
-  const V = eq(sending.map(a => a.value));
+  const V = tradeValue(sending.map(a => a.value), []);
   if (tfTarget && (!S.assets.get(tfTarget) || S.assets.get(tfTarget).owner === me)) tfTarget = null;
   renderRecs(me);
   if (tfTarget){
     const a = S.assets.get(tfTarget), owner = S.teams.get(a.owner);
     $("tfOptsTitle").textContent = "Trying to get";
     $("tfSending").innerHTML = `<button type="button" class="tf-target" id="tfClearTarget" aria-label="Stop looking for ${esc(a.name)}">
-      ${assetPhoto(a, "sm")}<span class="bi-text"><b>${esc(a.name)}</b><small>${esc([a.pos + (a.lgPosRank || ""), a.nfl, a.age ? "age " + a.age : "", "from " + (owner?.name || "")].filter(Boolean).join(", "))}</small></span><span class="v">${fmt(a.value)}</span><span class="tf-x" aria-hidden="true">✕</span></button>`;
+      ${assetPhoto(a, "sm")}<span class="bi-text"><b>${esc(a.name)}</b><small>${esc([a.pos + (a.lgPosRank || ""), a.nfl, a.age ? "age " + ageText(a.age) : "", "from " + (owner?.name || "")].filter(Boolean).join(", "))}</small></span><span class="v">${fmt(a.value)}</span><span class="tf-x" aria-hidden="true">✕</span></button>`;
     findForTarget(me, a);
     return;
   }
   $("tfOptsTitle").textContent = "Trading away";
   $("tfSending").innerHTML = sending.length ? sending.map(a => `<button type="button" class="tf-chip" data-id="${esc(a.id)}" aria-label="Remove ${esc(a.name)}">
-      ${assetPhoto(a, "sm")}<span class="bi-text"><b>${esc(a.name)}</b><small>${esc(a.kind === "player" ? [a.pos + (a.lgPosRank || ""), a.nfl, a.age ? "age " + a.age : ""].filter(Boolean).join(", ") : a.nfl)}</small></span><span class="v">${fmt(a.value)}</span><span class="tf-x" aria-hidden="true">✕</span></button>`).join("")
+      ${assetPhoto(a, "sm")}<span class="bi-text"><b>${esc(a.name)}</b><small>${esc(a.kind === "player" ? [a.pos + (a.lgPosRank || ""), a.nfl, a.age ? "age " + ageText(a.age) : ""].filter(Boolean).join(", ") : a.nfl)}</small></span><span class="v">${fmt(a.value)}</span><span class="tf-x" aria-hidden="true">✕</span></button>`).join("")
       + (sending.length > 1 ? `<div class="tf-total"><span>Package value</span><span>${fmt(V)}</span></div>` : "")
     : `<p class="empty">Tap a player or pick on the left.</p>`;
   findTrades(me, sending, V);
@@ -2891,7 +2961,7 @@ function renderRecs(me){
       } else {
         if (old) continue;
         score = C.futureVal(a) / 2000 + (young ? 0.6 : 0) + (isWeak ? 0.3 : 0) + (th.team.status === "contend" ? 0.4 : 0);
-        why = young ? `Young (${a.age}), fits your rebuild` : `Long-term value at ${a.pos}`;
+        why = young ? `Young (${ageText(a.age)}), fits your rebuild` : `Long-term value at ${a.pos}`;
       }
       if (th.team.status === "rebuild" && C.dir === "win") why += ", from a rebuilding team";
       if (th.team.status === "contend" && C.dir === "build") why += ", from a contender";
@@ -2903,7 +2973,7 @@ function renderRecs(me){
   for (const r of recs){ if ((per[r.a.owner] = (per[r.a.owner] || 0) + 1) <= 2) top.push(r); if (top.length >= 10) break; }
   $("tfRecsNote").textContent = C.dir === "win" ? "Players who would most improve your starting lineup now." : "Young players with long-term value for your rebuild.";
   $("tfRecs").innerHTML = top.length ? top.map(r => `<div class="tf-rec${tfTarget === r.a.id ? " on" : ""}">
-      ${assetPhoto(r.a, "md")}<span class="tn"><b>${esc(r.a.name)}</b><small>${esc([r.a.pos + (r.a.lgPosRank || ""), r.a.nfl, r.a.age ? "age " + r.a.age : "", S.teams.get(r.a.owner)?.name].filter(Boolean).join(", "))}</small><span class="why">${esc(r.why)}</span></span>
+      ${assetPhoto(r.a, "md")}<span class="tn"><b>${esc(r.a.name)}</b><small>${esc([r.a.pos + (r.a.lgPosRank || ""), r.a.nfl, r.a.age ? "age " + ageText(r.a.age) : "", S.teams.get(r.a.owner)?.name].filter(Boolean).join(", "))}</small><span class="why">${esc(r.why)}</span></span>
       <span class="v">${fmt(r.a.value)}</span><button type="button" class="ghost go" data-target="${esc(r.a.id)}">Find a deal</button></div>`).join("")
     : `<p class="empty">No clear targets right now${partner !== "any" ? " on that team" : ""}.</p>`;
 }
@@ -2927,7 +2997,8 @@ function findForTarget(me, target){
   const results = [];
   for (let k = 1; k <= 3; k++) for (const pack of combos(pool.slice(0, POOL[k]), k)){
     if (pack.reduce((t, a) => t + a.value, 0) < T * 0.9) continue;
-    const S2 = eq(pack.map(a => a.value));
+    const pv = pack.map(a => a.value);
+    const S2 = tradeValue(pv, [T]) * T / Math.max(1, tradeValue([T], pv));   // adjusted for depth and roster spots
     if (S2 < T * 0.9 || S2 > T * 1.15) continue;                          // what you send should be close to what they're giving up
     const ids = new Set(pack.map(a => a.id));
     const after = myPlayers.filter(a => !ids.has(a.id)).concat(target.kind === "player" ? [target] : []);
@@ -2961,7 +3032,7 @@ function findForTarget(me, target){
     return `<article class="tf-card${i === 0 ? " best" : ""}">
       <div class="tf-card-head">${teamPhoto(rid, "md")}<span class="nm"><b>${esc(th.team.name)}</b><small>${statusText[th.team.status]}${i === 0 ? ", best fit" : ""}</small></span></div>
       <div class="tf-get"><div class="lbl">You send</div>
-        ${r.pack.map(a => `<div class="tf-row">${assetPhoto(a, "md")}<span class="tn"><b>${esc(a.name)}</b><small>${esc(a.kind === "player" ? [a.pos + (a.lgPosRank || ""), a.nfl, a.age ? "age " + a.age : ""].filter(Boolean).join(", ") : a.nfl)}</small></span><span class="v">${fmt(a.value)}</span></div>`).join("")}
+        ${r.pack.map(a => `<div class="tf-row">${assetPhoto(a, "md")}<span class="tn"><b>${esc(a.name)}</b><small>${esc(a.kind === "player" ? [a.pos + (a.lgPosRank || ""), a.nfl, a.age ? "age " + ageText(a.age) : ""].filter(Boolean).join(", ") : a.nfl)}</small></span><span class="v">${fmt(a.value)}</span></div>`).join("")}
       </div>
       <ul class="tf-why">${why.slice(0, 3).map(w => `<li>${esc(w)}</li>`).join("")}</ul>
       <div class="tf-foot"><span class="tf-verdict" style="color:${verdict[1]}">${verdict[0]}</span>
@@ -3014,7 +3085,9 @@ function findTrades(me, sending, V){
      for (const pack of combos(pool.slice(0, POOL[k]), k)){
       const raw = pack.reduce((t, a) => t + a.value, 0);
       if (raw < V * FAIR_LOW) continue;                         // can't reach fair value
-      const R = eq(pack.map(a => a.value));
+      // Adjusted value you get, on the same scale as what you send
+      const pv = pack.map(a => a.value), sv = sending.map(a => a.value);
+      const R = tradeValue(pv, sv) * V / Math.max(1, tradeValue(sv, pv));
       if (R < V * FAIR_LOW || R > V * FAIR_HIGH) continue;
       if (want !== "fit" && !pack.some(a => (want === "PICK" ? a.kind === "pick" : a.pos === want))) continue;
       // How much your starting lineup improves (losing what you send, gaining what you get)
@@ -3071,7 +3144,7 @@ function findTrades(me, sending, V){
     return `<article class="tf-card${i === 0 ? " best" : ""}">
       <div class="tf-card-head">${teamPhoto(r.rid, "md")}<span class="nm"><b>${esc(th.name)}</b><small>${statusText[th.status]}${i === 0 ? ", best fit" : ""}</small></span></div>
       <div class="tf-get"><div class="lbl">You get</div>
-        ${r.pack.map(a => `<div class="tf-row">${assetPhoto(a, "md")}<span class="tn"><b>${esc(a.name)}</b><small>${esc(a.kind === "player" ? [a.pos + (a.lgPosRank || ""), a.nfl, a.age ? "age " + a.age : ""].filter(Boolean).join(", ") : a.nfl)}</small></span><span class="v">${fmt(a.value)}</span></div>`).join("")}
+        ${r.pack.map(a => `<div class="tf-row">${assetPhoto(a, "md")}<span class="tn"><b>${esc(a.name)}</b><small>${esc(a.kind === "player" ? [a.pos + (a.lgPosRank || ""), a.nfl, a.age ? "age " + ageText(a.age) : ""].filter(Boolean).join(", ") : a.nfl)}</small></span><span class="v">${fmt(a.value)}</span></div>`).join("")}
       </div>
       <ul class="tf-why">${why.slice(0, 3).concat(r.spots > 0 ? why.slice(-1) : []).filter((w, i, a) => a.indexOf(w) === i).map(w => `<li>${esc(w)}</li>`).join("")}</ul>
       <div class="tf-foot"><span class="tf-verdict" style="color:${verdict[1]}">${verdict[0]}</span>
