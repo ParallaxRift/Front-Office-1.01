@@ -342,13 +342,17 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 @media (prefers-color-scheme:dark){.toast{background:#E8EDE9;color:#10171D}}
 
 /* The Basics / Freakshow toggle */
-.modebar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin:18px 0 0}
+.modebar{position:relative;display:flex;flex-direction:column;align-items:flex-end;margin:0 0 0 auto;flex:none}
+.modebar[hidden]{display:none}
+/* the note hangs below the toggle so the toggle itself lines up with the league name */
+.mode-note{position:absolute;top:100%;right:4px;margin-top:5px;white-space:nowrap;text-align:right}
+@media (max-width:640px){.leaguehead{flex-wrap:wrap}.leaguehead > div:not(.modebar){flex:1 1 0;min-width:0}.modebar{margin:6px 0 0;align-items:flex-start;width:100%;gap:5px}.mode-note{position:static;margin:0;text-align:left;white-space:normal}}
 .mode-toggle{display:inline-flex;background:var(--card);border:1.5px solid var(--line);border-radius:999px;padding:3px}
 .mode-toggle button{border:0;background:none;border-radius:999px;padding:7px 16px;font-family:var(--display);font-weight:700;font-size:17px;color:var(--muted);cursor:pointer;transition:background .2s,color .2s}
 .mode-toggle button[aria-checked=true]{background:var(--field);color:#fff}
 .mode-toggle button[data-mode=freak][aria-checked=true]{background:var(--ink);color:var(--gold)}
 .mode-note{font-size:14px;color:var(--muted)}
-.tabs + .panel, .modebar + .tabs{margin-top:10px}
+.tabs + .panel{margin-top:10px}
 @media (prefers-reduced-motion:reduce){.mode-toggle button{transition:none}}
 
 /* League settings button next to the league name */
@@ -665,18 +669,18 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
   </section>
 
   <section class="leaguebar" id="leagueBar">
-    <div class="leaguehead"><span id="leagueAv"></span><div><div class="lname-row"><h2 id="leagueName"></h2><button type="button" class="settings-btn" id="settingsBtn" aria-pressed="false" aria-controls="panel-settings"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>League settings</button></div><small id="myTeamLine"></small></div></div>
+    <div class="leaguehead"><span id="leagueAv"></span><div><div class="lname-row"><h2 id="leagueName"></h2><button type="button" class="settings-btn" id="settingsBtn" aria-pressed="false" aria-controls="panel-settings"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>League settings</button></div><small id="myTeamLine"></small></div>
+      <div class="modebar" id="modeBar" hidden>
+        <div class="mode-toggle" id="modeToggle" role="radiogroup" aria-label="How much to show">
+          <button type="button" role="radio" data-mode="basics" aria-checked="false">The Basics</button>
+          <button type="button" role="radio" data-mode="freak" aria-checked="true">Freakshow</button>
+        </div>
+        <span class="mode-note" id="modeNote"></span>
+      </div></div>
     <div class="chips" id="chips"></div>
     <p class="source" id="source" hidden></p>
   </section>
 
-  <div class="modebar" id="modeBar" hidden>
-    <div class="mode-toggle" id="modeToggle" role="radiogroup" aria-label="How much to show">
-      <button type="button" role="radio" data-mode="basics" aria-checked="false">The Basics</button>
-      <button type="button" role="radio" data-mode="freak" aria-checked="true">Freakshow</button>
-    </div>
-    <span class="mode-note" id="modeNote"></span>
-  </div>
   <div class="tabs" id="tabs" role="tablist">
     <button class="tab" role="tab" aria-selected="true" data-tab="calc">Trade Calculator</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="finder">Trade Finder</button>
