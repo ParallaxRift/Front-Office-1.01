@@ -351,17 +351,33 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 .settings-btn[aria-pressed=true]{background:var(--ink);border-color:var(--ink);color:var(--paper)}
 
 /* Trade Finder */
-.tf-top{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:16px;margin-bottom:18px}
+.tf-top{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:14px;margin-bottom:14px;align-items:start}
 @media (max-width:760px){.tf-top{grid-template-columns:1fr}}
 .tf-pick h3,.tf-opts h3{margin:0 0 10px}
 #tfSearch{margin-bottom:8px}
-.tf-list{max-height:380px}
+.tf-list{max-height:250px}
+#panel-finder .box{padding:12px 14px}
+#panel-finder .tf-pick h3,#panel-finder .tf-opts h3{font-size:20px;margin:0 0 8px}
+#panel-finder .teamline{margin-bottom:8px}
+#panel-finder .pk-btn{padding:4px 8px}
+#tfSearch{padding:8px 10px;margin-bottom:6px}
+#tfList .asset{padding:5px 6px}
+#tfList .av.av-row{width:34px;height:34px}
+#tfList .asset .nm b{font-size:15px}
+#tfList .asset .nm small{font-size:12px}
+#tfList .asset .val{font-size:17px}
+.tf-filters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}
+.tf-filters .field{max-width:none;min-width:0}
+.tf-filters label{font-size:12.5px}
+.tf-filters select{padding:7px 8px;font-size:14px}
+@media (max-width:440px){.tf-filters{grid-template-columns:1fr 1fr}}
 .tf-sending{display:flex;flex-direction:column;gap:8px}
-.tf-chip{display:flex;align-items:center;gap:10px;background:var(--gold-soft);border:0;border-radius:10px;padding:6px 10px 6px 6px;text-align:left;cursor:pointer;width:100%}
+.tf-chip{display:flex;align-items:center;gap:8px;background:var(--gold-soft);border:0;border-radius:10px;padding:4px 10px 4px 5px;text-align:left;cursor:pointer;width:100%}
 .tf-chip .bi-text{flex:1;min-width:0;display:flex;flex-direction:column}
-.tf-chip b{font-size:16px}
-.tf-chip small{color:var(--muted);font-size:13px}
-.tf-chip .v{font-family:var(--display);font-weight:800;font-size:19px}
+.tf-chip b{font-size:15px}
+.tf-chip small{color:var(--muted);font-size:12px}
+.tf-chip .v{font-family:var(--display);font-weight:800;font-size:17px}
+.tf-sending{gap:6px}
 .tf-total{display:flex;justify-content:space-between;font-weight:700;margin-top:4px}
 .tf-h{font-family:var(--display);font-size:26px;margin:0 0 4px}
 .tf-results{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
@@ -700,13 +716,17 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
       <div class="box tf-opts">
         <h3>Trading away</h3>
         <div id="tfSending" class="tf-sending"><p class="empty">Tap a player or pick on the left.</p></div>
-        <div class="field" style="max-width:none;margin-top:12px"><label for="tfWant">Looking for</label>
+        <div class="tf-filters">
+        <div class="field"><label for="tfWant">Looking for</label>
           <select id="tfWant">
-            <option value="fit">Best fit for my team</option><option value="QB">A quarterback</option><option value="RB">A running back</option>
+            <option value="fit">Best fit</option><option value="QB">A quarterback</option><option value="RB">A running back</option>
             <option value="WR">A wide receiver</option><option value="TE">A tight end</option><option value="PICK">Draft picks</option>
           </select></div>
-        <div class="field" style="max-width:none;margin-top:10px"><label for="tfPartner">Trade partner</label><select id="tfPartner"></select></div>
-        <p class="note" id="tfPlan" style="margin:12px 0 0"></p>
+        <div class="field"><label for="tfPartner">Trade partner</label><select id="tfPartner"></select></div>
+        <div class="field"><label for="tfMax">Pieces back</label>
+          <select id="tfMax"><option value="4">Up to 4</option><option value="3">Up to 3</option><option value="2">Up to 2</option><option value="1">Just 1</option></select></div>
+        </div>
+        <p class="note" id="tfPlan" style="margin:10px 0 0"></p>
       </div>
     </div>
     <h3 class="tf-h">Trades that make sense</h3>
@@ -2652,7 +2672,7 @@ $("fbForm").addEventListener("submit", async e => {
 // ============================================================
 // TRADE FINDER
 // Pick what you'd trade away. Front Office searches every other roster for
-// fair packages (one or two pieces back) and ranks them by how well they fit
+// fair packages (one to four pieces back) and ranks them by how well they fit
 // your team's direction and needs, and how likely the other team is to say yes.
 // ============================================================
 const tfSend = new Set();
@@ -2678,7 +2698,7 @@ function renderFinder(){
   const sending = [...tfSend].map(id => S.assets.get(id)).filter(Boolean).sort((a, b) => b.value - a.value);
   const V = eq(sending.map(a => a.value));
   $("tfSending").innerHTML = sending.length ? sending.map(a => `<button type="button" class="tf-chip" data-id="${esc(a.id)}" aria-label="Remove ${esc(a.name)}">
-      ${assetPhoto(a, "md")}<span class="bi-text"><b>${esc(a.name)}</b><small>${esc(a.kind === "player" ? [a.pos + (a.lgPosRank || ""), a.nfl, a.age ? "age " + a.age : ""].filter(Boolean).join(", ") : a.nfl)}</small></span><span class="v">${fmt(a.value)}</span></button>`).join("")
+      ${assetPhoto(a, "sm")}<span class="bi-text"><b>${esc(a.name)}</b><small>${esc(a.kind === "player" ? [a.pos + (a.lgPosRank || ""), a.nfl, a.age ? "age " + a.age : ""].filter(Boolean).join(", ") : a.nfl)}</small></span><span class="v">${fmt(a.value)}</span></button>`).join("")
       + (sending.length > 1 ? `<div class="tf-total"><span>Package value</span><span>${fmt(V)}</span></div>` : "")
     : `<p class="empty">Tap a player or pick on the left.</p>`;
   findTrades(me, sending, V);
@@ -2710,13 +2730,23 @@ function findTrades(me, sending, V){
   const want = $("tfWant").value, partner = $("tfPartner").value;
 
   const results = [];
+  const maxPieces = Number($("tfMax").value) || 4;
+  // Biggest pieces first; bigger packages look at fewer candidates to stay fast
+  const POOL = { 1: 30, 2: 26, 3: 16, 4: 12 };
+  function* combos(arr, k, start = 0, picked = []){
+    if (picked.length === k){ yield picked.slice(); return; }
+    for (let i = start; i <= arr.length - (k - picked.length); i++){ picked.push(arr[i]); yield* combos(arr, k, i + 1, picked); picked.pop(); }
+  }
   for (const [rid, th] of prof){
     if (rid === me || (partner !== "any" && String(rid) !== partner)) continue;
-    const pool = teamAssets(rid).filter(a => a.value >= V * 0.12 && a.value <= V * FAIR_HIGH);
-    const top = pool.slice(0, 26);
-    const packs = top.map(a => [a]);
-    for (let i = 0; i < top.length; i++) for (let j = i + 1; j < top.length; j++) packs.push([top[i], top[j]]);
-    for (const pack of packs){
+    const roster = teamAssets(rid);
+    const theirPlayers = roster.filter(a => a.kind === "player");
+    const theirBefore = {}; POS.forEach(p => theirBefore[p] = starterSum(theirPlayers, p));
+    const pool = roster.filter(a => a.value >= V * 0.08 && a.value <= V * FAIR_HIGH);
+    for (let k = 1; k <= maxPieces; k++){
+     for (const pack of combos(pool.slice(0, POOL[k]), k)){
+      const raw = pack.reduce((t, a) => t + a.value, 0);
+      if (raw < V * FAIR_LOW) continue;                         // can't reach fair value
       const R = eq(pack.map(a => a.value));
       if (R < V * FAIR_LOW || R > V * FAIR_HIGH) continue;
       if (want !== "fit" && !pack.some(a => (want === "PICK" ? a.kind === "pick" : a.pos === want))) continue;
@@ -2729,19 +2759,21 @@ function findTrades(me, sending, V){
       let fit = dir === "win" ? gain / 1000 + 0.35 * nowGain / 1000 : futureGain / 1000 + 0.25 * gain / 1000;
       const fills = pack.filter(a => a.kind === "player" && weak.includes(a.pos) && gainBy[a.pos] > 0).map(a => a.pos);
       fit += fills.length * 0.8;
-      if (pack.length === 2) fit -= 0.25;                          // simpler deals first
+      fit -= 0.3 * (pack.length - 1);                              // simpler deals first
+      const spots = pack.length - sending.length;                  // roster spots you'd need to open
+      if (spots >= 2) fit -= 0.2 * (spots - 1);
       if (dir === "win") fit -= 0.4 * pack.filter(a => a.kind === "player" && a.age && a.age >= (CLIFF[a.pos] || 30) + 2).length;  // about to decline
       // Would they say yes? Their lineup gain + their direction
-      const theirPlayers = teamAssets(rid).filter(a => a.kind === "player");
       const theirAfter = theirPlayers.filter(a => !pack.includes(a)).concat(sending.filter(a => a.kind === "player"));
-      let theirGain = 0; POS.forEach(p => theirGain += starterSum(theirAfter, p) - starterSum(theirPlayers, p));
+      let theirGain = 0; POS.forEach(p => theirGain += starterSum(theirAfter, p) - theirBefore[p]);
       const theirDir = th.team.status === "contend" ? "win" : th.team.status === "rebuild" ? "build" : "either";
       let accept = theirDir === "build" ? (sentFuture - pack.reduce((s, a) => s + futureVal(a), 0)) / 1000 : theirGain / 1000;
       if (theirDir === "either") accept = Math.max(accept, (sentFuture - pack.reduce((s, a) => s + futureVal(a), 0)) / 1000);
       const theirNeed = sending.filter(a => a.kind === "player" && th.pos[a.pos].rank > N / 2).length;
       accept += theirNeed * 0.5;
       const score = fit + 0.5 * accept - 3 * Math.abs(R - V) / V + (R - V) / V;
-      results.push({ rid, pack, R, gain, gainBy, futureGain, fills, accept, theirNeed, score, theirDir });
+      results.push({ rid, pack, R, gain, gainBy, futureGain, fills, accept, theirNeed, score, theirDir, spots });
+     }
     }
   }
   // best two per team, then best overall
@@ -2751,7 +2783,7 @@ function findTrades(me, sending, V){
   note.textContent = picks.length
     ? `Every deal here is within about ${Math.round((1 - FAIR_LOW) * 100)}% of fair by your league's values. Best fits first.`
     : "";
-  if (!picks.length){ out.innerHTML = `<p class="empty">No fair one- or two-piece deals found${want !== "fit" ? " for that position" : ""}${partner !== "any" ? " with that team" : ""}. Try "Best fit," "Any team," or add or remove a piece.</p>`; return; }
+  if (!picks.length){ out.innerHTML = `<p class="empty">No fair deals of up to ${maxPieces} piece${maxPieces > 1 ? "s" : ""} found${want !== "fit" ? " for that position" : ""}${partner !== "any" ? " with that team" : ""}. Try "Best fit," "Any team," or add or remove a piece.</p>`; return; }
 
   out.innerHTML = picks.map((r, i) => {
     const th = S.teams.get(r.rid), diff = r.R - V, pct = Math.abs(diff) / Math.max(r.R, V);
@@ -2768,12 +2800,13 @@ function findTrades(me, sending, V){
     else if (r.theirDir === "build" && sending.some(a => a.kind === "pick" || (a.age && a.age <= 24))) why.push(`${th.name} is rebuilding, so youth and picks appeal to them.`);
     else if (r.theirDir === "win") why.push(`${th.name} is contending, so they're looking to win now.`);
     if (!why.length) why.push("Close in value and keeps your lineup balanced.");
+    if (r.spots > 0) why.push(`You'd need ${r.spots} open roster spot${r.spots > 1 ? "s" : ""} (${r.pack.length} pieces in, ${sending.length} out).`);
     return `<article class="tf-card${i === 0 ? " best" : ""}">
       <div class="tf-card-head">${teamPhoto(r.rid, "md")}<span class="nm"><b>${esc(th.name)}</b><small>${statusText[th.status]}${i === 0 ? ", best fit" : ""}</small></span></div>
       <div class="tf-get"><div class="lbl">You get</div>
         ${r.pack.map(a => `<div class="tf-row">${assetPhoto(a, "md")}<span class="tn"><b>${esc(a.name)}</b><small>${esc(a.kind === "player" ? [a.pos + (a.lgPosRank || ""), a.nfl, a.age ? "age " + a.age : ""].filter(Boolean).join(", ") : a.nfl)}</small></span><span class="v">${fmt(a.value)}</span></div>`).join("")}
       </div>
-      <ul class="tf-why">${why.slice(0, 3).map(w => `<li>${esc(w)}</li>`).join("")}</ul>
+      <ul class="tf-why">${why.slice(0, 3).concat(r.spots > 0 ? why.slice(-1) : []).filter((w, i, a) => a.indexOf(w) === i).map(w => `<li>${esc(w)}</li>`).join("")}</ul>
       <div class="tf-foot"><span class="tf-verdict" style="color:${verdict[1]}">${verdict[0]}</span>
         <button type="button" class="btn tf-open" data-rid="${r.rid}" data-get="${esc(r.pack.map(a => a.id).join(","))}">Open in calculator</button></div>
     </article>`;
@@ -2784,7 +2817,7 @@ $("tfList").addEventListener("click", e => {
   tfSend.has(b.dataset.id) ? tfSend.delete(b.dataset.id) : tfSend.add(b.dataset.id); renderFinder();
 });
 $("tfSending").addEventListener("click", e => { const b = e.target.closest(".tf-chip"); if (b){ tfSend.delete(b.dataset.id); renderFinder(); } });
-["tfTeam","tfWant","tfPartner"].forEach(id => $(id).addEventListener("change", renderFinder));
+["tfTeam","tfWant","tfPartner","tfMax"].forEach(id => $(id).addEventListener("change", renderFinder));
 $("tfSearch").addEventListener("input", renderFinder);
 $("tfResults").addEventListener("click", e => {
   const b = e.target.closest(".tf-open"); if (!b) return;
