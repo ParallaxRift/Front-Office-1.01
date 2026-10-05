@@ -350,6 +350,44 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 .settings-btn:hover{border-color:var(--field);color:var(--field)}
 .settings-btn[aria-pressed=true]{background:var(--ink);border-color:var(--ink);color:var(--paper)}
 
+/* Trade Finder */
+.tf-top{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:16px;margin-bottom:18px}
+@media (max-width:760px){.tf-top{grid-template-columns:1fr}}
+.tf-pick h3,.tf-opts h3{margin:0 0 10px}
+#tfSearch{margin-bottom:8px}
+.tf-list{max-height:380px}
+.tf-sending{display:flex;flex-direction:column;gap:8px}
+.tf-chip{display:flex;align-items:center;gap:10px;background:var(--gold-soft);border:0;border-radius:10px;padding:6px 10px 6px 6px;text-align:left;cursor:pointer;width:100%}
+.tf-chip .bi-text{flex:1;min-width:0;display:flex;flex-direction:column}
+.tf-chip b{font-size:16px}
+.tf-chip small{color:var(--muted);font-size:13px}
+.tf-chip .v{font-family:var(--display);font-weight:800;font-size:19px}
+.tf-total{display:flex;justify-content:space-between;font-weight:700;margin-top:4px}
+.tf-h{font-family:var(--display);font-size:26px;margin:0 0 4px}
+.tf-results{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+@media (max-width:400px){.tf-results{grid-template-columns:1fr}}
+.tf-card{background:var(--card);border:1.5px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+.tf-card.best{border-color:var(--field);border-width:2px}
+.tf-card-head{display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--paper)}
+.tf-card-head .nm{flex:1;min-width:0}
+.tf-card-head .nm b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tf-card-head .nm small{color:var(--muted);font-size:13px}
+.tf-get{padding:10px 14px 0}
+.tf-get .lbl{font-size:13px;color:var(--muted);font-weight:600;margin-bottom:6px}
+.tf-row{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--line)}
+.tf-row:last-child{border-bottom:0}
+.tf-row .tn{flex:1;min-width:0;display:flex;flex-direction:column}
+.tf-row .tn b{font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tf-row .tn small{color:var(--muted);font-size:13px}
+.tf-row .v{font-family:var(--display);font-weight:800;font-size:19px}
+.tf-why{margin:10px 14px 0;padding-left:18px;font-size:14px}
+.tf-why li{margin:0 0 4px}
+.tf-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;margin-top:auto}
+.tf-meter{flex:1;height:8px;border-radius:4px;background:var(--line);overflow:hidden}
+.tf-meter span{display:block;height:100%}
+.tf-verdict{font-size:13px;font-weight:700;white-space:nowrap}
+.tf-open{white-space:nowrap;padding:8px 12px;font-size:14px}
+
 /* Build notes */
 .notes{margin-top:18px}
 .notes-head{display:flex;align-items:center;gap:10px;margin-bottom:4px}
@@ -549,6 +587,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
   </div>
   <div class="tabs" id="tabs" role="tablist">
     <button class="tab" role="tab" aria-selected="true" data-tab="calc">Trade Calculator</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="finder">Trade Finder</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="values">League Values</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="strategy">Team Strategy</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="history">Trade History</button>
@@ -648,6 +687,31 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
       <span class="updated" id="scoresUpdated" role="status" aria-live="polite"></span>
     </div>
     <div class="matchups" id="matchups"></div>
+  </section>
+
+  <section class="panel" id="panel-finder">
+    <div class="tf-top">
+      <div class="box tf-pick">
+        <h3>What do you want to trade?</h3>
+        <div class="teamline"><select id="tfTeam" aria-label="Team you're trading for"></select><span class="badge" id="tfBadge"></span></div>
+        <input type="search" id="tfSearch" placeholder="Search your players and picks" aria-label="Search your roster">
+        <div class="list tf-list" id="tfList"></div>
+      </div>
+      <div class="box tf-opts">
+        <h3>Trading away</h3>
+        <div id="tfSending" class="tf-sending"><p class="empty">Tap a player or pick on the left.</p></div>
+        <div class="field" style="max-width:none;margin-top:12px"><label for="tfWant">Looking for</label>
+          <select id="tfWant">
+            <option value="fit">Best fit for my team</option><option value="QB">A quarterback</option><option value="RB">A running back</option>
+            <option value="WR">A wide receiver</option><option value="TE">A tight end</option><option value="PICK">Draft picks</option>
+          </select></div>
+        <div class="field" style="max-width:none;margin-top:10px"><label for="tfPartner">Trade partner</label><select id="tfPartner"></select></div>
+        <p class="note" id="tfPlan" style="margin:12px 0 0"></p>
+      </div>
+    </div>
+    <h3 class="tf-h">Trades that make sense</h3>
+    <p class="note" id="tfNote" style="margin:0 0 12px"></p>
+    <div id="tfResults" class="tf-results"></div>
   </section>
 
   <section class="panel" id="panel-values">
@@ -978,7 +1042,7 @@ async function openLeague(leagueId){
     S.history = null; S.nudge = null; S.historyError = false;
     S.leagueSig = leagueSignature(league, S.rosters, S.traded); lastLeagueCheck = Date.now();
     buildValues();
-    S.sendIds.clear(); S.getIds.clear();
+    S.sendIds.clear(); S.getIds.clear(); tfSend.clear();
     renderLeague();
     loadHistory(league);
     progress(3, "done");
@@ -1272,6 +1336,7 @@ function renderLeague(){
   $("teamB").value = other ?? S.myRid;
   $("board").style.display = "block"; $("sides").style.display = "grid";
   $("stratTeam").innerHTML = opts; $("stratTeam").value = S.myRid;
+  $("tfTeam").innerHTML = opts; $("tfTeam").value = S.myRid;
   renderCalc(); renderValues(); renderSettings(); renderStrategy(); setupScores();
   if (S.history) renderHistory();
 }
@@ -2169,7 +2234,7 @@ function historyInsightsHTML(rid){
 // League settings now opens from the button beside the league name
 function openSettingsPanel(){
   for (const t of $("tabs").children) t.setAttribute("aria-selected", "false");
-  for (const name of ["calc","history","feedback","scores","values","settings","strategy"]) $("panel-"+name).classList.toggle("on", name === "settings");
+  for (const name of ["calc","finder","history","feedback","scores","values","settings","strategy"]) $("panel-"+name).classList.toggle("on", name === "settings");
   $("settingsBtn").setAttribute("aria-pressed", "true");
   store.set("tr_tab", "settings");
 }
@@ -2225,15 +2290,17 @@ function leagueSignature(league, rosters, traded){
 }
 // Re-draw every tab after new data, keeping the teams, week, and trade you had picked
 function rerenderKeepingPlace(){
-  const keep = { a: $("teamA").value, b: $("teamB").value, st: $("stratTeam").value, wk: $("weekSelect").value };
+  const keep = { a: $("teamA").value, b: $("teamB").value, st: $("stratTeam").value, tf: $("tfTeam").value, wk: $("weekSelect").value };
   const scoresOpen = $("panel-scores").classList.contains("on");
   renderLeague();
   const has = v => v !== "" && S.teams.has(Number(v));
   if (has(keep.a)) $("teamA").value = keep.a;
   if (has(keep.b)) $("teamB").value = keep.b;
   if (has(keep.st)) $("stratTeam").value = keep.st;
+  if (has(keep.tf)) $("tfTeam").value = keep.tf;
   if (keep.wk && [...$("weekSelect").options].some(o => o.value === keep.wk)) $("weekSelect").value = keep.wk;
   renderCalc(); renderStrategy();
+  if ($("panel-finder").classList.contains("on")) renderFinder();
   if (scoresOpen) loadScores();
 }
 function toast(msg){
@@ -2583,11 +2650,157 @@ $("fbForm").addEventListener("submit", async e => {
 });
 
 // ============================================================
+// TRADE FINDER
+// Pick what you'd trade away. Front Office searches every other roster for
+// fair packages (one or two pieces back) and ranks them by how well they fit
+// your team's direction and needs, and how likely the other team is to say yes.
+// ============================================================
+const tfSend = new Set();
+const statusPhrase = { contend: "contending", middle: "in the middle", rebuild: "rebuilding" };
+const FAIR_LOW = 0.88, FAIR_HIGH = 1.12;   // packages within this range of what you send
+
+function renderFinder(){
+  if (!S.league) return;
+  syncPicker("tfTeam");
+  const me = Number($("tfTeam").value), t = S.teams.get(me);
+  $("tfBadge").textContent = statusText[t.status]; $("tfBadge").className = "badge " + badgeClass[t.status];
+  // drop anything no longer on this roster (team switched, or a trade happened)
+  for (const id of [...tfSend]) if (S.assets.get(id)?.owner !== me) tfSend.delete(id);
+  // roster list
+  const q = normName($("tfSearch").value);
+  const mine = teamAssets(me).filter(a => !q || normName(a.name).includes(q));
+  $("tfList").innerHTML = mine.length ? mine.map(a => assetRow(a, tfSend.has(a.id))).join("") : `<p class="empty">Nothing matches that search.</p>`;
+  // partner options
+  const pSel = $("tfPartner"), prevP = pSel.value;
+  pSel.innerHTML = `<option value="any">Any team</option>` + [...S.teams.values()].filter(x => x.rid !== me).map(x => `<option value="${x.rid}">${esc(x.name)}</option>`).join("");
+  pSel.value = [...pSel.options].some(o => o.value === prevP) ? prevP : "any";
+  // sending summary
+  const sending = [...tfSend].map(id => S.assets.get(id)).filter(Boolean).sort((a, b) => b.value - a.value);
+  const V = eq(sending.map(a => a.value));
+  $("tfSending").innerHTML = sending.length ? sending.map(a => `<button type="button" class="tf-chip" data-id="${esc(a.id)}" aria-label="Remove ${esc(a.name)}">
+      ${assetPhoto(a, "md")}<span class="bi-text"><b>${esc(a.name)}</b><small>${esc(a.kind === "player" ? [a.pos + (a.lgPosRank || ""), a.nfl, a.age ? "age " + a.age : ""].filter(Boolean).join(", ") : a.nfl)}</small></span><span class="v">${fmt(a.value)}</span></button>`).join("")
+      + (sending.length > 1 ? `<div class="tf-total"><span>Package value</span><span>${fmt(V)}</span></div>` : "")
+    : `<p class="empty">Tap a player or pick on the left.</p>`;
+  findTrades(me, sending, V);
+}
+
+function findTrades(me, sending, V){
+  const out = $("tfResults"), note = $("tfNote"), plan = $("tfPlan");
+  const prof = teamProfiles(), my = prof.get(me), N = S.teams.size, third = N / 3, need = slotNeeds();
+  const status = S.teams.get(me).status;
+  const dir = status === "contend" ? "win" : status === "rebuild" ? "build" : (my.ageRank <= third || my.pickRank <= third) ? "build" : "win";
+  const POS = ["QB","RB","WR","TE"];
+  const weak = POS.filter(p => my.pos[p].rank > N - third);
+  plan.textContent = `${S.teams.get(me).name} is ${statusPhrase[status]}, so results favor ${dir === "win" ? "proven players who help now" : "young players and picks"}${weak.length ? `, especially at ${andList(weak)}` : ""}.`;
+  if (!sending.length){ note.textContent = ""; out.innerHTML = `<p class="empty">Choose who you'd trade away and Front Office will find fair deals that fit your team.</p>`; return; }
+
+  // Your starting-lineup value by position, before and after a trade
+  const starterSum = (players, p) => {
+    const k = need[p], whole = Math.floor(k), frac = k - whole;
+    const v = players.filter(a => a.pos === p).map(a => a.value).sort((a, b) => b - a);
+    return v.slice(0, whole).reduce((s, x) => s + x, 0) + (v[whole] || 0) * frac;
+  };
+  const myPlayers = teamAssets(me).filter(a => a.kind === "player");
+  const sentIds = new Set(sending.map(a => a.id));
+  const keep = myPlayers.filter(a => !sentIds.has(a.id));
+  const before = {}; POS.forEach(p => before[p] = starterSum(myPlayers, p));
+  const futureVal = a => a.kind === "pick" ? a.value * 1.2 : a.value * (!a.age ? 1 : a.age <= 23 ? 1.2 : a.age <= 25 ? 1.08 : a.age >= (CLIFF[a.pos] || 30) ? 0.7 : 0.95);
+  const nowVal = a => a.kind === "pick" ? a.value * 0.35 : a.value * (a.age && a.age <= 22 ? 0.85 : 1);
+  const sentFuture = sending.reduce((s, a) => s + futureVal(a), 0), sentNow = sending.reduce((s, a) => s + nowVal(a), 0);
+  const want = $("tfWant").value, partner = $("tfPartner").value;
+
+  const results = [];
+  for (const [rid, th] of prof){
+    if (rid === me || (partner !== "any" && String(rid) !== partner)) continue;
+    const pool = teamAssets(rid).filter(a => a.value >= V * 0.12 && a.value <= V * FAIR_HIGH);
+    const top = pool.slice(0, 26);
+    const packs = top.map(a => [a]);
+    for (let i = 0; i < top.length; i++) for (let j = i + 1; j < top.length; j++) packs.push([top[i], top[j]]);
+    for (const pack of packs){
+      const R = eq(pack.map(a => a.value));
+      if (R < V * FAIR_LOW || R > V * FAIR_HIGH) continue;
+      if (want !== "fit" && !pack.some(a => (want === "PICK" ? a.kind === "pick" : a.pos === want))) continue;
+      // How much your starting lineup improves (losing what you send, gaining what you get)
+      const after = keep.concat(pack.filter(a => a.kind === "player"));
+      let gain = 0; const gainBy = {};
+      POS.forEach(p => { const d = starterSum(after, p) - before[p]; gainBy[p] = d; gain += d; });
+      const futureGain = pack.reduce((s, a) => s + futureVal(a), 0) - sentFuture;
+      const nowGain = pack.reduce((s, a) => s + nowVal(a), 0) - sentNow;
+      let fit = dir === "win" ? gain / 1000 + 0.35 * nowGain / 1000 : futureGain / 1000 + 0.25 * gain / 1000;
+      const fills = pack.filter(a => a.kind === "player" && weak.includes(a.pos) && gainBy[a.pos] > 0).map(a => a.pos);
+      fit += fills.length * 0.8;
+      if (pack.length === 2) fit -= 0.25;                          // simpler deals first
+      if (dir === "win") fit -= 0.4 * pack.filter(a => a.kind === "player" && a.age && a.age >= (CLIFF[a.pos] || 30) + 2).length;  // about to decline
+      // Would they say yes? Their lineup gain + their direction
+      const theirPlayers = teamAssets(rid).filter(a => a.kind === "player");
+      const theirAfter = theirPlayers.filter(a => !pack.includes(a)).concat(sending.filter(a => a.kind === "player"));
+      let theirGain = 0; POS.forEach(p => theirGain += starterSum(theirAfter, p) - starterSum(theirPlayers, p));
+      const theirDir = th.team.status === "contend" ? "win" : th.team.status === "rebuild" ? "build" : "either";
+      let accept = theirDir === "build" ? (sentFuture - pack.reduce((s, a) => s + futureVal(a), 0)) / 1000 : theirGain / 1000;
+      if (theirDir === "either") accept = Math.max(accept, (sentFuture - pack.reduce((s, a) => s + futureVal(a), 0)) / 1000);
+      const theirNeed = sending.filter(a => a.kind === "player" && th.pos[a.pos].rank > N / 2).length;
+      accept += theirNeed * 0.5;
+      const score = fit + 0.5 * accept - 3 * Math.abs(R - V) / V + (R - V) / V;
+      results.push({ rid, pack, R, gain, gainBy, futureGain, fills, accept, theirNeed, score, theirDir });
+    }
+  }
+  // best two per team, then best overall
+  results.sort((a, b) => b.score - a.score);
+  const perTeam = {}, picks = [];
+  for (const r of results){ if ((perTeam[r.rid] = (perTeam[r.rid] || 0) + 1) <= 2) picks.push(r); if (picks.length >= 10) break; }
+  note.textContent = picks.length
+    ? `Every deal here is within about ${Math.round((1 - FAIR_LOW) * 100)}% of fair by your league's values. Best fits first.`
+    : "";
+  if (!picks.length){ out.innerHTML = `<p class="empty">No fair one- or two-piece deals found${want !== "fit" ? " for that position" : ""}${partner !== "any" ? " with that team" : ""}. Try "Best fit," "Any team," or add or remove a piece.</p>`; return; }
+
+  out.innerHTML = picks.map((r, i) => {
+    const th = S.teams.get(r.rid), diff = r.R - V, pct = Math.abs(diff) / Math.max(r.R, V);
+    const verdict = pct <= FAIR_BAND ? ["Fair", "#3B82F6"] : diff > 0 ? ["You win by " + fmt(diff), "#22A55A"] : ["You pay " + fmt(-diff) + " extra", "#E5484D"];
+    const why = [];
+    for (const a of r.pack.filter(a => a.kind === "player")){
+      const g = r.gainBy[a.pos];
+      if (g > 0) why.push(`${a.name} ${r.fills.includes(a.pos) ? "fills a weak spot at " + a.pos : "upgrades your " + a.pos + " starters"}.`);
+    }
+    if (dir === "win" && r.gain > 0) why.push(`Your starting lineup gets about ${fmt(r.gain)} stronger overall.`);
+    if (dir === "build" && r.futureGain > 0) why.push(`Adds long-term value: ${r.pack.some(a => a.kind === "pick") ? "draft capital" : "younger talent"} for your rebuild.`);
+    if (dir === "win" && r.pack.every(a => a.kind === "player" && a.age && a.age >= 24)) why.push("Proven players who help this season.");
+    if (r.theirNeed) why.push(`${th.name} ${th.status === "rebuild" ? "is rebuilding but" : "is " + statusPhrase[th.status] + " and"} needs ${andList([...new Set(sending.filter(a => a.kind === "player" && prof.get(r.rid).pos[a.pos].rank > N / 2).map(a => a.pos))])}, so they should be interested.`);
+    else if (r.theirDir === "build" && sending.some(a => a.kind === "pick" || (a.age && a.age <= 24))) why.push(`${th.name} is rebuilding, so youth and picks appeal to them.`);
+    else if (r.theirDir === "win") why.push(`${th.name} is contending, so they're looking to win now.`);
+    if (!why.length) why.push("Close in value and keeps your lineup balanced.");
+    return `<article class="tf-card${i === 0 ? " best" : ""}">
+      <div class="tf-card-head">${teamPhoto(r.rid, "md")}<span class="nm"><b>${esc(th.name)}</b><small>${statusText[th.status]}${i === 0 ? ", best fit" : ""}</small></span></div>
+      <div class="tf-get"><div class="lbl">You get</div>
+        ${r.pack.map(a => `<div class="tf-row">${assetPhoto(a, "md")}<span class="tn"><b>${esc(a.name)}</b><small>${esc(a.kind === "player" ? [a.pos + (a.lgPosRank || ""), a.nfl, a.age ? "age " + a.age : ""].filter(Boolean).join(", ") : a.nfl)}</small></span><span class="v">${fmt(a.value)}</span></div>`).join("")}
+      </div>
+      <ul class="tf-why">${why.slice(0, 3).map(w => `<li>${esc(w)}</li>`).join("")}</ul>
+      <div class="tf-foot"><span class="tf-verdict" style="color:${verdict[1]}">${verdict[0]}</span>
+        <button type="button" class="btn tf-open" data-rid="${r.rid}" data-get="${esc(r.pack.map(a => a.id).join(","))}">Open in calculator</button></div>
+    </article>`;
+  }).join("");
+}
+$("tfList").addEventListener("click", e => {
+  const b = e.target.closest(".asset"); if (!b) return;
+  tfSend.has(b.dataset.id) ? tfSend.delete(b.dataset.id) : tfSend.add(b.dataset.id); renderFinder();
+});
+$("tfSending").addEventListener("click", e => { const b = e.target.closest(".tf-chip"); if (b){ tfSend.delete(b.dataset.id); renderFinder(); } });
+["tfTeam","tfWant","tfPartner"].forEach(id => $(id).addEventListener("change", renderFinder));
+$("tfSearch").addEventListener("input", renderFinder);
+$("tfResults").addEventListener("click", e => {
+  const b = e.target.closest(".tf-open"); if (!b) return;
+  $("teamA").value = $("tfTeam").value; $("teamB").value = b.dataset.rid;
+  S.sendIds = new Set(tfSend); S.getIds = new Set(b.dataset.get.split(","));
+  renderCalc();
+  $("tabs").querySelector('[data-tab="calc"]').click();
+  window.scrollTo({ top: $("tabs").offsetTop, behavior: "smooth" });
+});
+
+// ============================================================
 // TEAM PICKERS: the browser's built-in dropdown can't show images,
 // so each team <select> gets a custom button and list with photos.
 // The hidden <select> still holds the value, so nothing else changes.
 // ============================================================
-const PICKERS = ["teamA", "teamB", "stratTeam"];
+const PICKERS = ["teamA", "teamB", "stratTeam", "tfTeam"];
 const CHEVRON_DOWN = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:var(--muted)"><path d="M6 9l6 6 6-6"/></svg>`;
 function makePicker(id){
   const sel = $(id);
@@ -2644,9 +2857,10 @@ PICKERS.forEach(makePicker);
 $("tabs").addEventListener("click", e => {
   const b = e.target.closest(".tab"); if (!b) return;
   for (const t of $("tabs").children) t.setAttribute("aria-selected", t === b);
-  for (const name of ["calc","history","feedback","scores","values","settings","strategy"]) $("panel-"+name).classList.toggle("on", b.dataset.tab === name);
+  for (const name of ["calc","finder","history","feedback","scores","values","settings","strategy"]) $("panel-"+name).classList.toggle("on", b.dataset.tab === name);
   if (b.dataset.tab === "scores") loadScores();
   if (b.dataset.tab === "feedback") loadFeedback();
+  if (b.dataset.tab === "finder") renderFinder();
   store.set("tr_tab", b.dataset.tab);
   $("settingsBtn").setAttribute("aria-pressed", "false");
 });
