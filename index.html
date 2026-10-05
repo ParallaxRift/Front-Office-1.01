@@ -442,18 +442,8 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 #getItems .badj b{margin-right:0;margin-left:33px}
 @media (max-width:600px){#getItems .badj{flex-direction:row}#getItems .badj b{margin-left:0;margin-right:33px}}
 
-/* Search every player in the league from either side of the calculator */
-.pfind{position:relative;margin:0 0 8px}
-.pfind-in{width:100%;background:var(--card);border:1.5px solid var(--line);border-radius:8px;padding:9px 12px;font:inherit}
-.pfind-list{position:absolute;z-index:40;left:0;right:0;top:calc(100% + 4px);background:var(--card);border:1.5px solid var(--line);border-radius:12px;box-shadow:0 10px 28px rgba(0,0,0,.15);max-height:360px;overflow-y:auto;padding:4px}
-.pf-opt{display:flex;align-items:center;gap:10px;width:100%;border:0;background:none;padding:6px 8px;border-radius:8px;text-align:left;cursor:pointer;font:inherit;color:inherit}
-.pf-opt:hover,.pf-opt.act{background:var(--paper)}
-.pf-opt.in{background:var(--gold-soft)}
-.pf-opt .tn{flex:1;min-width:0;display:flex;flex-direction:column}
-.pf-opt .tn b{font-size:15.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pf-opt .tn small{font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pf-opt .v{font-family:var(--display);font-weight:800;font-size:17px}
-.pf-empty{padding:10px;color:var(--muted);font-size:14px}
+/* All Players mode search box */
+.browse-in{width:100%;background:var(--card);border:1.5px solid var(--gold);border-radius:8px;padding:9px 12px;font:inherit;margin:0 0 8px}
 
 /* Trade Finder */
 .tf-top{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:14px;margin-bottom:14px;align-items:start}
@@ -462,8 +452,9 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 #tfSearch{margin-bottom:8px}
 .tf-list{max-height:250px}
 .tf-left{display:flex;flex-direction:column;gap:14px;min-width:0}
+.tf-recs-box{margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
 .tf-recs-box h3{font-size:20px;margin:0 0 4px}
-.tf-recs{display:flex;flex-direction:column;max-height:300px;overflow-y:auto;border-top:1px solid var(--line)}
+.tf-recs{display:flex;flex-direction:column;max-height:200px;overflow-y:auto;border-top:1px solid var(--line)}
 .tf-rec{display:flex;align-items:center;gap:10px;padding:6px 4px;border-bottom:1px solid var(--line)}
 .tf-rec .tn{flex:1;min-width:0;display:flex;flex-direction:column}
 .tf-rec .tn b{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -750,19 +741,13 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
     <div class="sides" id="sides" style="display:none">
       <div class="side">
         <div class="teamline"><span id="avA"></span><select id="teamA" aria-label="Your team"></select><span class="badge" id="badgeA"></span></div>
-        <div class="pfind" data-side="A">
-          <input type="search" class="pfind-in" id="findA" placeholder="Search all players and picks in the league" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="findListA" aria-label="Search all players and picks">
-          <div class="pfind-list" id="findListA" role="listbox" hidden></div>
-        </div>
+        <input type="search" class="browse-in" id="browseA" placeholder="Search all players and picks" aria-label="Search all players and picks" hidden>
         <div class="side-filter"><label for="posA">Show</label><select id="posA"><option value="EVERY">All players and picks</option><option value="ALL">Players only</option><option value="QB">Quarterbacks</option><option value="RB">Running backs</option><option value="WR">Wide receivers</option><option value="TE">Tight ends</option><option value="PICK">Draft picks</option></select></div>
         <div class="list" id="listA"></div>
       </div>
       <div class="side">
         <div class="teamline"><span id="avB"></span><select id="teamB" aria-label="Trade partner"></select><span class="badge" id="badgeB"></span></div>
-        <div class="pfind" data-side="B">
-          <input type="search" class="pfind-in" id="findB" placeholder="Search all players and picks in the league" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="findListB" aria-label="Search all players and picks">
-          <div class="pfind-list" id="findListB" role="listbox" hidden></div>
-        </div>
+        <input type="search" class="browse-in" id="browseB" placeholder="Search all players and picks" aria-label="Search all players and picks" hidden>
         <div class="side-filter"><label for="posB">Show</label><select id="posB"><option value="EVERY">All players and picks</option><option value="ALL">Players only</option><option value="QB">Quarterbacks</option><option value="RB">Running backs</option><option value="WR">Wide receivers</option><option value="TE">Tight ends</option><option value="PICK">Draft picks</option></select></div>
         <div class="list" id="listB"></div>
       </div>
@@ -852,11 +837,6 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
         <input type="search" id="tfSearch" placeholder="Search your players and picks" aria-label="Search your roster">
         <div class="list tf-list" id="tfList"></div>
       </div>
-      <div class="box tf-recs-box">
-        <h3>Recommended players to trade for</h3>
-        <p class="note" id="tfRecsNote" style="margin:0 0 8px"></p>
-        <div class="tf-recs" id="tfRecs"></div>
-      </div>
       </div>
       <div class="box tf-opts">
         <h3 id="tfOptsTitle">Trading away</h3>
@@ -872,6 +852,11 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
           <select id="tfMax"><option value="4">Up to 4</option><option value="3">Up to 3</option><option value="2">Up to 2</option><option value="1">Just 1</option></select></div>
         </div>
         <p class="note" id="tfPlan" style="margin:10px 0 0"></p>
+        <div class="tf-recs-box">
+          <h3>Recommended players to trade for</h3>
+          <p class="note" id="tfRecsNote" style="margin:0 0 8px"></p>
+          <div class="tf-recs" id="tfRecs"></div>
+        </div>
       </div>
     </div>
     <h3 class="tf-h" id="tfHeading">Trades that make sense</h3>
@@ -1579,9 +1564,9 @@ function assetPhoto(a, size){
   const orig = Number(String(a.id).split("-").pop());
   return S.teams.has(orig) ? teamPhoto(orig, size) : avatar(null, a.name, size);
 }
-function assetRow(a, sel){
-  const sub = a.kind === "pick" ? a.nfl
-    : [a.nfl, a.age ? "age " + ageText(a.age) : "", a.lgPosRank ? a.pos + a.lgPosRank : "", a.lgRank ? "#" + a.lgRank + " overall" : ""].filter(Boolean).join(", ");
+function assetRow(a, sel, showOwner){
+  const sub = a.kind === "pick" ? [a.nfl, showOwner ? S.teams.get(a.owner)?.name : ""].filter(Boolean).join(", ")
+    : [a.nfl, a.age ? "age " + ageText(a.age) : "", a.lgPosRank ? a.pos + a.lgPosRank : "", a.lgRank ? "#" + a.lgRank + " overall" : "", showOwner ? S.teams.get(a.owner)?.name : ""].filter(Boolean).join(", ");
   return `<button class="asset${sel?" sel":""}" data-id="${esc(a.id)}" aria-pressed="${sel}">
     <span class="pos">${esc(a.pos)}</span>
     ${assetPhoto(a, "row")}
@@ -1591,9 +1576,13 @@ function assetRow(a, sel){
 function renderSide(rid, listEl, badgeEl, set){
   const t = S.teams.get(rid);
   badgeEl.textContent = statusText[t.status]; badgeEl.className = "badge " + badgeClass[t.status];
-  const f = $(listEl.id === "listA" ? "posA" : "posB").value;
-  const items = teamAssets(rid).filter(a => f === "EVERY" ? true : f === "ALL" ? a.kind === "player" : f === "PICK" ? a.kind === "pick" : a.pos === f);
-  listEl.innerHTML = items.length ? items.map(a => assetRow(a, set.has(a.id))).join("") : `<p class="empty">${f === "EVERY" || f === "ALL" ? "No valued players on this roster yet." : "None on this roster."}</p>`;
+  const side = listEl.id === "listA" ? "A" : "B";
+  const f = $("pos" + side).value;
+  const q = browseAll[side] ? normName($("browse" + side).value) : "";
+  const pool = browseAll[side] ? [...S.assets.values()].filter(a => a.owner != null && a.value > 0 && (!q || normName(a.name).includes(q))).sort((a, b) => b.value - a.value).slice(0, 300)
+                               : teamAssets(rid);
+  const items = pool.filter(a => f === "EVERY" ? true : f === "ALL" ? a.kind === "player" : f === "PICK" ? a.kind === "pick" : a.pos === f);
+  listEl.innerHTML = items.length ? items.map(a => assetRow(a, set.has(a.id), browseAll[side])).join("") : `<p class="empty">${browseAll[side] ? "No players or picks match." : f === "EVERY" || f === "ALL" ? "No valued players on this roster yet." : "None on this roster."}</p>`;
 }
 const eq = vals => Math.pow(vals.reduce((s,v) => s + Math.pow(v, STUD_EXPONENT), 0), 1/STUD_EXPONENT);
 
@@ -1706,7 +1695,7 @@ function toggle(set, e){
   const btn = e.target.closest(".asset"); if (!btn) return;
   const id = btn.dataset.id; set.has(id) ? set.delete(id) : set.add(id); renderCalc();
 }
-$("listA").addEventListener("click", e => toggle(S.sendIds, e));
+$("listA").addEventListener("click", e => browseAll.A ? browseClick("A", e) : toggle(S.sendIds, e));
 $("board").addEventListener("click", e => {
   const x = e.target.closest(".bi-x");
   if (x){ (x.dataset.side === "send" ? S.sendIds : S.getIds).delete(x.dataset.id); renderCalc(); return; }
@@ -1726,7 +1715,7 @@ function showInValues(id){
   const row = $("valuesBody").querySelector(`tr[data-id="${CSS.escape(id)}"]`);
   if (row){ row.classList.add("hl"); row.scrollIntoView({ behavior: "smooth", block: "center" }); }
 }
-$("listB").addEventListener("click", e => toggle(S.getIds, e));
+$("listB").addEventListener("click", e => browseAll.B ? browseClick("B", e) : toggle(S.getIds, e));
 $("teamA").addEventListener("change", renderCalc);
 $("posA").addEventListener("change", renderCalc);
 $("posB").addEventListener("change", renderCalc);
@@ -2928,49 +2917,28 @@ function renderStandings(){
 }
 
 // ============================================================
-// PLAYER SEARCH (calculator)
-// Type in either box to search every player and pick in the league. Picking
-// one adds it to that side of the trade and switches that side to its team.
+// ALL PLAYERS (calculator)
+// Each side's team dropdown starts with "All Players". In that mode the list
+// shows every player and pick in the league; tapping one adds it to that side
+// and switches the side to the player's team (one team per side of a trade).
 // ============================================================
-function findMatches(q){
-  const n = normName(q);
-  return [...S.assets.values()].filter(a => a.owner != null && a.value > 0 && (!n || normName(a.name).includes(n)))
-    .sort((a, b) => b.value - a.value).slice(0, 60);
-}
-function renderFind(side){
-  const inp = $("find" + side), list = $("findList" + side), set = side === "A" ? S.sendIds : S.getIds;
-  const items = findMatches(inp.value);
-  list.innerHTML = items.length ? items.map((a, i) => `<button type="button" class="pf-opt${set.has(a.id) ? " in" : ""}${i === 0 ? " act" : ""}" role="option" data-id="${esc(a.id)}">
-      ${assetPhoto(a, "md")}<span class="tn"><b>${esc(a.name)}</b><small>${esc([a.kind === "player" ? a.pos + (a.lgPosRank || "") : "Pick", a.kind === "player" ? a.nfl : a.nfl, a.age ? "age " + ageText(a.age) : "", S.teams.get(a.owner)?.name].filter(Boolean).join(", "))}</small></span>
-      <span class="v">${fmt(a.value)}</span></button>`).join("")
-    : `<p class="pf-empty">No players or picks match.</p>`;
-  list.hidden = false; inp.setAttribute("aria-expanded", "true");
-}
-function closeFind(side){ $("findList" + side).hidden = true; $("find" + side).setAttribute("aria-expanded", "false"); }
-function pickFound(side, id){
-  const a = S.assets.get(id); if (!a) return;
-  const sel = $(side === "A" ? "teamA" : "teamB"), set = side === "A" ? S.sendIds : S.getIds;
-  if (Number(sel.value) !== a.owner){ sel.value = a.owner; set.clear(); }   // switch this side to the player's team
-  set.has(id) ? set.delete(id) : set.add(id);
-  $("find" + side).value = ""; closeFind(side);
+const browseAll = { A: false, B: false };
+function setBrowse(side, on){
+  browseAll[side] = on;
+  $("browse" + side).hidden = !on;
+  if (!on) $("browse" + side).value = "";
+  syncPicker(side === "A" ? "teamA" : "teamB");
   renderCalc();
+  if (on) $("browse" + side).focus();
 }
-for (const side of ["A", "B"]){
-  const inp = $("find" + side), list = $("findList" + side);
-  inp.addEventListener("focus", () => renderFind(side));
-  inp.addEventListener("input", () => renderFind(side));
-  inp.addEventListener("keydown", e => {
-    const opts = [...list.querySelectorAll(".pf-opt")], i = opts.findIndex(o => o.classList.contains("act"));
-    if (e.key === "ArrowDown" || e.key === "ArrowUp"){
-      e.preventDefault(); if (!opts.length) return;
-      const n = Math.max(0, Math.min(opts.length - 1, i + (e.key === "ArrowDown" ? 1 : -1)));
-      opts.forEach(o => o.classList.remove("act")); opts[n].classList.add("act"); opts[n].scrollIntoView({ block: "nearest" });
-    } else if (e.key === "Enter"){ e.preventDefault(); if (opts[i]) pickFound(side, opts[i].dataset.id); }
-    else if (e.key === "Escape"){ closeFind(side); inp.blur(); }
-  });
-  list.addEventListener("mousedown", e => e.preventDefault());   // keep focus while clicking
-  list.addEventListener("click", e => { const o = e.target.closest(".pf-opt"); if (o) pickFound(side, o.dataset.id); });
-  document.addEventListener("click", e => { if (!e.target.closest(`.pfind[data-side="${side}"]`)) closeFind(side); });
+["A","B"].forEach(side => $("browse" + side).addEventListener("input", () => renderCalc()));
+function browseClick(side, e){
+  const b = e.target.closest(".asset"); if (!b) return;
+  const a = S.assets.get(b.dataset.id); if (!a) return;
+  const sel = $(side === "A" ? "teamA" : "teamB"), set = side === "A" ? S.sendIds : S.getIds;
+  if (Number(sel.value) !== a.owner){ sel.value = a.owner; set.clear(); }
+  set.has(a.id) ? set.delete(a.id) : set.add(a.id);
+  renderCalc();
 }
 
 // ============================================================
@@ -3303,6 +3271,9 @@ function makePicker(id){
   });
   list.addEventListener("click", e => {
     const opt = e.target.closest(".pk-opt"); if (!opt) return;
+    const side = id === "teamA" ? "A" : id === "teamB" ? "B" : null;
+    if (opt.dataset.rid === "all"){ close(true); if (side) setBrowse(side, true); return; }
+    if (side && browseAll[side]){ browseAll[side] = false; $("browse" + side).hidden = true; $("browse" + side).value = ""; }
     sel.value = opt.dataset.rid; close(true); syncPicker(id);
     sel.dispatchEvent(new Event("change"));
   });
@@ -3316,7 +3287,12 @@ function makePicker(id){
 }
 function fillPickerList(id){
   const sel = $(id), list = sel.parentNode.querySelector(".pk-list"), cur = Number(sel.value);
-  list.innerHTML = [...sel.options].map(o => {
+  const allRow = (id === "teamA" || id === "teamB") ? (() => {
+    const on = browseAll[id === "teamA" ? "A" : "B"];
+    return `<button type="button" class="pk-opt" role="option" data-rid="all" aria-selected="${on}">
+      ${avatar(null, "All", "md")}<span class="pk-text"><b>All Players</b><small>Every player and pick in the league</small></span></button>`;
+  })() : "";
+  list.innerHTML = allRow + [...sel.options].map(o => {
     const rid = Number(o.value), t = S.teams.get(rid);
     if (!t) return "";
     const sub = [t.manager && t.manager !== t.name ? t.manager : "", statusText[t.status]].filter(Boolean).join(", ");
@@ -3329,6 +3305,11 @@ function syncPicker(id){
   const sel = $(id), btn = sel.parentNode.querySelector(".pk-btn");
   if (!btn) return;
   const rid = Number(sel.value), t = S.teams.get(rid);
+  const side = id === "teamA" ? "A" : id === "teamB" ? "B" : null;
+  if (side && browseAll[side]){
+    btn.innerHTML = `${avatar(null, "All", "md")}<span class="pk-name">All Players${t ? ` <small style="color:var(--muted)">(trading with ${esc(t.name)})</small>` : ""}</span>${CHEVRON_DOWN}`;
+    return;
+  }
   btn.innerHTML = t ? `${teamPhoto(rid, "md")}<span class="pk-name">${esc(t.name)}</span>${CHEVRON_DOWN}` : `<span class="pk-name">Choose a team</span>${CHEVRON_DOWN}`;
 }
 PICKERS.forEach(makePicker);
