@@ -83,6 +83,7 @@ input[type=text],input[type=search],select{background:var(--card);border:1.5px s
 .leaguehead > div{display:flex;flex-direction:column;justify-content:center;gap:6px}
 .leaguehead small{margin-top:0!important}
 .leaguehead small{display:block;color:var(--muted);font-size:14px;margin-top:4px}
+#myTeamLine{font-size:16px;font-weight:700;color:var(--ink)}
 .teamcell{display:inline-flex;align-items:center;gap:8px}
 .stratTop{display:flex;align-items:center;gap:16px}
 .tgt{align-items:center}
@@ -508,7 +509,8 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 .hs-lead{display:inline-flex;align-items:center;gap:8px;background:var(--gold-soft);border-radius:999px;padding:4px 12px 4px 4px;font-size:14px;font-weight:600}
 .hs-lead b{font-family:var(--display);font-size:17px}
 
-/* League settings button (football icon) beside last year's champ */
+/* League settings button (football icon), under your team name */
+.settings-row{margin-top:6px}
 .settings-btn{display:inline-flex;align-items:center;gap:6px;background:var(--card);border:1.5px solid var(--line);border-radius:999px;padding:3px 11px 3px 6px;font-weight:600;font-size:13px;line-height:1.4;color:var(--ink);cursor:pointer;white-space:nowrap}
 .settings-btn .fb{width:17px;height:17px;color:var(--field);display:block}
 .settings-btn:hover{border-color:var(--field);color:var(--field)}
@@ -771,7 +773,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
   </section>
 
   <section class="leaguebar" id="leagueBar">
-    <div class="leaguehead"><span id="leagueAv"></span><div><div class="lname-row"><h2 id="leagueName"></h2><span id="champSlot"></span><button type="button" class="settings-btn" id="settingsBtn" aria-pressed="false" aria-controls="panel-settings"><span id="settingsIcon"></span>League settings</button></div><small id="myTeamLine"></small></div>
+    <div class="leaguehead"><span id="leagueAv"></span><div><div class="lname-row"><h2 id="leagueName"></h2><span id="champSlot"></span></div><small id="myTeamLine"></small><div class="settings-row"><button type="button" class="settings-btn" id="settingsBtn" aria-pressed="false" aria-controls="panel-settings"><span id="settingsIcon"></span>League settings</button></div></div>
       <div class="modebar" id="modeBar" hidden>
         <div class="mode-toggle" id="modeToggle" role="radiogroup" aria-label="How much to show">
           <button type="button" role="radio" data-mode="basics" aria-checked="false">The Basics</button>
