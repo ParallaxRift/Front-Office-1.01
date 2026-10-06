@@ -27,9 +27,10 @@ from datetime import datetime, timezone
 FIRST_SEASON = 2012              # oldest season of stats to include
 SLEEPER_PLAYERS = "https://api.sleeper.app/v1/players/nfl"
 SLEEPER_SEASON = "https://api.sleeper.app/v1/stats/nfl/regular/{season}"
+SLEEPER_STATE = "https://api.sleeper.app/v1/state/nfl"
 
-FP_FIRST_SEASON = 2015           # oldest season of FantasyPros injury reports to collect
-FP_WEEKS = 18
+FP_WEEKS = 18                    # FantasyPros only reports the CURRENT season, so each season is saved
+                                 # as it happens and becomes history the next year
 FP_URLS = [   # tried in order until one works; data/fp-status.json shows which
     "https://api.fantasypros.com/public/v2/json/nfl/injuries?season={season}&week={week}",
     "https://api.fantasypros.com/public/v2/json/nfl/{season}/injuries?week={week}",
@@ -231,7 +232,8 @@ def pid_of(name, pos):
     return by_name.get(norm(name) + "|" + ("RB" if pos == "FB" else pos))
 
 
-NOT_INJURIES = ("coach", "rest", "not injury", "non-injury", "non injury", "personal", "suspen", "team decision")
+NOT_INJURIES = ("coach", "rest", "not injury", "non-injury", "non injury", "personal", "suspen", "team decision",
+                "retire", "other", "holdout", "unsigned", "released", "exempt")
 news_count = 0
 fp_seasons = {}
 if not API_KEY:
@@ -272,44 +274,53 @@ else:
             news_count += 1
     print(f"[FP news] {len(items)} items, {news_count} matched to players")
 
-    # 3b) Weekly injury reports: this season first, then older seasons, newest first.
-    # Each season is saved as it goes, so a run that hits the request limit picks up where it left off.
+    # 3b) Weekly injury reports. FantasyPros only has the current season (asking for an older season
+    # returns this season again), and it returns leftovers for weeks not played yet, so we ask only
+    # for weeks 1 through the current week. Each season's file is kept and becomes history next year.
+    fp_season, week_now = CURRENT, 0          # week 0 = not in season (or Sleeper didn't answer): download nothing new
+    try:
+        state = get_json(SLEEPER_STATE)
+        fp_season = int(state.get("season") or CURRENT)
+        if state.get("season_type") == "regular":
+            week_now = min(FP_WEEKS, int(state.get("display_week") or state.get("week") or 0))
+        elif state.get("season_type") == "post":
+            week_now = FP_WEEKS                # regular season is over; make sure every week is saved
+    except Exception as e:
+        print(f"[FP injuries] couldn't get the current NFL week from Sleeper ({e}); keeping what's saved")
+    fp_report["current_week"] = week_now
     os.makedirs(FP_CACHE, exist_ok=True)
-    for y in [CURRENT] + list(range(CURRENT - 1, FP_FIRST_SEASON - 1, -1)):
-        path = os.path.join(FP_CACHE, f"{y}.json")
-        saved = {"weeks": {}, "complete": False}
-        if os.path.exists(path):
+    for name in os.listdir(FP_CACHE):
+        path = os.path.join(FP_CACHE, name)
+        try:
             with open(path, encoding="utf-8") as f:
                 saved = json.load(f)
-        weeks = saved["weeks"]
-        if y < CURRENT and saved.get("complete"):
-            fp_seasons[y] = weeks
+            y = int(name.split(".")[0])
+        except Exception:
             continue
-        if y == CURRENT:
-            have = sorted(int(w) for w in weeks)
-            start = max(1, (have[-1] - 1) if have else 1)       # re-check the latest weeks; reports change all week
+        if saved.get("verified") and saved.get("season") == y:
+            fp_seasons[y] = saved["weeks"]
         else:
-            start = max([int(w) for w in weeks] + [0]) + 1
-        done = True
-        for w in range(start, FP_WEEKS + 1):
-            rows = fp_week(y, w)
+            os.remove(path)                                      # files from before this fix weren't real history
+            print(f"[FP injuries] removed {name}: FantasyPros returned this season's reports for it")
+    weeks = dict(fp_seasons.get(fp_season, {}))
+    if week_now:
+        path = os.path.join(FP_CACHE, f"{fp_season}.json")
+        weeks = {w: v for w, v in weeks.items() if int(w) <= week_now}   # drop leftovers for weeks not played yet
+        have = sorted(int(w) for w in weeks)
+        start = max(1, (have[-1] - 1) if have else 1)                   # re-check the latest weeks; reports change all week
+        for w in range(start, week_now + 1):
+            rows = fp_week(fp_season, w)
             if rows is None:
-                done = False
-                break
-            if not rows and y == CURRENT and w > 1:
-                break                                            # future weeks of this season
+                break                                                   # FantasyPros didn't answer; keep what we have
             weeks[str(w)] = rows
-        saved = {"weeks": weeks, "complete": done and y < CURRENT}
-        with open(path, "w", encoding="utf-8") as f:
-            json.dump(saved, f, separators=(",", ":"))
-        fp_report["seasons"][str(y)] = f"{len(weeks)} weeks" + ("" if done else " (more next run)")
-        if len(weeks) >= 10 and any(weeks.values()) and len({json.dumps(v, sort_keys=True) for v in weeks.values()}) == 1:
-            print(f"[FP injuries] {y}: every week came back identical, so it isn't used as history")
-        else:
-            fp_seasons[y] = weeks
-        print(f"[FP injuries] {y}: {sum(len(v) for v in weeks.values())} records across {len(weeks)} weeks" + ("" if done else ", continuing next run"))
-        if not done:
-            break
+        if weeks:
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump({"season": fp_season, "verified": True, "weeks": weeks}, f, separators=(",", ":"))
+            fp_seasons[fp_season] = weeks
+        print(f"[FP injuries] {fp_season}: {sum(len(v) for v in weeks.values())} records across {len(weeks)} weeks (through week {week_now})")
+    else:
+        print("[FP injuries] Not in the regular season or playoffs, so nothing new to download")
+    fp_report["seasons"] = {str(y): f"{len(w)} weeks" for y, w in sorted(fp_seasons.items())}
 
 # Turn the weekly reports into one line per player, season and injury.
 unmatched = set()
@@ -318,9 +329,10 @@ for y, weeks in fp_seasons.items():
     for w, rows in weeks.items():
         w = int(w)
         for r in rows:
-            name, pos, status, injury = r[0], r[1], r[3], (r[4] or "Not listed").strip().title()
+            name, pos, status, injury = r[0], r[1], r[3], (r[4] or "Undisclosed").strip().title()
+            comment = (r[5] if len(r) > 5 else "").lower()
             col = fp_status(status)
-            if col is None or any(x in injury.lower() for x in NOT_INJURIES):
+            if col is None or any(x in injury.lower() or x in comment for x in NOT_INJURIES):
                 continue
             pid = pid_of(name, pos)
             if not pid:
@@ -338,12 +350,12 @@ if unmatched:
     print(f"[FP injuries] {len(unmatched)} names didn't match a Sleeper player, e.g. {sorted(unmatched)[:5]}")
 
 # This week's FantasyPros details for anyone on the latest report (chance of playing, practices, comment)
-cur = fp_seasons.get(CURRENT) or {}
+cur = fp_seasons.get(fp_season if API_KEY else CURRENT) or {}
 if cur:
     wk = max(int(w) for w in cur)
     for r in cur[str(wk)]:
         pid = pid_of(r[0], r[1])
-        if pid and len(r) >= 11:
+        if pid and len(r) >= 11 and not any(x in (r[5] or "").lower() for x in ("retire", "other")):
             players[pid]["c"] = {"wk": wk, "st": r[3], "inj": r[4], "note": r[5][:400], "prob": r[6],
                                  "prac": [x for x in r[7:10] if x], "upd": r[10]}
 
