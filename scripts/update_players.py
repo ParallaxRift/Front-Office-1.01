@@ -30,20 +30,26 @@ SLEEPER_SEASON = "https://api.sleeper.app/v1/stats/nfl/regular/{season}"
 
 FP_FIRST_SEASON = 2015           # oldest season of FantasyPros injury reports to try
 FP_WEEKS = 18
-FP_URLS = [   # tried in order until one works; the log shows which
+FP_URLS = [   # tried in order until one works; data/fp-status.json shows which
     "https://api.fantasypros.com/public/v2/json/nfl/{season}/injuries?week={week}",
     "https://api.fantasypros.com/public/v2/json/nfl/injuries?season={season}&week={week}",
+    "https://api.fantasypros.com/public/v2/json/nfl/{season}/injuries?week={week}&practice=true",
+    "https://api.fantasypros.com/v2/json/nfl/{season}/injuries?week={week}",
+    "https://api.fantasypros.com/v2/json/nfl/injuries?season={season}&week={week}",
 ]
 
 FP_NEWS_URLS = [   # latest injury news; tried in order until one works
     "https://api.fantasypros.com/public/v2/json/nfl/news?category=injury&limit=500",
     "https://api.fantasypros.com/public/v2/json/nfl/news?category=injury",
+    "https://api.fantasypros.com/v2/json/nfl/news?category=injury&limit=500",
+    "https://api.fantasypros.com/public/v2/json/nfl/news",
 ]
 NEWS_DAYS = 45                   # ignore injury news older than this
 
 HERE = os.path.dirname(__file__)
 OUTPUT = os.path.join(HERE, "..", "data", "players.json")
 STATS_CACHE = os.path.join(HERE, "..", "data", "season-stats")
+STATUS_FILE = os.path.join(HERE, "..", "data", "fp-status.json")   # what FantasyPros answered (never the key)
 FP_CACHE = os.path.join(HERE, "..", "data", "fp-injuries")
 # ---------------------------------------------
 
@@ -139,6 +145,13 @@ def flatten(data):
 
 
 fp_url, fp_logged = None, False
+fp_report = {"checked": now.isoformat(timespec="seconds"), "key_present": bool(API_KEY), "injuries": [], "news": []}
+
+
+def note(kind, url, **info):
+    """Remember what FantasyPros said (status, short reply), so it can be checked without the log."""
+    if len(fp_report[kind]) < 12:
+        fp_report[kind].append({"url": url, **info})
 
 
 def fp_week(season, week):
@@ -150,13 +163,18 @@ def fp_week(season, week):
             data = get_json(url, {"x-api-key": API_KEY})
         except urllib.error.HTTPError as e:
             if not fp_url:
-                print(f"[FP injuries] {url.split('?')[0]} -> error {e.code}: {e.read().decode('utf-8', 'replace')[:200]}")
+                body = e.read().decode('utf-8', 'replace')[:300]
+                print(f"[FP injuries] {url.split('?')[0]} -> error {e.code}: {body[:200]}")
+                note("injuries", url, status=e.code, reply=body)
             continue
         except Exception as e:
             print(f"[FP injuries] could not reach FantasyPros: {e}")
+            note("injuries", url, status="no connection", reply=str(e)[:300])
             return None
         items = flatten(data)
         if not fp_logged:
+            note("injuries", url, status=200, fields=list(data.keys())[:20] if isinstance(data, dict) else "list",
+                 records=len(items), sample=json.dumps(items[0])[:500] if items else None)
             print(f"[FP injuries] Using {pattern.split('?')[0]}")
             print(f"[FP injuries] Top-level fields: {list(data.keys()) if isinstance(data, dict) else 'list'}")
             if items:
@@ -192,6 +210,7 @@ if not API_KEY:
     print("[FP injuries] No FANTASYPROS_API_KEY secret, so cards will have no injury history.")
 else:
     os.makedirs(FP_CACHE, exist_ok=True)
+    fp_week(CURRENT, 1)        # find the address that works using this season, which FantasyPros surely covers
     for y in range(FP_FIRST_SEASON, CURRENT + 1):
         path = os.path.join(FP_CACHE, f"{y}.json")
         if y < CURRENT and os.path.exists(path):
@@ -210,7 +229,7 @@ else:
         if failed:
             print(f"[FP injuries] {y}: request failed")
             if fp_url is None:
-                break                 # no URL pattern works, so stop trying
+                break                 # no address works, so stop trying
             continue
         # Some APIs ignore the week and return the same list every time; that isn't weekly history
         if len(weeks) >= 10 and len({json.dumps(v, sort_keys=True) for v in weeks.values()}) == 1:
@@ -257,12 +276,17 @@ if API_KEY:
         try:
             data = get_json(url, {"x-api-key": API_KEY})
         except urllib.error.HTTPError as e:
-            print(f"[FP news] {url.split('?')[0]} -> error {e.code}: {e.read().decode('utf-8', 'replace')[:200]}")
+            body = e.read().decode('utf-8', 'replace')[:300]
+            print(f"[FP news] {url.split('?')[0]} -> error {e.code}: {body[:200]}")
+            note("news", url, status=e.code, reply=body)
             continue
         except Exception as e:
             print(f"[FP news] could not reach FantasyPros: {e}")
+            note("news", url, status="no connection", reply=str(e)[:300])
             break
         items = flatten(data)
+        note("news", url, status=200, fields=list(data.keys())[:20] if isinstance(data, dict) else "list",
+             records=len(items), sample=json.dumps(items[0])[:500] if items else None)
         print(f"[FP news] {len(items)} injury news items" + (f"; fields: {sorted(items[0].keys())}" if items else ""))
         break
     # Index Sleeper players by full name, longest names first so "Josh Allen" doesn't grab "Josh Allen Jr."
@@ -308,6 +332,10 @@ out = {
     "players": players,
 }
 os.makedirs(os.path.dirname(OUTPUT), exist_ok=True)
+fp_report["injury_seasons_saved"] = out["fp_injury_seasons"]
+fp_report["news_matched"] = news_count
+with open(STATUS_FILE, "w", encoding="utf-8") as f:
+    json.dump(fp_report, f, indent=1)
 with open(OUTPUT, "w", encoding="utf-8") as f:
     json.dump(out, f, separators=(",", ":"))
 print(f"Saved {len(players)} players to data/players.json ({os.path.getsize(OUTPUT) // 1024} KB)")
