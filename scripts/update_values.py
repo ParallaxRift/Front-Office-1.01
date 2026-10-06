@@ -5,7 +5,8 @@
 #   1. Downloads Sleeper's player list (to know every QB, RB, WR and TE)
 #   2. Downloads Sleeper's season stats for every season since 2012
 #      (one request per season; past seasons are saved and not downloaded again)
-#   3. Downloads FantasyPros injury reports, week by week, with your API key
+#   3. Downloads FantasyPros injury reports, week by week, and the latest
+#      injury news, with your API key
 #   4. Saves everything to data/players.json for the player cards
 #
 # The website also asks Sleeper for stats live when a card opens; this file is
@@ -33,6 +34,12 @@ FP_URLS = [   # tried in order until one works; the log shows which
     "https://api.fantasypros.com/public/v2/json/nfl/{season}/injuries?week={week}",
     "https://api.fantasypros.com/public/v2/json/nfl/injuries?season={season}&week={week}",
 ]
+
+FP_NEWS_URLS = [   # latest injury news; tried in order until one works
+    "https://api.fantasypros.com/public/v2/json/nfl/news?category=injury&limit=500",
+    "https://api.fantasypros.com/public/v2/json/nfl/news?category=injury",
+]
+NEWS_DAYS = 45                   # ignore injury news older than this
 
 HERE = os.path.dirname(__file__)
 OUTPUT = os.path.join(HERE, "..", "data", "players.json")
@@ -241,11 +248,55 @@ for y, weeks in fp_seasons.items():
 if unmatched:
     print(f"[FP injuries] {len(unmatched)} names didn't match a Sleeper player, e.g. {sorted(unmatched)[:5]}")
 
+
+# ---------- 3b) FantasyPros injury news (shown on the card under Current Status) ----------
+news_count = 0
+if API_KEY:
+    items = []
+    for url in FP_NEWS_URLS:
+        try:
+            data = get_json(url, {"x-api-key": API_KEY})
+        except urllib.error.HTTPError as e:
+            print(f"[FP news] {url.split('?')[0]} -> error {e.code}: {e.read().decode('utf-8', 'replace')[:200]}")
+            continue
+        except Exception as e:
+            print(f"[FP news] could not reach FantasyPros: {e}")
+            break
+        items = flatten(data)
+        print(f"[FP news] {len(items)} injury news items" + (f"; fields: {sorted(items[0].keys())}" if items else ""))
+        break
+    # Index Sleeper players by full name, longest names first so "Josh Allen" doesn't grab "Josh Allen Jr."
+    names = sorted(((p.get("full_name") or "", pid) for pid, p in skill.items() if p.get("team") and p.get("full_name")),
+                   key=lambda x: -len(x[0]))
+    cutoff = now.timestamp() - NEWS_DAYS * 86400
+    for it in items:
+        title = pick(it, "title", "headline")
+        desc = pick(it, "desc", "description", "body", "summary", "news")
+        when = pick(it, "created", "date", "published", "updated")
+        try:
+            ts = datetime.fromisoformat(when.replace("Z", "+00:00").replace(" ", "T")).timestamp() if when else now.timestamp()
+        except ValueError:
+            ts = now.timestamp()
+        if ts < cutoff or not title:
+            continue
+        who = pick(it, "player_name", "name")
+        pid = by_name.get(norm(who) + "|" + pick(it, "position", "player_position_id").upper()[:2]) if who else None
+        if not pid:
+            low = title.lower()
+            pid = next((pid for nm, pid in names if nm.lower() in low), None)
+        if not pid:
+            continue
+        lst = players[pid].setdefault("n", [])
+        if len(lst) < 3:
+            lst.append([datetime.fromtimestamp(ts, timezone.utc).strftime("%Y-%m-%d"), title[:200], desc[:600]])
+            news_count += 1
+    print(f"[FP news] {news_count} news items matched to players")
+
 # ---------- 4) Save ----------
 # Keep players who are on a team or played/were hurt in the last five seasons (their whole career is kept)
 recent = CURRENT - 4
 players = {pid: p for pid, p in players.items()
-           if skill.get(pid, {}).get("team") or any(r[0] >= recent for r in p["s"]) or any(r[0] >= recent for r in p["i"])}
+           if skill.get(pid, {}).get("team") or p.get("n") or any(r[0] >= recent for r in p["s"]) or any(r[0] >= recent for r in p["i"])}
 for p in players.values():
     p["s"].sort(key=lambda r: r[0])
     p["i"].sort(key=lambda r: (-r[0], r[2]))
