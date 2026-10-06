@@ -1,5 +1,5 @@
 {
- "checked": "2026-10-06T14:57:27+00:00",
+ "checked": "2026-10-06T15:58:50+00:00",
  "rankings": {
   "1QB": {
    "status": 200,
@@ -204,7 +204,16 @@
   }
  ],
  "smoothed_days": 1,
+ "projection_basis": "rest of season",
+ "ros_probe": [
+  {
+   "url": "https://api.fantasypros.com/public/v2/json/nfl/2026/projections?position=QB&week=ros",
+   "status": 200,
+   "players": 76,
+   "qb_pass_yds_vs_season": 0.059
+  }
+ ],
  "projected_players": 472,
  "snapshot": "2026-10-06.json",
- "calls": 6
+ "calls": 11
 }
