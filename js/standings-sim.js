@@ -156,7 +156,8 @@ function buildSim(D){
   const sd = new Map(rids.map(r => [r, sdOf(r, playoffMean.get(r))]));
   return { rec, sched, playoffMean, sd, median, rids };
 }
-function runSim(M, runs = SIM_RUNS, trackSlots = false){
+function runSim(M, runs = SIM_RUNS, trackSlots = false, keepLast = false){
+  let last = null;                       // with keepLast: the final run's records, seeds and every playoff game
   const nPO = Math.min(Number(S.league.settings?.playoff_teams) || 6, M.rids.length);
   const out = new Map(M.rids.map(r => [r, { wins: 0, losses: 0, playoffs: 0, champ: 0, final: 0, seed: 0, bye: 0, slots: new Array(M.rids.length).fill(0) }]));
   const draw = (r, mean) => mean + randn() * M.sd.get(r);
@@ -175,8 +176,8 @@ function runSim(M, runs = SIM_RUNS, trackSlots = false){
     seeds.forEach((r, i) => { const o = out.get(r); o.wins += W.get(r).w; o.losses += (M.rec.get(r).w + M.rec.get(r).l + M.rec.get(r).t + games) - W.get(r).w; o.seed += i + 1; });
     const field = seeds.slice(0, nPO); field.forEach(r => out.get(r).playoffs++);
     const out1 = [];                     // playoff teams in the order they're knocked out: [team, round]
-    let rnd = 0;
-    const game = (a, b) => { const w = draw(a, M.playoffMean.get(a)) >= draw(b, M.playoffMean.get(b)) ? a : b; out1.push([w === a ? b : a, rnd]); return w; };
+    let rnd = 0; const log = [];
+    const game = (a, b) => { const w = draw(a, M.playoffMean.get(a)) >= draw(b, M.playoffMean.get(b)) ? a : b; out1.push([w === a ? b : a, rnd]); log.push({ a, b, w, rnd }); return w; };
     let champ;
     if (nPO === 6){ out.get(field[0]).bye++; out.get(field[1]).bye++;
       const w36 = game(field[2], field[5]), w45 = game(field[3], field[4]); rnd = 1;
@@ -187,6 +188,7 @@ function runSim(M, runs = SIM_RUNS, trackSlots = false){
     else if (nPO >= 4){ const s1 = game(field[0], field[3]), s2 = game(field[1], field[2]); rnd = 1; out.get(s1).final++; out.get(s2).final++; champ = game(s1, s2); }
     else if (nPO >= 2){ out.get(field[0]).final++; out.get(field[1]).final++; champ = game(field[0], field[1]); }
     if (champ) out.get(champ).champ++;
+    if (keepLast) last = { W, seeds, games: log, champ, gamesLeft: games };
     if (trackSlots){
       // Next year's draft order: non-playoff teams worst record first, then playoff teams by how early
       // they were knocked out (worse seed first within a round), the runner-up second to last, the champion last
@@ -198,7 +200,7 @@ function runSim(M, runs = SIM_RUNS, trackSlots = false){
       order.forEach((r, i) => { const o = out.get(r); if (o && i < o.slots.length) o.slots[i]++; });
     }
   }
-  return { out, nPO };
+  return { out, nPO, last };
 }
 // ---------- Draft pick odds from the season simulator ----------
 // Plays out the rest of the season 3,000 times in the background and records where each team's
@@ -233,38 +235,37 @@ async function simulateSeason(){
     await new Promise(r => setTimeout(r, 30));
     if (D.done >= D.lastReg){ out.innerHTML = `<p class="empty">The regular season is over, so there's nothing left to simulate. Check the Trophy Room for playoff results.</p>`; return; }
     const M = buildSim(D), R = runSim(M);
+    // One full season played out, game by game. This is what changes on every click; the 10,000-season odds barely move.
+    const one = runSim(M, 1, false, true).last;
+    const oneRec = r => { const c = M.rec.get(r), w = one.W.get(r).w, tot = c.w + c.l + c.t + one.gamesLeft; return `${Math.round(w)}-${Math.round(tot - w)}`; };
     const row = r => { const o = R.out.get(r), t = S.teams.get(r), cur = M.rec.get(r);
       const w = o.wins / SIM_RUNS, games = cur.w + cur.l + cur.t + M.sched.length * (M.median ? 2 : 1);
       return { r, t, w, l: games - w, cur, o, seed: o.seed / SIM_RUNS }; };
     const rows = M.rids.map(row).sort((a, b) => b.w - a.w || a.seed - b.seed);
     const champ = [...rows].sort((a, b) => b.o.champ - a.o.champ)[0];
-    // projected bracket: the most likely seeds, with the favorite advancing
-    const seeds = [...rows].sort((a, b) => a.seed - b.seed).slice(0, R.nPO).map(x => x.r);
+    // bracket from that one simulated season: its seeds, its games, its upsets
+    const seeds = one.seeds.slice(0, R.nPO);
     const nm = r => esc(S.teams.get(r)?.name || "Team " + r);
-    const match = (a, b, label) => { const p = headToHead(M, a, b), win = p >= 0.5 ? a : b, wp = Math.max(p, 1 - p);
-      return { win, html: `<div class="sim-game"><small>${label}</small><div class="${win === a ? "w" : ""}">${teamPhoto(a, "sm")}<span>${seeds.indexOf(a) + 1}. ${nm(a)}</span></div><div class="${win === b ? "w" : ""}">${teamPhoto(b, "sm")}<span>${seeds.indexOf(b) + 1}. ${nm(b)}</span></div><em>${nm(win)} favored, ${Math.round(wp * 100)}%</em></div>` }; };
-    let rounds = [];
-    if (R.nPO === 6){ const a = match(seeds[2], seeds[5], "Round 1"), b = match(seeds[3], seeds[4], "Round 1");
-      const c = match(seeds[0], b.win, "Semifinal"), d = match(seeds[1], a.win, "Semifinal"), f = match(c.win, d.win, "Championship");
-      rounds = [[a, b], [c, d], [f]]; }
-    else if (R.nPO === 8){ const r1 = [match(seeds[0], seeds[7], "Round 1"), match(seeds[3], seeds[4], "Round 1"), match(seeds[1], seeds[6], "Round 1"), match(seeds[2], seeds[5], "Round 1")];
-      const c = match(r1[0].win, r1[1].win, "Semifinal"), d = match(r1[2].win, r1[3].win, "Semifinal"), f = match(c.win, d.win, "Championship"); rounds = [r1, [c, d], [f]]; }
-    else if (R.nPO >= 4){ const c = match(seeds[0], seeds[3], "Semifinal"), d = match(seeds[1], seeds[2], "Semifinal"), f = match(c.win, d.win, "Championship"); rounds = [[c, d], [f]]; }
-    else if (R.nPO >= 2) rounds = [[match(seeds[0], seeds[1], "Championship")]];
+    const rdName = (rd, maxRd) => rd === maxRd ? "Championship" : rd === maxRd - 1 ? "Semifinal" : "Round " + (rd + 1);
+    const maxRd = Math.max(0, ...one.games.map(g => g.rnd));
+    const gameHtml = g => { const p = headToHead(M, g.a, g.b), pw = g.w === g.a ? p : 1 - p, upset = pw < 0.5;
+      const side = r => `<div class="${g.w === r ? "w" : ""}">${teamPhoto(r, "sm")}<span>${seeds.indexOf(r) + 1}. ${nm(r)}</span></div>`;
+      return `<div class="sim-game"><small>${rdName(g.rnd, maxRd)}</small>${side(g.a)}${side(g.b)}<em>${upset ? "Upset! " : ""}${nm(g.w)} wins (${Math.round(pw * 100)}% chance)</em></div>`; };
+    const rounds = [...new Set(one.games.map(g => g.rnd))].map(rd => one.games.filter(g => g.rnd === rd).map(g => ({ html: gameHtml(g) })));
     const recTxt = (w, l) => `${Math.round(w)}-${Math.round(l)}`;
     const mine = rows.find(x => x.r === S.myRid);
     out.innerHTML = `
-      <div class="sim-champ">${teamPhoto(champ.r, "lg")}<div><small>Projected champion</small><b>${nm(champ.r)}</b><span>Wins the title in ${pct(champ.o.champ)} of ${SIM_RUNS.toLocaleString()} simulated seasons</span></div></div>
+      <div class="sim-champ">${teamPhoto(one.champ, "lg")}<div><small>This simulation's champion</small><b>${nm(one.champ)}</b><span>${one.champ === champ.r ? "Also the most likely champion" : `Most likely champion: ${nm(champ.r)}`}, ${pct(champ.o.champ)} of ${SIM_RUNS.toLocaleString()} seasons</span></div></div>
       ${mine && mine.r !== champ.r ? `<p class="note" style="margin:8px 0 0">Your team, <b>${nm(mine.r)}</b>: projected ${recTxt(mine.w, mine.l)}, makes the playoffs ${pct(mine.o.playoffs)} of the time, wins it all ${pct(mine.o.champ)}.</p>` : ""}
       <h4 class="sim-h">Projected Final Standings</h4>
-      <div class="tablewrap"><table class="stand sim-table"><thead><tr><th class="n">#</th><th>Team</th><th class="n">Now</th><th class="n">Projected</th><th class="n">Playoffs</th><th class="n hide-sm">Bye</th><th class="n hide-sm">Final</th><th class="n">Title</th></tr></thead>
+      <div class="tablewrap"><table class="stand sim-table"><thead><tr><th class="n">#</th><th>Team</th><th class="n hide-sm">Now</th><th class="n">Projected</th><th class="n">This sim</th><th class="n">Playoffs</th><th class="n hide-sm">Bye</th><th class="n hide-sm">Final</th><th class="n">Title</th></tr></thead>
       <tbody>${rows.map((x, i) => `<tr class="${x.r === S.myRid ? "me" : ""}${i === R.nPO - 1 ? " cut" : ""}"><td class="n rk">${i + 1}</td>
         <td><span class="teamcell">${teamPhoto(x.r, "sm")}<b>${nm(x.r)}</b></span></td>
-        <td class="n">${x.cur.w}-${x.cur.l}${x.cur.t ? "-" + x.cur.t : ""}</td><td class="n rec">${recTxt(x.w, x.l)}</td>
+        <td class="n hide-sm">${x.cur.w}-${x.cur.l}${x.cur.t ? "-" + x.cur.t : ""}</td><td class="n rec">${recTxt(x.w, x.l)}</td><td class="n">${oneRec(x.r)}</td>
         <td class="n">${pct(x.o.playoffs)}</td><td class="n hide-sm">${R.nPO === 6 ? pct(x.o.bye) : "–"}</td><td class="n hide-sm">${pct(x.o.final)}</td><td class="n"><b>${pct(x.o.champ)}</b></td></tr>`).join("")}</tbody></table></div>
-      <h4 class="sim-h">Projected Playoff Bracket</h4>
+      <h4 class="sim-h">This Simulation's Playoffs</h4>
       <div class="sim-bracket">${rounds.map(rd => `<div class="sim-round">${rd.map(g => g.html).join("")}</div>`).join("")}</div>
-      <p class="note">Simulated ${M.sched.length} remaining week${M.sched.length === 1 ? "" : "s"} (through Week ${D.lastReg}) and a ${R.nPO}-team playoff starting Week ${D.firstPlayoff}${M.median ? ", with a win or loss against the league median each week" : ""}. Projections use each player's scoring this season (last 3 weeks count extra), league values, and current injuries with Front Office's estimated return dates. Bye weeks and future trades aren't included. Each click runs a fresh ${SIM_RUNS.toLocaleString()} seasons, so percentages can move a point or two.</p>`;
+      <p class="note">Simulated ${M.sched.length} remaining week${M.sched.length === 1 ? "" : "s"} (through Week ${D.lastReg}) and a ${R.nPO}-team playoff starting Week ${D.firstPlayoff}${M.median ? ", with a win or loss against the league median each week" : ""}. Projections use each player's scoring this season (last 3 weeks count extra), league values, and current injuries with Front Office's estimated return dates. Bye weeks and future trades aren't included. Projected records and percentages average ${SIM_RUNS.toLocaleString()} simulated seasons, so they only move a point or two between clicks. The champion, the This sim column, and the playoffs show one of those seasons played out game by game, so they change every time you simulate.</p>`;
   } catch(e){
     console.error(e);
     out.innerHTML = `<p class="empty">Couldn't run the simulation right now. Try again in a minute.</p>`;

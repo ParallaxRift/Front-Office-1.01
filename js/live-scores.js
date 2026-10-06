@@ -7,16 +7,41 @@
 // ============================================================
 const REFRESH_MS = 60000;
 let scoresTimer = null, scoresLeague = null;
+// The week flips every Tuesday at 6 a.m. Central (11:00 UTC; 5 a.m. once daylight saving ends), right after
+// Monday Night Football, instead of waiting for Sleeper, which moves on Wednesday. Weeks are counted from
+// the Tuesday before the season's opening Thursday (Sleeper's season_start_date). If that date is
+// missing, Sleeper's own week is used.
+const WEEK_FLIP_UTC_HOUR = 11;
+function flipWeek(st){
+  const d = /^\d{4}-\d{2}-\d{2}$/.test(st.season_start_date || "") ? new Date(st.season_start_date + "T00:00:00Z") : null;
+  if (!d || isNaN(d)) return null;
+  d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() - 2 + 7) % 7));    // back to the Tuesday on or before kickoff
+  d.setUTCHours(WEEK_FLIP_UTC_HOUR);
+  return Math.floor((Date.now() - d.getTime()) / (7 * 864e5)) + 1;
+}
 function currentWeek(){
   const st = S.nflState || {};
-  if (st.season_type === "regular" || st.season_type === "post") return Math.min(18, Math.max(1, st.display_week || st.week || 1));
+  if (st.season_type === "regular" || st.season_type === "post"){
+    const sleeper = st.display_week || st.week || 1, mine = flipWeek(st);
+    // trust the date math only when it's within a week of Sleeper's count (protects against odd schedules)
+    const wk = mine && Math.abs(mine - sleeper) <= 1 ? mine : sleeper;
+    return Math.min(18, Math.max(1, wk));
+  }
   return 1;
 }
+// If the site stays open across Tuesday morning, move Live Scores to the new week on its own,
+// unless you picked a different week yourself.
+let autoWeek = null;
+setInterval(() => {
+  if (!S.league || autoWeek === null) return;
+  const now = currentWeek();
+  if (now !== autoWeek && Number($("weekSelect").value) === autoWeek) setupScores();
+}, 60000);
 function setupScores(){
   const last = S.league.settings?.last_scored_leg || 18;
   const weeks = Math.max(17, Math.min(18, S.league.settings?.playoff_week_start ? S.league.settings.playoff_week_start + 3 : 18));
   $("weekSelect").innerHTML = Array.from({length: weeks}, (_,i) => `<option value="${i+1}">Week ${i+1}${i+1===currentWeek() && S.nflState?.season_type==="regular" ? " (this week)" : ""}</option>`).join("");
-  $("weekSelect").value = currentWeek();
+  $("weekSelect").value = autoWeek = currentWeek();
   scoresLeague = null;
   $("matchups").innerHTML = "";
   if ($("panel-scores").classList.contains("on")) loadScores();

@@ -50,9 +50,9 @@ async function openLeague(browser, viewport, opts){
           const group = await page.evaluate(t => navGroupOf(t).id, t);
           {
             if (vp.width < 500){ // phones navigate with the bottom tab bar; Live Scores and Feedback live in the More sheet
-              const bar = { trade: 'trade', values: 'values', team: 'team', league: 'league' }[group];
+              const bar = { trade: 'trade', values: 'values', team: 'team', league: 'league', scores: 'scores' }[group];
               if (bar) await page.tap(`#tabbar [data-go="${bar}"]`).catch(() => bad.push(`${t} tab bar button missing`));
-              else { await page.tap('#tabbar [data-go="more"]'); await page.waitForTimeout(250); await page.tap(`#moreSheet [data-more="${group === 'scores' ? 'scores' : 'feedback'}"]`).catch(() => bad.push(`${t} More item missing`)); await page.waitForTimeout(250); }
+              else { await page.tap('#tabbar [data-go="more"]'); await page.waitForTimeout(250); await page.tap(`#moreSheet [data-more="feedback"]`).catch(() => bad.push(`${t} More item missing`)); await page.waitForTimeout(250); }
             } else await page.click(`#groups [data-group="${group}"]`).catch(() => bad.push(`${t} section button missing`));
             if (await page.$eval(`[data-tab="${t}"]`, e => e.offsetParent !== null)) await page.click(`[data-tab="${t}"]`);
           }
@@ -113,9 +113,20 @@ async function openLeague(browser, viewport, opts){
     // 4) Season simulator: title odds add to ~100%, playoff odds to ~(playoff teams x 100%)
     await page.click('#groups [data-group=league]'); await page.click('[data-tab=standings]'); await page.click('#simBtn'); await page.waitForSelector('.sim-champ', { timeout: 30000 });
     const sums = await page.$$eval('.sim-table tbody tr', rows => { const v = t => t.includes('>99') ? 100 : t.includes('<1') ? 0.3 : parseFloat(t) || 0;
-      return rows.reduce((s, r) => ({ title: s.title + v(r.cells[7].textContent), po: s.po + v(r.cells[4].textContent) }), { title: 0, po: 0 }); });
+      return rows.reduce((s, r) => ({ title: s.title + v(r.cells[8].textContent), po: s.po + v(r.cells[5].textContent) }), { title: 0, po: 0 }); });
     check('simulator title odds add to about 100%', Math.abs(sums.title - 100) <= 4, Math.round(sums.title) + '%');
     check('simulator playoff odds add to about 600%', Math.abs(sums.po - 600) <= 8, Math.round(sums.po) + '%');
+    // re-simulating plays out a new season: the This sim records, champion or playoff games should change across a few clicks
+    const sample = () => page.$eval('#simOut', o => [...o.querySelectorAll('.sim-table tbody tr')].map(r => r.cells[4].textContent).join(',') + '|' + o.querySelector('.sim-champ b').textContent + '|' + [...o.querySelectorAll('.sim-game em')].map(e => e.textContent).join(','));
+    const seen = new Set([await sample()]);
+    for (let i = 0; i < 3; i++){ await page.click('#simBtn'); await page.waitForFunction(() => !document.getElementById('simBtn').disabled); seen.add(await sample()); }
+    check('simulator: Simulate Again plays out a different season', seen.size > 1, seen.size + ' different results in 4 runs');
+
+    // Live Scores flips to the next week on Tuesday morning (6 a.m. Central), not Wednesday
+    const flips = await page.evaluate(() => { const real = Date.now, st = { season_start_date: '2026-09-10' };
+      const at = iso => { Date.now = () => new Date(iso).getTime(); const w = flipWeek(st); Date.now = real; return w; };
+      return [at('2026-09-10T23:00:00Z'), at('2026-10-06T10:30:00Z'), at('2026-10-06T11:30:00Z'), at('2026-10-07T18:00:00Z')].join(','); });
+    check('live scores: week flips Tuesday morning', flips === '1,4,5,5', flips + ' (want 1,4,5,5)');
 
     // 5) Explainer popups open
     await page.click('#groups [data-group=values]');

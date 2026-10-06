@@ -1265,3 +1265,13 @@ body:not(.has-league) .side-switch,body:not(.has-league) #miniBar{display:none!i
 .board .share-btns .icon-btn::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 8px);right:0;width:max-content;max-width:240px;background:var(--card);color:var(--ink);font:500 13px/1.35 var(--body);text-align:left;padding:7px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.25);opacity:0;pointer-events:none;transform:translateY(3px);transition:opacity .12s,transform .12s;z-index:20;white-space:normal}
 @media (hover:hover){.board .share-btns .icon-btn:hover::after{opacity:1;transform:none}}
 .board .share-btns .icon-btn:focus-visible::after{opacity:1;transform:none}
+/* Phone only: value adjustment number on top with the balancing piece underneath; no Trade Analysis button; room above the buttons */
+@media (max-width:600px){
+  .badj{display:grid!important;grid-template-columns:minmax(0,1fr) auto;column-gap:10px;row-gap:3px;align-items:center}
+  .badj > span{display:contents}
+  .badj > span > span{grid-column:1;grid-row:1}
+  .badj > b{grid-column:2;grid-row:1}
+  .badj .badj-eq{grid-column:1 / -1;grid-row:2;white-space:normal}
+  #analysisBtn{display:none!important}
+  .board .brow .share-btns{margin-top:12px}
+}
