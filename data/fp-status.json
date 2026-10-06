@@ -1,22 +1,22 @@
 {
- "checked": "2026-10-06T03:42:07+00:00",
+ "checked": "2026-10-06T13:50:50+00:00",
  "key_present": true,
- "calls": 5,
+ "calls": 3,
  "rate_limited": 0,
  "injuries": [
   {
-   "url": "https://api.fantasypros.com/public/v2/json/nfl/injuries?season=2026&week=1",
+   "url": "https://api.fantasypros.com/public/v2/json/nfl/injuries?season=2026&week=3",
    "status": 200,
-   "records": 379,
-   "sample": "{\"player_id\": 25403, \"yahoo_id\": \"42625\", \"name\": \"Jeremiyah Love\", \"status\": \"Questionable\", \"injury_type\": \"Ankle\", \"comment\": \"\", \"injury_update_date\": \"2026-09-13 11:11:38\", \"team_id\": \"ARI\", \"position_id\": \"RB\", \"rank\": 21, \"status_short\": \"Q\", \"filename\": \"jeremiyah-love.php\", \"ir_weeks\": [], "
+   "records": 440,
+   "sample": "{\"player_id\": 23180, \"yahoo_id\": \"40168\", \"name\": \"Puka Nacua\", \"status\": \"OUT\", \"injury_type\": \"\", \"comment\": \"injured\", \"injury_update_date\": \"2026-09-27 12:00:00\", \"team_id\": \"LAR\", \"position_id\": \"WR\", \"rank\": 13, \"status_short\": \"O\", \"filename\": \"puka-nacua.php\", \"ir_weeks\": [], \"probability_of"
   }
  ],
  "news": [
   {
    "url": "https://api.fantasypros.com/public/v2/json/nfl/news?category=injury&limit=500",
    "status": 200,
-   "records": 24,
-   "sample": "{\"id\": 612417, \"created\": \"2026-10-06 00:54:13\", \"created_formated\": \"Tue, Oct 6th 12:54am UTC\", \"author\": \"Ari Koslow\", \"player_id\": 17240, \"team_id\": \"PHI\", \"title\": \"Saquon Barkley (hamstring) considered week-to-week \", \"sport_id\": \"NFL\", \"categories\": [\"Commentary\", \"News\", \"Injury\"], \"link\": \"h"
+   "records": 6,
+   "sample": "{\"id\": 612458, \"created\": \"2026-10-06 13:35:44\", \"created_formated\": \"Tue, Oct 6th 1:35pm UTC\", \"author\": \"Nate Miller\", \"player_id\": 17233, \"team_id\": \"BAL\", \"title\": \"Lamar Jackson (ankle) unlikely to play in Week 5\", \"sport_id\": \"NFL\", \"categories\": [\"Commentary\", \"News\", \"Injury\", \"Breaking\"], \""
   }
  ],
  "seasons": {
@@ -27,5 +27,5 @@
   2026
  ],
  "players_with_this_week": 178,
- "news_matched": 12
+ "news_matched": 3
 }
