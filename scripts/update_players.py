@@ -326,18 +326,28 @@ else:
 unmatched = set()
 for y, weeks in fp_seasons.items():
     spells = {}
-    for w, rows in weeks.items():
+    last_injury = {}                       # a player's most recent named injury this season
+    first_named = {}                       # ...and his first named one, for blank weeks before it
+    for w, rows in sorted(weeks.items(), key=lambda kv: int(kv[0])):
+        for r in rows:
+            pid = pid_of(r[0], r[1])
+            if pid and (r[4] or "").strip() and pid not in first_named:
+                first_named[pid] = r[4].strip().title()
+    for w, rows in sorted(weeks.items(), key=lambda kv: int(kv[0])):
         w = int(w)
         for r in rows:
-            name, pos, status, injury = r[0], r[1], r[3], (r[4] or "Undisclosed").strip().title()
+            name, pos, status = r[0], r[1], r[3]
             comment = (r[5] if len(r) > 5 else "").lower()
             col = fp_status(status)
-            if col is None or any(x in injury.lower() or x in comment for x in NOT_INJURIES):
+            if col is None or any(x in (r[4] or "").lower() or x in comment for x in NOT_INJURIES):
                 continue
             pid = pid_of(name, pos)
             if not pid:
                 unmatched.add(name)
                 continue
+            # Players who stay on IR often lose the injury name in later reports; carry it forward
+            injury = (r[4] or "").strip().title() or last_injury.get(pid) or first_named.get(pid) or "Undisclosed"
+            last_injury[pid] = injury
             s = spells.setdefault((pid, injury), [y, injury, w, w, 0, 0, 0, 0, set()])
             if w in s[8]:
                 continue
