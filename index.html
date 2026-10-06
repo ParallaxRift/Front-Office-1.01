@@ -3918,13 +3918,12 @@ function findTrades(me, sending, V){
     else if (r.theirDir === "build" && sending.some(a => a.kind === "pick" || (a.age && a.age <= 24))) why.push(`${th.name} is rebuilding, so youth and picks appeal to them.`);
     else if (r.theirDir === "win") why.push(`${th.name} is contending, so they're looking to win now.`);
     if (!why.length) why.push("Close in value and keeps your lineup balanced.");
-    if (r.spots > 0) why.push(`You'd need ${r.spots} open roster spot${r.spots > 1 ? "s" : ""} (${r.pack.length} pieces in, ${sending.length} out).`);
     return `<article class="tf-card${i === 0 ? " best" : ""}">
       <div class="tf-card-head">${teamPhoto(r.rid, "md")}<span class="nm"><b>${esc(th.name)}</b><small>${statusText[th.status]}${i === 0 ? ", best fit" : ""}</small></span></div>
       <div class="tf-get"><div class="lbl">You get</div>
         ${r.pack.map(a => `<div class="tf-row">${assetPhoto(a, "md")}<span class="tn"><b>${esc(a.name)}</b><small>${esc(a.kind === "player" ? [a.pos + (a.lgPosRank || ""), a.nfl, a.age ? "age " + ageText(a.age) : ""].filter(Boolean).join(", ") : a.nfl)}</small></span><span class="v">${fmt(a.value)}</span></div>`).join("")}
       </div>
-      <ul class="tf-why">${why.slice(0, 3).concat(r.spots > 0 ? why.slice(-1) : []).filter((w, i, a) => a.indexOf(w) === i).map(w => `<li>${esc(w)}</li>`).join("")}</ul>
+      <ul class="tf-why">${why.slice(0, 3).map(w => `<li>${esc(w)}</li>`).join("")}</ul>
       <div class="tf-foot"><span class="tf-verdict" style="color:${verdict[1]}">${verdict[0]}</span>
         <button type="button" class="btn tf-open" data-rid="${r.rid}" data-get="${esc(r.pack.map(a => a.id).join(","))}">Open in calculator</button></div>
     </article>`;
