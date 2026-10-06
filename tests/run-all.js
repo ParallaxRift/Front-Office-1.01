@@ -138,12 +138,12 @@ async function openLeague(browser, viewport, opts){
     // Calculator shows the math under each total when there's a value adjustment
     await page.click('#groups [data-group=trade]'); await page.click('[data-tab=calc]');
     await page.evaluate(() => { const A = teamAssets(Number($("teamA").value)).filter(a => a.kind === 'player'), B = teamAssets(Number($("teamB").value)).filter(a => a.kind === 'player'); S.sendIds = new Set([A[0].id]); S.getIds = new Set([B[2].id, B[3].id, B[4].id]); renderCalc(); });
-    const raw = await page.textContent('#sendRaw');
-    check('calculator shows players & picks plus the adjustment', /players & picks.*value adjustment/.test(raw), raw);
+    const raw = (await page.textContent('#tradeMath')).replace(/\s+/g, ' ');
+    check('calculator shows the trade math: players & picks, adjustment, total', /Players & picks.*Value adjustment.*Total/.test(raw), raw);
     // FAAB counts in the calculator
-    await page.evaluate(() => { const A = teamAssets(Number($("teamA").value)).filter(a => a.kind === 'player'), B = teamAssets(Number($("teamB").value)).filter(a => a.kind === 'player'); S.sendIds = new Set([A[3].id]); S.getIds = new Set([B[2].id]); S.faab = { send: 0, get: 0 }; renderCalc(); });
+    await page.evaluate(() => { const A = teamAssets(Number($("teamA").value)).filter(a => a.kind === 'player'), B = teamAssets(Number($("teamB").value)).filter(a => a.kind === 'player'); S.sendIds = new Set([A[3].id]); S.getIds = new Set([B[2].id]); S.faab = { send: 0, get: 0 }; S.faabOn = { send: false, get: false }; renderCalc(); });
     const before = await page.evaluate(() => Number($("sendNum").textContent.replace(/,/g, '')));
-    await page.fill('#faabSend', '50'); await page.waitForTimeout(150);
+    await page.click('#listA .faab-asset'); await page.waitForTimeout(150); await page.fill('#listA .faab-amt', '50'); await page.waitForTimeout(150);
     const after = await page.evaluate(() => Number($("sendNum").textContent.replace(/,/g, '')));
     check('FAAB adds value to a side', after > before, `${before} -> ${after}`);
     // Shared trade link reopens the same trade in a fresh browser

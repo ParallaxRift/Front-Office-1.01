@@ -412,7 +412,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 .strk.l{background:var(--loss-soft);color:var(--loss)}
 
 /* Verdict with the hint beside it; suggestions sit under the players */
-.vrow{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px}
+.vrow{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px 16px;text-align:center}
 .vrow .verdict,.vrow .hint{margin:0}
 .board .suggest{margin-top:10px}
 .board .suggest:empty{display:none}
@@ -1074,13 +1074,7 @@ th.sortable[aria-sort=ascending],th.sortable[aria-sort=descending]{color:var(--i
 @media (max-width:600px){.ta-list li{grid-template-columns:1fr;gap:1px}}
 @media (prefers-color-scheme:dark){.ta-btn{border-color:rgba(0,0,0,.3);background:rgba(0,0,0,.05)}.ta-btn:hover{background:rgba(0,0,0,.1)}.ta-panel{background:rgba(0,0,0,.05);border-color:rgba(0,0,0,.12)}}
 .range-cell{color:var(--muted);font-size:14px}
-/* FAAB in trades */
-.faab-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;margin:10px 0 0;font-size:14px}
-.faab-row[hidden]{display:none}
-.faab-row label{display:inline-flex;align-items:center;gap:6px;font-weight:600}
-.faab-row input{width:80px;padding:4px 8px;border-radius:6px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.08);color:inherit;font:inherit}
-.faab-row small{opacity:.7}
-@media (prefers-color-scheme:dark){.faab-row input{border-color:rgba(0,0,0,.3);background:rgba(0,0,0,.05)}}
+/* FAAB in trades: a row in each roster list */
 .faab-ico{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--gold-soft);color:var(--gold);font-weight:800;flex:none}
 /* Share buttons beside Reset */
 .share-btns{display:flex;flex-wrap:wrap;gap:8px;margin-left:auto}
@@ -1108,3 +1102,42 @@ th.sortable[aria-sort=ascending],th.sortable[aria-sort=descending]{color:var(--i
 @media (max-width:860px){.home-extra{grid-template-columns:1fr}}
 @media (max-width:600px){.ht-sides{grid-template-columns:1fr}}
 body:not(.has-league) .side-switch,body:not(.has-league) #miniBar{display:none!important}
+/* Trade math in the middle of the calculator: left team right-aligned, right team left-aligned */
+.tmath{margin:14px auto 6px;max-width:640px}
+.tmath[hidden]{display:none}
+.tm-grid{display:grid;grid-template-columns:1fr auto 1fr;column-gap:18px;row-gap:4px;align-items:baseline;font-variant-numeric:tabular-nums}
+.tm-l{text-align:right}.tm-r{text-align:left}
+.tm-lbl{text-align:center;font-size:12.5px;text-transform:uppercase;letter-spacing:.05em;opacity:.65;white-space:nowrap}
+.tm-grid > div:not(.tm-lbl):not(.tm-head){font-family:var(--display);font-weight:700;font-size:22px}
+.tm-head{font-size:13px;font-weight:700;opacity:.7;padding-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tm-grid .adj{color:#7BD3A2}
+.tm-grid .tot{border-top:2px solid currentColor;padding-top:4px;margin-top:2px}
+.tm-grid div.tot:not(.tm-lbl){font-size:30px;font-weight:800}
+@media (prefers-color-scheme:dark){.tm-grid .adj{color:#1E6B47}}
+@media (max-width:600px){.tm-grid{column-gap:8px}.tm-grid > div:not(.tm-lbl):not(.tm-head){font-size:19px}.tm-grid div.tot:not(.tm-lbl){font-size:24px}.tm-lbl{font-size:11px}}
+.faab-asset{cursor:pointer}
+.faab-asset .faab-ico{width:40px;height:40px;font-size:18px}
+.faab-in{display:inline-flex;align-items:center;gap:3px;font-weight:700;margin-left:auto;margin-right:8px}
+.faab-in{flex:none}
+.faab-asset .faab-amt{width:72px!important;min-width:0;flex:none;padding:5px 8px;border:1.5px solid var(--field);border-radius:6px;font:inherit;font-weight:700;background:var(--card);color:var(--ink)}
+/* ===== Calculator board, top to bottom: team names, players added, the math, the bar, the verdict ===== */
+.board .totals{flex-direction:row!important;align-items:center!important;gap:16px}
+.board .bside{flex:1 1 0!important;padding-top:0!important;border-top:0!important}
+.board .num,.board .raw{display:none!important}          /* totals now live in the math below */
+.board .bteam{font-size:20px;font-weight:700;margin:4px 0 0}
+.board .right .bteam{justify-content:flex-end!important}
+.board .right .side-label{text-align:right}
+.board .bplayers{margin-top:12px}
+.board .tmath{margin:16px auto 4px}
+.board .track{height:20px!important;border-radius:10px;margin:16px 0 12px!important}
+.board .mid{width:3px}
+.board .vrow{margin-top:4px}
+/* "You could add" chips with the player's face */
+.board .suggest button{display:inline-flex;align-items:center;gap:8px;font-size:15.5px!important;padding:5px 14px 5px 5px!important}
+.board .suggest button b{font-weight:700;opacity:.85}
+.av.av-chip{width:30px;height:30px;font-size:13px}
+@media (max-width:600px){.board .bteam{font-size:16px}.board .bteam .av{width:32px;height:32px}}
+/* traded-player rows: the name area shrinks with an ellipsis so the value never overlaps it */
+.bitem .bi-link{flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:9px;background:none;border:0;color:inherit;font:inherit;padding:0;text-align:inherit;cursor:pointer}
+.bitem .bi-val,.bitem .bi-x{flex:none}
+.bitem .bi-text > b,.bitem .bi-text > small{max-width:100%}

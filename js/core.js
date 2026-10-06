@@ -22,6 +22,7 @@ function tradeCall(gap, bigger){
 // ============================================================
 const S = {
   faab: { send: 0, get: 0 },   // FAAB dollars in the trade being built
+  faabOn: { send: false, get: false },   // FAAB row selected (stays selected while you type an amount)
   user: null, season: null, leagues: [], sleeperPlayers: null, market: null,
   league: null, rosters: [], users: [], traded: [], cfg: null,
   assets: new Map(), teams: new Map(), myRid: null,

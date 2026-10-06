@@ -41,7 +41,8 @@ async function openSharedTrade(t){
     $("teamA").value = t.ra; $("teamB").value = t.rb;
     S.sendIds = new Set(t.send.filter(id => S.assets.get(id)?.owner === t.ra));
     S.getIds = new Set(t.get.filter(id => S.assets.get(id)?.owner === t.rb));
-    S.faab = { send: Math.min(t.faabSend, faabBudget()), get: Math.min(t.faabGet, faabBudget()) };
+    S.faab = { send: Math.min(t.faabSend, faabLeft(t.ra)), get: Math.min(t.faabGet, faabLeft(t.rb)) };
+    S.faabOn = { send: S.faab.send > 0, get: S.faab.get > 0 };
     navTab("calc")?.click();
     renderCalc();
     const missing = t.send.length + t.get.length - S.sendIds.size - S.getIds.size;

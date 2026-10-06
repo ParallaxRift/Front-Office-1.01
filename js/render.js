@@ -8,9 +8,7 @@ function renderLeague(){
   $("leagueBar").style.display = "block";
   $("tabs").style.display = "flex"; $("groups").style.display = "flex";
   document.body.classList.add("has-league");
-  // FAAB inputs only for leagues that use a FAAB budget
-  $("faabRow").hidden = !faabBudget();
-  $("faabNote").textContent = faabBudget() ? `League budget $${fmt(faabBudget())}. A full budget counts like a late 2nd-round pick.` : "";
+
   $("modeBar").hidden = false; applyMode(currentMode(), true);
   $("leagueName").textContent = S.league.name;
   $("leagueAv").innerHTML = avatar(S.league.avatar, S.league.name, "lg");
@@ -120,6 +118,19 @@ function assetRow(a, sel, showOwner){
     <span class="nm"><b>${esc(a.name)}${injTag(a.pid)}</b><small>${sub}</small></span>
     <span class="val">${fmt(a.value)}</span></button>`;
 }
+// FAAB a team still has this season: the league budget minus what it has spent on waivers
+function faabLeft(rid){
+  const ro = S.rosters?.find(r => r.roster_id === rid);
+  return Math.max(0, faabBudget() - (Number(ro?.settings?.waiver_budget_used) || 0));
+}
+function faabAssetRow(rid, side){
+  const left = faabLeft(rid), amt = S.faab[side] || 0, sel = !!S.faabOn[side];
+  return `<div class="asset faab-asset${sel ? " sel" : ""}" data-faab="${side}" role="button" tabindex="0" aria-pressed="${sel}">
+    <span class="pos">FAAB</span><span class="faab-ico" aria-hidden="true">$</span>
+    <span class="nm"><b>FAAB</b><small>$${fmt(left)} left of $${fmt(faabBudget())}${sel ? "" : " · tap to add"}</small></span>
+    ${sel ? `<label class="faab-in" title="How much FAAB to include">$<input type="text" inputmode="numeric" class="faab-amt" value="${amt || ""}" placeholder="0" aria-label="FAAB amount"></label>` : ""}
+    <span class="val">${sel ? fmt(faabValue(amt)) : left ? fmt(faabValue(left)) : "$0"}</span></div>`;
+}
 function renderSide(rid, listEl, badgeEl, set){
   const t = S.teams.get(rid);
   badgeEl.textContent = statusText[t.status]; badgeEl.className = "badge " + badgeClass[t.status];
@@ -130,7 +141,9 @@ function renderSide(rid, listEl, badgeEl, set){
   const pool = browseAll[side] ? [...S.assets.values()].filter(a => a.owner != null && a.value > 0 && (!q || normName(a.name).includes(q))).sort((a, b) => b.value - a.value).slice(0, 300)
                                : teamAssets(rid);
   const items = pool.filter(a => f === "EVERY" ? true : f === "ALL" ? a.kind === "player" : f === "PICK" ? a.kind === "pick" : a.pos === f);
-  listEl.innerHTML = items.length ? items.map(a => assetRow(a, set.has(a.id), browseAll[side])).join("") : `<p class="empty">${browseAll[side] ? "No players or picks match." : f === "EVERY" || f === "ALL" ? "No valued players on this roster yet." : "None on this roster."}</p>`;
+  const faabSide = side === "A" ? "send" : "get";
+  const faabHTML = !browseAll[side] && faabBudget() && (f === "EVERY" || f === "PICK") ? faabAssetRow(rid, faabSide) : "";
+  listEl.innerHTML = items.length || faabHTML ? faabHTML + items.map(a => assetRow(a, set.has(a.id), browseAll[side])).join("") : `<p class="empty">${browseAll[side] ? "No players or picks match." : f === "EVERY" || f === "ALL" ? "No valued players on this roster yet." : "None on this roster."}</p>`;
 }
 const eq = vals => Math.pow(vals.reduce((s,v) => s + Math.pow(v, STUD_EXPONENT), 0), 1/STUD_EXPONENT);
 
@@ -244,6 +257,7 @@ function renderCalc(){
   // drop selections that no longer belong to the chosen teams
   for (const id of [...S.sendIds]) if (S.assets.get(id)?.owner !== ra) S.sendIds.delete(id);
   for (const id of [...S.getIds]) if (S.assets.get(id)?.owner !== rb) S.getIds.delete(id);
+  S.faab.send = Math.min(S.faab.send || 0, faabLeft(ra)); S.faab.get = Math.min(S.faab.get || 0, faabLeft(rb));   // can't trade more FAAB than a team has
   renderSide(ra, $("listA"), $("badgeA"), S.sendIds);
   renderSide(rb, $("listB"), $("badgeB"), S.getIds);
   $("avA").innerHTML = teamPhoto(ra, "md"); $("avB").innerHTML = teamPhoto(rb, "md");
@@ -265,8 +279,8 @@ function renderCalc(){
   $("sendNum").textContent = fmt(eS); $("getNum").textContent = fmt(eG);
   // Team name + logo on each side, and the players/picks being traded (tap one to remove it)
   const tA = S.teams.get(ra), tB = S.teams.get(rb);
-  $("sendTeam").innerHTML = tA ? `${teamPhoto(ra, true)}<span class="nm">${esc(tA.name)}</span>` : "";
-  $("getTeam").innerHTML = tB ? `${teamPhoto(rb, true)}<span class="nm">${esc(tB.name)}</span>` : "";
+  $("sendTeam").innerHTML = tA ? `${teamPhoto(ra, "md")}<span class="nm">${esc(tA.name)}</span>` : "";
+  $("getTeam").innerHTML = tB ? `${teamPhoto(rb, "md")}<span class="nm">${esc(tB.name)}</span>` : "";
   const itemsHTML = (ids, side) => [...ids].map(id => S.assets.get(id)).filter(Boolean).sort((a, b) => b.value - a.value)
     .map(a => {
       const sub = a.kind === "player" ? [esc(a.nfl), a.age ? "age " + ageText(a.age) : "", rankHTML(a)].filter(Boolean).join(", ") : esc(a.nfl);
@@ -292,14 +306,24 @@ function renderCalc(){
   $("sendItems").innerHTML = itemsHTML(S.sendIds, "send") + faabRow(S.faab.send, fS, "send") + adjRow(bonusS, rb, S.getIds);
   $("getItems").innerHTML = itemsHTML(S.getIds, "get") + faabRow(S.faab.get, fG, "get") + adjRow(bonusG, ra, S.sendIds);
   $("bPlayers").hidden = !S.sendIds.size && !S.getIds.size && !S.faab.send && !S.faab.get;
-  $("faabSend").value = S.faab.send || ""; $("faabGet").value = S.faab.get || "";
   $("swCountA").textContent = S.sendIds.size ? `(${S.sendIds.size})` : ""; $("swCountB").textContent = S.getIds.size ? `(${S.getIds.size})` : "";
   $("swTeamA").textContent = browseAll.A ? "All Players" : (tA?.name || ""); $("swTeamB").textContent = browseAll.B ? "All Players" : (tB?.name || "");
   $("resetTrade").disabled = !S.sendIds.size && !S.getIds.size && !S.faab.send && !S.faab.get;
-  // Show the math under each total: players and picks, plus the value adjustment when there is one
-  const breakdown = (raw, bonus, faab) => bonus || faab ? `<span class="rawsum">${fmt(raw)} players &amp; picks${faab ? ` + ${fmt(faab)} FAAB` : ""}</span>${bonus ? `<b>+${fmt(bonus)} value adjustment</b>` : ""}` : "";
-  $("sendRaw").innerHTML = breakdown(rawS, bonusS, fS);
-  $("getRaw").innerHTML = breakdown(rawG, bonusG, fG);
+  // Under each total: the value adjustment, when there is one
+  $("sendRaw").innerHTML = ""; $("getRaw").innerHTML = "";
+  // The math, laid out like a problem in the middle of the calculator: players & picks, then FAAB and
+  // the value adjustment if any, then the total. Left team right-aligned, right team left-aligned.
+  const anyS = S.sendIds.size || S.faab.send, anyG = S.getIds.size || S.faab.get;
+  if (anyS || anyG){
+    const line = (lbl, l, r, cls = "") => `<div class="tm-l ${cls}">${l}</div><div class="tm-lbl ${cls}">${lbl}</div><div class="tm-r ${cls}">${r}</div>`;
+    const plus = n => n ? "+" + fmt(n) : "—";
+    let h = line("Players &amp; picks", fmt(rawS), fmt(rawG));
+    if (fS || fG) h += line("FAAB", plus(fS), plus(fG));
+    if (bonusS || bonusG) h += line("Value adjustment", plus(bonusS), plus(bonusG), "adj");
+    h += line("Total", fmt(eS), fmt(eG), "tot");
+    $("tradeMath").innerHTML = `<div class="tm-grid">${h}</div>`;
+  }
+  $("tradeMath").hidden = !(anyS || anyG);
   const total = eS + eG;
   $("fill").style.width = (total ? (eS/total*100) : 50) + "%";
   $("fill").className = "fill";   // gold until both sides have something
@@ -360,7 +384,7 @@ function renderCalc(){
       sug.appendChild(lbl);
       for (const a of picks){
         const b = document.createElement("button");
-        b.textContent = `${a.name} (${fmt(a.value)})`;
+        b.innerHTML = `${assetPhoto(a, "chip")}<span>${esc(a.name)}</span><b>${fmt(a.value)}</b>`;
         b.addEventListener("click", () => { (needFromThem ? S.getIds : S.sendIds).add(a.id); renderCalc(); });
         sug.appendChild(b);
       }
@@ -375,6 +399,12 @@ function addedNote(set, id, wasIn){
   toast(wasIn ? `Removed ${a.name}` : `${a.name} added to ${set === S.sendIds ? "You Send" : "You Get"}`);
 }
 function toggle(set, e){
+  if (e.target.closest(".faab-in")) return;                      // typing an amount, not toggling
+  const fb = e.target.closest(".faab-asset");
+  if (fb){ const side = fb.dataset.faab, rid = Number($(side === "send" ? "teamA" : "teamB").value);
+    S.faabOn[side] = !S.faabOn[side];
+    S.faab[side] = S.faabOn[side] ? faabLeft(rid) : 0;            // add all of it; then type a smaller amount if you like
+    renderCalc(); if (S.faabOn[side]) $(side === "send" ? "listA" : "listB").querySelector(".faab-amt")?.select(); return; }
   const btn = e.target.closest(".asset"); if (!btn) return;
   const id = btn.dataset.id, wasIn = set.has(id);
   wasIn ? set.delete(id) : set.add(id); renderCalc(); addedNote(set, id, wasIn);
@@ -387,13 +417,19 @@ function setSideSwitch(side){
 $("sideSwitch").addEventListener("click", e => { const b = e.target.closest("button"); if (b) setSideSwitch(b.dataset.side); });
 setSideSwitch("A");
 $("listA").addEventListener("click", e => browseAll.A ? browseClick("A", e) : toggle(S.sendIds, e));
-$("resetTrade").addEventListener("click", () => { S.sendIds.clear(); S.getIds.clear(); S.faab = { send: 0, get: 0 }; renderCalc(); });
-// FAAB (waiver budget) can go in a trade on either side
-for (const [id, side] of [["faabSend", "send"], ["faabGet", "get"]])
-  $(id).addEventListener("input", e => { S.faab[side] = Math.max(0, Math.min(faabBudget(), Math.round(Number(e.target.value) || 0))); renderCalc(); });
+$("resetTrade").addEventListener("click", () => { S.sendIds.clear(); S.getIds.clear(); S.faab = { send: 0, get: 0 }; S.faabOn = { send: false, get: false }; renderCalc(); });
+// FAAB in the roster lists: tap the row to add it, then type how much to include
+for (const [listId, side] of [["listA", "send"], ["listB", "get"]])
+  $(listId).addEventListener("input", e => {
+    const inp = e.target.closest(".faab-amt"); if (!inp) return;
+    const rid = Number($(side === "send" ? "teamA" : "teamB").value), max = faabLeft(rid);
+    const n = Math.max(0, Math.min(max, Math.round(Number(String(inp.value).replace(/[^0-9]/g, "")) || 0)));
+    S.faab[side] = n; renderCalc();
+    const again = $(listId).querySelector(".faab-amt"); if (again){ again.focus(); const L = again.value.length; again.setSelectionRange(L, L); }   // keep typing
+  });
 $("board").addEventListener("click", e => {
   const x = e.target.closest(".bi-x");
-  if (x && x.dataset.faab){ S.faab[x.dataset.faab] = 0; renderCalc(); return; }
+  if (x && x.dataset.faab){ S.faab[x.dataset.faab] = 0; S.faabOn[x.dataset.faab] = false; renderCalc(); return; }
   if (x){ (x.dataset.side === "send" ? S.sendIds : S.getIds).delete(x.dataset.id); renderCalc(); return; }
   const l = e.target.closest(".bi-link");
   if (!l || !l.dataset.show) return;

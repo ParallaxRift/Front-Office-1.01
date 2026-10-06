@@ -133,7 +133,7 @@ async function openLeague(leagueId){
     S.history = null; S.nudge = null; S.curveB = 1; S.curveT = 1; S.ageStrength = 1; S.ageFit = null; S.depth = null; S.depthFit = null; S.accuracy = null; S.pickOdds = null; S.playoffOdds = null; S.weeksPlayed = 0; S.historyError = false;
     S.leagueSig = leagueSignature(league, S.rosters, S.traded); lastLeagueCheck = Date.now();
     buildValues();
-    S.sendIds.clear(); S.getIds.clear(); S.faab = { send: 0, get: 0 }; tfSend.clear(); tfTarget = null; trophy = null;
+    S.sendIds.clear(); S.getIds.clear(); S.faab = { send: 0, get: 0 }; S.faabOn = { send: false, get: false }; tfSend.clear(); tfTarget = null; trophy = null;
     renderLeague();
     loadHistory(league);
     progress(3, "done");
