@@ -874,6 +874,18 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
   .lu .av{display:none}
   .lineups{gap:0 10px;padding:0 10px 10px}
 }
+/* Player photos sit on their current NFL team's color and logo (from Sleeper, so a real-life trade updates it);
+   players without a team keep the generic football */
+.av.pl.tm{background:linear-gradient(160deg,var(--tm),color-mix(in srgb,var(--tm) 70%,#000))}
+.av.pl.tm::before{content:"";position:absolute;inset:4%;background:var(--tm-logo) center/contain no-repeat;opacity:.6}
+.av.pl.tm img{background:transparent;z-index:1}
+.av.pl.tm .fb{display:none}
+.pc-photo{position:relative}
+.pc-photo img{position:relative;z-index:1}
+.pc-photo.tm{background:linear-gradient(160deg,var(--tm),color-mix(in srgb,var(--tm) 65%,#000))}
+.pc-photo.tm::before{content:"";position:absolute;inset:6%;background:var(--tm-logo) center/contain no-repeat;opacity:.7}
+.pc-photo.tm .fb{display:none}
+.pc-photo .fb{position:absolute;width:70%;height:70%;color:#fff;opacity:.9}
 /* ---------- Player card ---------- */
 .av.pl[data-pid]{cursor:zoom-in}
 .pc-backdrop{position:fixed;inset:0;z-index:60;background:rgba(10,16,20,.55);display:flex;align-items:flex-start;justify-content:center;padding:32px 16px;overflow-y:auto}
@@ -894,10 +906,13 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 .pc-val b{display:block;font-family:var(--display);font-size:32px;line-height:1}
 .pc-val small{font-size:13px;opacity:.85}
 .pc-body{padding:18px 22px 22px}
-.pc-facts{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin:0 0 18px}
-.pc-facts div{background:var(--paper);border-radius:10px;padding:9px 12px}
-.pc-facts dt{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
-.pc-facts dd{margin:2px 0 0;font-weight:700;font-size:15px}
+/* bio facts: one line; on narrow screens the line scrolls sideways instead of wrapping */
+.pc-facts{display:flex;gap:8px;margin:0 0 18px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.pc-facts::-webkit-scrollbar{display:none}
+.pc-facts div{flex:1 1 0;min-width:max-content;background:var(--paper);border-radius:10px;padding:8px 12px}
+.pc-facts div.wide{flex-grow:1.8}
+.pc-facts dt{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+.pc-facts dd{margin:2px 0 0;font-weight:700;font-size:15px;white-space:nowrap}
 .pc h3{font-family:var(--display);font-size:19px;margin:20px 0 8px}
 .pc-status{border-radius:12px;padding:12px 14px;border:1.5px solid var(--line)}
 .pc-status.hurt{border-color:#E5484D;background:var(--loss-soft)}
@@ -1963,8 +1978,17 @@ function teamAssets(rid){
 // Player headshots come from Sleeper's image server (same place the Sleeper app gets them).
 // Picks show the logo of the team the pick originally belonged to. Missing images fall back to the football icon.
 const PLAYER_IMG = pid => `https://sleepercdn.com/content/nfl/players/thumb/${encodeURIComponent(pid)}.jpg`;
+const NFL_COLORS = {ARI:"#97233F",ATL:"#A71930",BAL:"#241773",BUF:"#00338D",CAR:"#0085CA",CHI:"#0B162A",CIN:"#FB4F14",CLE:"#311D00",DAL:"#041E42",DEN:"#FB4F14",DET:"#0076B6",GB:"#203731",HOU:"#03202F",IND:"#002C5F",JAX:"#006778",KC:"#E31837",LV:"#000000",LAC:"#0080C6",LAR:"#003594",LA:"#003594",MIA:"#008E97",MIN:"#4F2683",NE:"#002244",NO:"#101820",NYG:"#0B2265",NYJ:"#125740",PHI:"#004C54",PIT:"#101820",SF:"#AA0000",SEA:"#002244",TB:"#D50A0A",TEN:"#0C2340",WAS:"#5A1414"};
+// The player's CURRENT NFL team, straight from Sleeper's player list (reloaded every time a league opens)
+const currentTeam = pid => { const t = S.sleeperPlayers?.[pid]?.team; return t && NFL_COLORS[t] ? t : null; };
+const teamBgStyle = t => t ? `--tm:${NFL_COLORS[t]};--tm-logo:url('https://sleepercdn.com/images/team_logos/nfl/${t.toLowerCase()}.png')` : "";
 function assetPhoto(a, size){
-  if (a.kind === "player") return avatar(PLAYER_IMG(a.pid), a.name, size).replace('class="av', `data-pid="${esc(a.pid)}" class="av pl`).replace(/title="[^"]*"/, `title="${esc(a.name)}: tap for player card"`);
+  if (a.kind === "player"){
+    const t = currentTeam(a.pid);
+    return avatar(PLAYER_IMG(a.pid), a.name, size)
+      .replace('class="av', `data-pid="${esc(a.pid)}"${t ? ` style="${teamBgStyle(t)}"` : ""} class="av pl${t ? " tm" : ""}`)
+      .replace(/title="[^"]*"/, `title="${esc(a.name)}: tap for player card"`);
+  }
   const orig = Number(String(a.id).split("-").pop());
   return S.teams.has(orig) ? teamPhoto(orig, size) : avatar(null, a.name, size);
 }
@@ -2077,7 +2101,7 @@ function renderCalc(){
     .map(a => {
       const sub = a.kind === "player" ? [a.pos, a.nfl, a.age ? "age " + ageText(a.age) : ""].filter(Boolean).join(", ") : a.nfl;
       return `<div class="bitem">
-        <button type="button" class="bi-link" data-show="${esc(a.id)}" title="See ${esc(a.name)} in Player Values">
+        <button type="button" class="bi-link" data-show="${esc(a.id)}" title="${a.kind === "player" ? "Open " + esc(a.name) + "'s player card" : "See " + esc(a.name) + " in Player Values"}">
           ${assetPhoto(a, "trade")}<span class="bi-text"><b>${esc(a.name)}</b><small>${esc(sub)}</small></span></button>
         <span class="bi-val">${fmt(a.value)}</span>
         <button type="button" class="bi-x" data-side="${side}" data-id="${esc(a.id)}" aria-label="Remove ${esc(a.name)} from the trade">✕</button></div>`;
@@ -2173,7 +2197,10 @@ $("board").addEventListener("click", e => {
   const x = e.target.closest(".bi-x");
   if (x){ (x.dataset.side === "send" ? S.sendIds : S.getIds).delete(x.dataset.id); renderCalc(); return; }
   const l = e.target.closest(".bi-link");
-  if (l) showInValues(l.dataset.show);
+  if (!l) return;
+  const a = S.assets.get(l.dataset.show);
+  if (a && a.kind === "player") openPlayerCard(a.pid);    // players open their player card
+  else showInValues(l.dataset.show);                      // picks still jump to Player Values
 });
 // Jump to a player's (or pick's) row in League Values and highlight it
 function showInValues(id){
@@ -2366,7 +2393,7 @@ async function openPlayerCard(pid){
   $("pcard").innerHTML = `<div class="pc" role="dialog" aria-modal="true" aria-labelledby="pcName">
     <button type="button" class="pc-close" aria-label="Close player card">×</button>
     <header class="pc-head">
-      <div class="pc-photo">${FOOTBALL}<img src="https://sleepercdn.com/content/nfl/players/${encodeURIComponent(pid)}.jpg" alt="" onerror="this.remove()"></div>
+      <div class="pc-photo${currentTeam(pid) ? " tm" : ""}" style="${teamBgStyle(currentTeam(pid))}">${FOOTBALL}<img src="https://sleepercdn.com/content/nfl/players/${encodeURIComponent(pid)}.jpg" alt="" onerror="this.remove()"></div>
       <div class="pc-id"><h2 id="pcName">${esc(name)}</h2>
         <div class="pc-sub"><span>${esc(pos)}${sp.number ? " · #" + esc(sp.number) : ""}</span>
           ${team ? `<span><img src="https://sleepercdn.com/images/team_logos/nfl/${esc(team.toLowerCase())}.png" alt="" onerror="this.remove()"> ${esc(NFL_TEAMS[team] || team)}</span>` : `<span>Free agent</span>`}
@@ -2374,7 +2401,7 @@ async function openPlayerCard(pid){
       ${a ? `<div class="pc-val"><b>${fmt(a.value)}</b><small>${[a.lgPosRank ? pos + a.lgPosRank : "", a.lgRank ? "#" + a.lgRank + " overall" : ""].filter(Boolean).join(" · ")} in your league</small></div>` : ""}
     </header>
     <div class="pc-body">
-      <dl class="pc-facts">${facts.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl>
+      <dl class="pc-facts">${facts.map(([k, v]) => `<div${k === "Fantasy team" || k === "College" ? ' class="wide"' : ""}><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl>
       <h3>Current Status</h3>${currentStatus(sp)}
       <h3>Career Stats</h3><div id="pcStats"><p class="pc-loading">Loading stats…</p></div>
       <h3>Injury History</h3><div id="pcInj"><p class="pc-loading">Loading injury history…</p></div>
