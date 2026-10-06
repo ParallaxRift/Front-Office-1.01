@@ -25,7 +25,7 @@ async function openLeague(browser, viewport, opts){
   await page.goto(`http://localhost:${PORT}/index.html`);
   await page.fill('#username', 'tester'); await page.click('#loadUser');
   await page.waitForSelector('.lg'); await page.click('.lg');
-  await page.waitForSelector('#appbar:not([hidden])');
+  await page.waitForFunction(() => document.body.classList.contains('has-league'));
   await page.waitForFunction(() => window.S && S.history, null, { timeout: 30000 }).catch(() => {});
   await page.waitForTimeout(1500);
   return page;
@@ -49,7 +49,11 @@ async function openLeague(browser, viewport, opts){
           const before = page.errors.length;
           const group = await page.evaluate(t => navGroupOf(t).id, t);
           {
-            await page.click(`#groups [data-group="${group}"]`).catch(() => bad.push(`${t} section button missing`));
+            if (vp.width < 500){ // phones navigate with the bottom tab bar; Live Scores and Feedback live in the More sheet
+              const bar = { trade: 'trade', values: 'values', team: 'team', league: 'league' }[group];
+              if (bar) await page.tap(`#tabbar [data-go="${bar}"]`).catch(() => bad.push(`${t} tab bar button missing`));
+              else { await page.tap('#tabbar [data-go="more"]'); await page.waitForTimeout(250); await page.tap(`#moreSheet [data-more="${group === 'scores' ? 'scores' : 'feedback'}"]`).catch(() => bad.push(`${t} More item missing`)); await page.waitForTimeout(250); }
+            } else await page.click(`#groups [data-group="${group}"]`).catch(() => bad.push(`${t} section button missing`));
             if (await page.$eval(`[data-tab="${t}"]`, e => e.offsetParent !== null)) await page.click(`[data-tab="${t}"]`);
           }
           await page.waitForTimeout(250);
@@ -59,8 +63,11 @@ async function openLeague(browser, viewport, opts){
         }
         check(`${vp.name} ${mode}: all ${tabs.length} tabs open cleanly`, !bad.length, bad.join(', '));
       }
+      const shell = await page.evaluate(() => ({ bar: getComputedStyle(document.getElementById('tabbar')).display !== 'none', head: getComputedStyle(document.getElementById('appbar')).display !== 'none' }));
+      if (vp.width < 500) check('phone: app tab bar shown, desktop header hidden', shell.bar && !shell.head, JSON.stringify(shell));
+      else check('desktop: unchanged header, no phone tab bar', !shell.bar && shell.head, JSON.stringify(shell));
       if (vp.width < 500){
-        await page.click('#groups [data-group=trade]'); await page.click('[data-tab=calc]');
+        await page.tap('#tabbar [data-go=trade]'); await page.waitForTimeout(200);
         await page.tap('#listA .asset .nm >> nth=0'); await page.tap('#sideSwitch [data-side=B]'); await page.tap('#listB .asset .nm >> nth=2');
         await page.evaluate(() => window.scrollTo(0, 1600)); await page.waitForTimeout(400);
         const bar = await page.$eval('#miniBar', e => e.hidden ? '' : e.textContent);
@@ -148,7 +155,7 @@ async function openLeague(browser, viewport, opts){
     // Shared trade link reopens the same trade in a fresh browser
     const link = await page.evaluate(() => tradeLink()), want = await page.evaluate(() => [$("sendNum").textContent, $("getNum").textContent].join(' / '));
     const p2 = await browser.newPage({ viewport: { width: 1300, height: 900 } }); p2.errors = []; p2.on('pageerror', e => p2.errors.push(e.message));
-    await setup(p2); await p2.goto(link); await p2.waitForSelector('#appbar:not([hidden])', { timeout: 30000 }); await p2.waitForFunction(() => S.history, null, { timeout: 30000 }); await p2.waitForTimeout(1500);
+    await setup(p2); await p2.goto(link); await p2.waitForFunction(() => document.body.classList.contains('has-league'), null, { timeout: 30000 }); await p2.waitForFunction(() => S.history, null, { timeout: 30000 }); await p2.waitForTimeout(1500);
     const got = await p2.evaluate(() => [$("sendNum").textContent, $("getNum").textContent].join(' / '));
     check('shared trade link reopens the same trade', got === want && !p2.errors.length, `${want} vs ${got}${p2.errors.length ? ' ' + p2.errors[0] : ''}`);
     await p2.close();

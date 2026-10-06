@@ -1166,3 +1166,82 @@ body:not(.has-league) .side-switch,body:not(.has-league) #miniBar{display:none!i
 /* Selected sub-tab: green gradient (desktop and phone) */
 .tabs .tab[aria-selected=true]{background:linear-gradient(135deg,#1E6B47 0%,#2FA36B 100%)!important;color:#fff!important;border-color:transparent!important;border-radius:8px!important;box-shadow:0 2px 8px rgba(30,107,71,.25)}
 .tabs .tab{border-radius:8px}
+
+/* ================= PHONE APP FRAME (600px and narrower only; desktop never sees this) ================= */
+.tabbar,.more-sheet,.home-mode,.install-tip{display:none}
+@media (max-width:600px){
+  /* slim header: league name and your team; the section buttons, mode switch and footer move to the tab bar / More */
+  body.has-league #appbar,body.has-league #groups,body.has-league #modeBar,body.has-league .foot{display:none!important}
+  body.has-league .wrap{padding-top:6px;padding-bottom:calc(88px + env(safe-area-inset-bottom,0px))}
+  body.has-league .leaguebar{padding:8px 0 4px}
+  body.has-league .leaguehead{gap:10px;flex-wrap:nowrap}
+  body.has-league #leagueAv .av{width:36px;height:36px}
+  body.has-league .leaguebar h2{font-size:21px;margin:0}
+  body.has-league #myTeamLine{font-size:13px}
+  body.has-league #chips:empty{display:none}
+  /* the tabs inside a section stay pinned at the top while you scroll */
+  body.has-league .tabs:not(.single){position:sticky;top:0;z-index:30;background:var(--paper);margin:0 -12px!important;padding:8px 12px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;border-bottom:1px solid var(--line)!important}
+  body.has-league .tabs .tab{flex:none}
+  body.has-league .panel{padding-top:10px}
+  /* bottom tab bar */
+  body.has-league .tabbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:45;background:var(--card);border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px));box-shadow:0 -4px 18px rgba(0,0,0,.06)}
+  .tabbar button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:0;color:var(--muted);font:inherit;font-size:11.5px;font-weight:600;padding:4px 0;border-radius:10px;cursor:pointer}
+  .tabbar button[hidden]{display:none}
+  .tabbar button[aria-current=page]{color:var(--field)}
+  .tabbar button[aria-current=page] svg{background:var(--field-soft);border-radius:999px;padding:2px 12px;width:48px;box-sizing:content-box;margin:0 -12px}
+  /* things that sit at the bottom move up above the tab bar */
+  body.has-league .minibar{bottom:calc(78px + env(safe-area-inset-bottom,0px))}
+  body.has-league .toast{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+  /* More menu */
+  .more-sheet:not([hidden]){display:block;position:fixed;inset:0;z-index:70}
+  .ms-backdrop{position:absolute;inset:0;background:rgba(10,16,20,.45);opacity:0;transition:opacity .2s}
+  .ms-panel{position:absolute;left:0;right:0;bottom:0;background:var(--card);color:var(--ink);border-radius:18px 18px 0 0;padding:8px 16px calc(16px + env(safe-area-inset-bottom,0px));transform:translateY(100%);transition:transform .22s ease;max-height:85vh;overflow-y:auto}
+  .more-sheet.open .ms-backdrop{opacity:1}.more-sheet.open .ms-panel{transform:none}
+  .ms-grab{width:40px;height:4px;border-radius:2px;background:var(--line);margin:4px auto 10px}
+  .ms-list{display:flex;flex-direction:column}
+  .ms-list > button{display:flex;flex-direction:column;align-items:flex-start;gap:1px;background:none;border:0;border-bottom:1px solid var(--line);padding:12px 2px;text-align:left;font:inherit;color:inherit;cursor:pointer}
+  .ms-list > button[hidden]{display:none}
+  .ms-list b{font-size:16px}.ms-list small{color:var(--muted);font-size:13px}
+  .ms-mode,.home-mode{display:flex;align-items:center;gap:10px;padding:12px 2px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .ms-mode > span,.home-mode > span{font-weight:700;font-size:14px}
+  .ms-toggle{display:inline-flex;border:1.5px solid var(--line);border-radius:999px;padding:2px}
+  .ms-toggle button{border:0;background:none;font:inherit;font-size:13.5px;font-weight:600;padding:5px 12px;border-radius:999px;color:var(--muted);cursor:pointer}
+  .ms-toggle button[aria-pressed=true]{background:var(--ink);color:var(--paper)}
+  .ms-fine{font-size:12px;color:var(--muted);margin:12px 0 0}
+  .home-mode{border-bottom:0;border-top:1px solid var(--line);margin-top:10px;padding-bottom:0}
+  .home-mode a{font-size:13px;color:var(--field)}
+  /* install tip */
+  .install-tip{display:flex;align-items:center;gap:10px;position:fixed;left:10px;right:10px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:65;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:14px;padding:10px 12px;box-shadow:0 10px 30px rgba(0,0,0,.18)}
+  body.has-league .install-tip{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+  .install-tip img{width:40px;height:40px;border-radius:10px;flex:none}
+  .install-tip > span{flex:1;min-width:0;display:flex;flex-direction:column;font-size:14px}
+  .install-tip small{color:var(--muted);font-size:12.5px}
+  .install-tip .btn{padding:6px 12px;font-size:14px}
+  .install-tip .it-x{background:none;border:0;font-size:16px;color:var(--muted);padding:4px;cursor:pointer}
+
+  /* ----- screen fixes ----- */
+  /* player card slides up from the bottom */
+  .pc-backdrop{align-items:flex-end!important;padding:0!important}
+  .pc{min-height:0!important;max-height:92vh;overflow-y:auto!important;border-radius:18px 18px 0 0!important}
+  .pc-facts{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible!important}
+  .pc-facts div{min-width:0!important}
+  .pc-facts div.wide{grid-column:span 3}
+  .pc-facts dd{white-space:normal!important;overflow-wrap:anywhere}
+  /* Trade Finder: recommendation rows stack the value and button under the name */
+  .tf-rec{flex-wrap:wrap;row-gap:4px}
+  .tf-rec .tn{flex:1 1 calc(100% - 52px)}
+  .tf-rec .tn b,.tf-rec .tn small{white-space:normal}
+  .tf-rec .v{margin-left:46px}
+  .tf-rec .go{margin-left:auto}
+  /* League Settings: the label sits above its explanation */
+  .rules li{flex-direction:column;gap:2px}
+  .rules .mult{min-width:0;font-size:16px}
+  /* wide tables: tighter, and they scroll sideways inside their box instead of being cut off */
+  .stand td,.stand th{padding:6px 5px!important;font-size:13px}
+  .tablewrap{-webkit-overflow-scrolling:touch}
+}
+
+@media (max-width:600px){
+  .vsearch{display:flex;width:100%}
+  .vsearch input{flex:1;width:100%;max-width:none}
+}
