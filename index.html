@@ -445,6 +445,10 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 .bitem .bi-x{background:none;border:0;cursor:pointer;padding:4px 6px;border-radius:6px;color:inherit}
 .bitem .bi-x:hover{background:var(--loss-soft);color:var(--loss)}
 #valuesBody tr[data-id^="p:"]{cursor:pointer}
+#valuesBody tr{transition:background-color .12s}
+#valuesBody tr[data-id^="p:"]:hover,#valuesBody tr[data-id^="p:"]:focus-visible{background:var(--paper)}
+#valuesBody tr[data-id^="p:"]:focus-visible{outline:2px solid var(--field);outline-offset:-2px}
+#valuesBody tr[data-id^="p:"]:active{background:var(--field-soft)}
 #valuesBody tr.hl{background:var(--field-soft);outline:2px solid var(--field);outline-offset:-2px}
 
 /* Roster filter dropdown under each team picker */
@@ -886,6 +890,8 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 .pc-photo.tm::before{content:"";position:absolute;inset:6%;background:var(--tm-logo) center/contain no-repeat;opacity:.7}
 .pc-photo.tm .fb{display:none}
 .pc-photo .fb{position:absolute;width:70%;height:70%;color:#fff;opacity:.9}
+.inj{display:inline-block;vertical-align:1px;margin-left:5px;padding:1px 5px;border-radius:5px;font-family:var(--display);font-size:11px;font-weight:800;line-height:1.35;letter-spacing:.02em;color:#fff;background:#E5484D;white-space:nowrap}
+.inj-q{background:#F0B848;color:#2B1E00}.inj-d{background:#F08A3E;color:#2B1200}
 /* ---------- Player card ---------- */
 .av.pl[data-pid]{cursor:zoom-in}
 .pc-backdrop{position:fixed;inset:0;z-index:60;background:rgba(10,16,20,.55);display:flex;align-items:flex-start;justify-content:center;padding:32px 16px;overflow-y:auto}
@@ -920,6 +926,22 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 .pc-status.hurt{border-color:#E5484D;background:var(--loss-soft)}
 .pc-status.warn{border-color:#F0B848;background:var(--gold-soft)}
 .pc-status p{margin:4px 0 0;font-size:14px;color:var(--muted)}
+.pc-inj{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:8px 0 0;font-size:14px}
+.pc-inj dt{color:var(--muted)}
+.pc-inj dd{margin:0;font-weight:600}
+.pc-est{margin-top:12px;padding:10px 12px;border-radius:10px;background:var(--card);border:1px solid var(--line)}
+.pc-est small{display:block;font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.pc-est b{display:block;font-family:var(--display);font-size:22px;line-height:1.15;margin-top:2px}
+.pc-est span{display:block;font-weight:600;font-size:14px;margin-top:2px}
+.pc-est p{margin:6px 0 0;font-size:12.5px;color:var(--muted)}
+.pc-news{margin-top:10px;border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+.pc-news small{display:block;font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
+.pc-news article{padding:8px 0;border-top:1px solid var(--line)}
+.pc-news article:first-of-type{border-top:0}
+.pc-news article b{display:block;font-size:14.5px}
+.pc-news article p{margin:3px 0 0;font-size:14px;color:var(--ink)}
+.pc-news time{display:block;font-size:12px;color:var(--muted);margin-top:3px}
+
 .pc-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);border-radius:12px}
 .pc table{width:100%;border-collapse:collapse;font-size:14px;white-space:nowrap}
 .pc th{font-size:12px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);text-align:right;padding:8px 10px;border-bottom:1px solid var(--line);background:var(--paper)}
@@ -1980,6 +2002,14 @@ function teamAssets(rid){
 // Player headshots come from Sleeper's image server (same place the Sleeper app gets them).
 // Picks show the logo of the team the pick originally belonged to. Missing images fall back to the football icon.
 const PLAYER_IMG = pid => `https://sleepercdn.com/content/nfl/players/thumb/${encodeURIComponent(pid)}.jpg`;
+// Injury designation tag shown next to a player's name everywhere (live from Sleeper's player list)
+const INJ_SHORT = { Questionable: ["Q", "q"], Doubtful: ["D", "d"], Out: ["O", "o"], IR: ["IR", "o"], PUP: ["PUP", "o"], NFI: ["NFI", "o"], Sus: ["SUS", "o"], COV: ["COV", "o"], NA: ["NA", "d"], DNR: ["DNR", "d"] };
+function injTag(pid){
+  const sp = pid != null ? S.sleeperPlayers?.[pid] : null, st = sp?.injury_status, t = INJ_SHORT[st];
+  if (!t) return "";
+  const full = (INJ_LABEL[st]?.[0] || st) + (sp.injury_body_part ? ": " + sp.injury_body_part : "");
+  return ` <span class="inj inj-${t[1]}" title="${esc(full)}" aria-label="${esc(full)}">${t[0]}</span>`;
+}
 const NFL_COLORS = {ARI:"#97233F",ATL:"#A71930",BAL:"#241773",BUF:"#00338D",CAR:"#0085CA",CHI:"#0B162A",CIN:"#FB4F14",CLE:"#311D00",DAL:"#041E42",DEN:"#FB4F14",DET:"#0076B6",GB:"#203731",HOU:"#03202F",IND:"#002C5F",JAX:"#006778",KC:"#E31837",LV:"#000000",LAC:"#0080C6",LAR:"#003594",LA:"#003594",MIA:"#008E97",MIN:"#4F2683",NE:"#002244",NO:"#101820",NYG:"#0B2265",NYJ:"#125740",PHI:"#004C54",PIT:"#101820",SF:"#AA0000",SEA:"#002244",TB:"#D50A0A",TEN:"#0C2340",WAS:"#5A1414"};
 // The player's CURRENT NFL team, straight from Sleeper's player list (reloaded every time a league opens)
 const currentTeam = pid => { const t = S.sleeperPlayers?.[pid]?.team; return t && NFL_COLORS[t] ? t : null; };
@@ -2000,7 +2030,7 @@ function assetRow(a, sel, showOwner){
   return `<button class="asset${sel?" sel":""}" data-id="${esc(a.id)}" aria-pressed="${sel}">
     <span class="pos">${esc(a.pos)}</span>
     ${assetPhoto(a, "row")}
-    <span class="nm"><b>${esc(a.name)}</b><small>${esc(sub)}</small></span>
+    <span class="nm"><b>${esc(a.name)}${injTag(a.pid)}</b><small>${esc(sub)}</small></span>
     <span class="val">${fmt(a.value)}</span></button>`;
 }
 function renderSide(rid, listEl, badgeEl, set){
@@ -2104,7 +2134,7 @@ function renderCalc(){
       const sub = a.kind === "player" ? [a.pos, a.nfl, a.age ? "age " + ageText(a.age) : ""].filter(Boolean).join(", ") : a.nfl;
       return `<div class="bitem">
         <button type="button" class="bi-link" data-show="${esc(a.id)}" title="${a.kind === "player" ? "Open " + esc(a.name) + "'s player card" : "See " + esc(a.name) + " in Player Values"}">
-          ${assetPhoto(a, "trade")}<span class="bi-text"><b>${esc(a.name)}</b><small>${esc(sub)}</small></span></button>
+          ${assetPhoto(a, "trade")}<span class="bi-text"><b>${esc(a.name)}${injTag(a.pid)}</b><small>${esc(sub)}</small></span></button>
         <span class="bi-val">${fmt(a.value)}</span>
         <button type="button" class="bi-x" data-side="${side}" data-id="${esc(a.id)}" aria-label="Remove ${esc(a.name)} from the trade">✕</button></div>`;
     }).join("");
@@ -2117,7 +2147,7 @@ function renderCalc(){
   const adjRow = (n, fromRid, exclude) => {
     if (n < 1) return "";
     const eqA = equivalent(n, fromRid, exclude);
-    return `<div class="badj"><span><span>Value adjustment<button type="button" class="info-btn" data-info="adjust" aria-label="What is the value adjustment?">?</button></span>${eqA ? `<small class="badj-eq">About the same as them adding ${esc(eqA.name)} (${fmt(eqA.value)})</small>` : ""}</span><b>+${fmt(n)}</b></div>`;
+    return `<div class="badj"><span><span>Value adjustment<button type="button" class="info-btn" data-info="adjust" aria-label="What is the value adjustment?">?</button></span>${eqA ? `<small class="badj-eq">About the same as them adding ${esc(eqA.name)}${injTag(eqA.pid)} (${fmt(eqA.value)})</small>` : ""}</span><b>+${fmt(n)}</b></div>`;
   };
   // bonus on your side = the other team (rb) would need to add; bonus on their side = you (ra) would
   $("sendItems").innerHTML = itemsHTML(S.sendIds, "send") + adjRow(bonusS, rb, S.getIds);
@@ -2262,7 +2292,7 @@ function renderValues(){
     const teamHTML = a.owner != null ? `<span class="teamcell">${teamPhoto(a.owner, true)}${esc(team)}</span>` : "Free agent";
     const ch = a.market ? (a.value/a.market - 1) * 100 : 0;
     const chTxt = a.kind === "pick" || Math.abs(ch) < 1 ? "" : `<span class="${ch>0?"up":"down"}">${ch>0?"+":""}${Math.round(ch)}%</span>`;
-    return `<tr data-id="${esc(a.id)}"${a.id === S.valuesHL ? ' class="hl"' : ""}><td class="n">${a.kind === "player" && a.lgRank ? a.lgRank : i+1}</td><td><span class="teamcell">${assetPhoto(a, true)}${esc(a.name)}</span></td><td>${esc(a.pos)}</td><td class="n">${esc(ageText(a.age))}</td>
+    return `<tr data-id="${esc(a.id)}"${a.kind === "player" ? ' tabindex="0"' : ""}${a.id === S.valuesHL ? ' class="hl"' : ""}><td class="n">${a.kind === "player" && a.lgRank ? a.lgRank : i+1}</td><td><span class="teamcell">${assetPhoto(a, true)}${esc(a.name)}${injTag(a.pid)}</span></td><td>${esc(a.pos)}</td><td class="n">${esc(ageText(a.age))}</td>
       <td class="hide-sm">${teamHTML}</td><td class="n big">${fmt(a.value)}</td><td class="n hide-sm">${a.kind==="pick"?"":fmt(a.market)}</td><td class="n hide-sm">${chTxt}</td></tr>`;
   }).join("") || `<tr><td colspan="8" class="empty">No players match. Try a different search or filter.</td></tr>`;
 }
@@ -2373,14 +2403,95 @@ function injuryTable(rec){
   return `<div class="pc-scroll"><table><thead><tr><th>Season</th><th class="l">Injury</th><th class="l">When</th><th class="l">Weeks listed</th></tr></thead><tbody>${body}</tbody></table></div>
     <p class="pc-note">${rows.length} injury listing${rows.length > 1 ? "s" : ""}, ${outWeeks} week${outWeeks === 1 ? "" : "s"} missed (Out, IR or PUP). Regular season only.${(cardData?.fp_injury_seasons || []).length ? ` FantasyPros injury reports, ${cardData.fp_injury_seasons[0]}${cardData.fp_injury_seasons.length > 1 ? "–" + cardData.fp_injury_seasons.at(-1) : ""}.` : ""}</p>`;
 }
-function currentStatus(sp){
+// ---------- Current injury: details + Front Office's return estimate ----------
+// Typical NFL time missed, in weeks [fewest, most], by injury. First match wins, so specific injuries come first.
+const INJURY_TIMES = [
+  [/achilles/, 36, 52, "Achilles tears usually end the season"], [/\bacl\b|anterior cruciate/, 36, 52, "ACL tears usually take 9 to 12 months"],
+  [/lisfranc/, 8, 16, ""], [/pectoral|\bpec\b/, 8, 16, ""], [/collarbone|clavicle/, 6, 10, ""],
+  [/fractur|broken|break/, 4, 10, "Fractures usually take 4 to 10 weeks"], [/\bpcl\b/, 3, 8, ""], [/meniscus/, 3, 6, ""], [/\bmcl\b/, 2, 6, ""],
+  [/high ankle/, 3, 6, "High ankle sprains usually take 3 to 6 weeks"], [/turf toe/, 2, 6, ""], [/\bac joint|separated shoulder/, 2, 4, ""],
+  [/torn|tear|rupture/, 4, 10, "Tears usually cost several weeks"],
+  [/concussion|head/, 1, 2, "Concussions depend on clearing the league protocol, usually 1 to 2 weeks"],
+  [/hamstring/, 1, 3, "Hamstrings often linger and can re-aggravate"], [/groin|adductor/, 1, 3, ""], [/quad/, 1, 3, ""], [/calf/, 1, 3, ""],
+  [/oblique|abdom|core|ribs?\b|chest/, 1, 3, ""], [/hip/, 1, 3, ""], [/back|neck|spine/, 1, 3, ""], [/shoulder/, 1, 4, ""],
+  [/knee/, 1, 4, ""], [/ankle/, 1, 3, ""], [/foot/, 1, 4, ""], [/toe/, 1, 3, ""], [/elbow|wrist|forearm/, 1, 3, ""],
+  [/hand|finger|thumb/, 0, 2, ""], [/illness|sick|flu/, 0, 1, ""]
+];
+function returnEstimate(sp, news){
+  const st = sp?.injury_status;
+  if (!st || st === "Sus" || st === "NA" || st === "DNR") return null;
+  const text = [sp.injury_body_part, sp.injury_notes, ...(news || []).slice(0, 2).map(n => n[1] + " " + n[2])].filter(Boolean).join(" ").toLowerCase();
+  const wk = currentWeek(), inSeason = S.nflState?.season_type === "regular";
+  const since = Date.parse((sp.injury_start_date || "") + (/^\d{4}-\d{2}-\d{2}$/.test(sp.injury_start_date || "") ? "T12:00:00" : ""));
+  const out = isNaN(since) ? 0 : Math.max(0, Math.floor((Date.now() - since) / (7 * 864e5)));
+  let lo, hi, why = [];
+  // 1) a timeline in the notes or news beats everything else
+  const m = text.match(/(\d+)\s*(?:-|to|–)\s*(\d+)\s*weeks?/) || text.match(/(\d+)\s*weeks?/);
+  const months = text.match(/(\d+)\s*(?:-|to|–)?\s*(\d+)?\s*months?/);
+  if (/season[- ]ending|out for (the )?season|miss (the )?(rest of the )?season|year[- ]ending/.test(text)){ lo = hi = 99; why.push("Reports say he's out for the season"); }
+  else if (m && !/practice|returned|after \d+ weeks/.test(text.slice(Math.max(0, m.index - 20), m.index))){ lo = +m[1]; hi = +(m[2] || m[1]); why.push(`Reports give a ${m[2] ? m[1] + "–" + m[2] : m[1]}-week timeline`); }
+  else if (months){ lo = 4 * +months[1]; hi = 4 * +(months[2] || months[1]); why.push(`Reports give a ${months[2] ? months[1] + "–" + months[2] : months[1]}-month timeline`); }
+  else {
+    const hit = INJURY_TIMES.find(([re]) => re.test(text));
+    [lo, hi] = hit ? [hit[1], hit[2]] : [1, 3];
+    why.push(hit ? (hit[3] || `${(sp.injury_body_part || "This injury")} injuries usually cost ${hit[1] === hit[2] ? hit[1] : hit[1] + "–" + hit[2]} week${hit[2] === 1 ? "" : "s"}`) : "Typical range for an unspecified injury");
+    if (/week[- ]to[- ]week/.test(text)){ lo = Math.max(lo, 1); why.push("described as week-to-week"); }
+    if (/day[- ]to[- ]day/.test(text)){ hi = Math.min(hi, 1); why.push("described as day-to-day"); }
+    if (/surgery/.test(text)){ lo = Math.max(lo, 4); hi = Math.max(hi, 8); why.push("surgery adds time"); }
+  }
+  // 2) the designation sets a floor or ceiling
+  if (st === "Questionable"){ lo = 0; hi = Math.min(hi, 1); why.push("Questionable players usually play or miss one game"); }
+  else if (st === "Doubtful"){ lo = 1; hi = Math.min(Math.max(hi, 1), 2); why.push("Doubtful players usually miss this week"); }
+  else if (["IR", "PUP", "NFI"].includes(st) && lo < 99){ lo = Math.max(lo, 4); hi = Math.max(hi, 4); why.push(`${INJ_LABEL[st][0]} means at least 4 games`); }
+  else if (st === "Out" || st === "COV"){ lo = Math.max(lo, 1); hi = Math.max(hi, 1); }
+  // 3) time already missed comes off the estimate
+  if (out && lo < 99 && st !== "Questionable" && st !== "Doubtful"){ lo = Math.max(st === "Out" || INJ_LABEL[st]?.[1] === "o" ? 1 : 0, lo - out); hi = Math.max(lo, hi - out); why.push(`he's already been out about ${out} week${out > 1 ? "s" : ""}`); }
+  // In words
+  let head, sub;
+  if (lo >= 99){ head = "Out for the season"; sub = "Expected back next season"; }
+  else if (hi === 0){ head = "Expected to play this week"; sub = ""; }
+  else if (st === "Questionable"){ head = "Game-time decision"; sub = "Most likely misses 0–1 games"; }
+  else {
+    const span = (a, b) => b > 8 ? (Math.round(a / 4.3) === Math.round(b / 4.3) ? `About ${Math.round(a / 4.3)} months` : `About ${Math.round(a / 4.3)}–${Math.round(b / 4.3)} months`)
+      : a === b ? `About ${a} week${a === 1 ? "" : "s"}` : `About ${a}–${b} weeks`;
+    const w1 = wk + Math.max(lo, 1), w2 = wk + Math.max(hi, 1);       // misses this week through the range, back the week after
+    if (inSeason && w1 > 18){ head = "Likely out for the season"; sub = span(lo, hi) + ", so expected back next season"; }
+    else {
+      head = span(lo, hi);
+      sub = !inSeason ? "" : w1 === w2 ? `Likely back Week ${w1}` : `Likely back between Week ${w1} and ${w2 > 18 ? "the end of the season" : "Week " + w2}`;
+    }
+  }
+  const conf = why[0]?.startsWith("Reports") ? "Based on reported timeline" : "Rough estimate";
+  return { head, sub, why: why.join("; ") + ".", conf };
+}
+function currentStatus(sp, rec, news){
   const st = sp?.injury_status, lab = INJ_LABEL[st];
-  if (!st && (!sp?.status || sp.status === "Active")) return `<div class="pc-status"><b>No current injury designation</b><p>Active${sp?.team ? " for the " + esc(NFL_TEAMS[sp.team] || sp.team) : ""}.</p></div>`;
+  if (!st && (!sp?.status || sp.status === "Active")) {
+    const n = (news || [])[0];
+    return `<div class="pc-status"><b>No current injury designation</b><p>Active${sp?.team ? " for the " + esc(NFL_TEAMS[sp.team] || sp.team) : ""}.</p></div>${n ? newsBlock(news) : ""}`;
+  }
   const label = lab ? lab[0] : (st || sp.status);
-  const detail = [sp.injury_body_part, sp.injury_notes].filter(Boolean).map(esc).join(": ");
-  const since = sp.injury_start_date ? `Since ${dateText(sp.injury_start_date)}.` : "";
   const cls = lab && lab[1] === "q" ? "warn" : "hurt";
-  return `<div class="pc-status ${cls}"><b>${esc(label)}</b>${detail || since ? `<p>${detail}${detail && since ? ". " : ""}${since}</p>` : ""}</div>`;
+  const sinceT = Date.parse((sp.injury_start_date || "") + "T12:00:00");
+  const days = isNaN(sinceT) ? null : Math.max(0, Math.round((Date.now() - sinceT) / 864e5));
+  const practice = [sp.practice_participation, sp.practice_description].filter(Boolean).join(": ");
+  const part = (sp.injury_body_part || "").toLowerCase();
+  const past = part ? (rec?.i || []).filter(r => r[0] < (Number(S.nflState?.season) || 9999) && r[1].toLowerCase().includes(part)).length : 0;
+  const thisSeason = (rec?.i || []).filter(r => r[0] === (Number(S.nflState?.season) || 0)).reduce((t, r) => t + r[4] + (r[7] || 0), 0);
+  const rows = [
+    ["Designation", label], ["Details", sp.injury_notes],
+    ["Since", sp.injury_start_date ? `${dateText(sp.injury_start_date)}${days != null ? ` (${days === 0 ? "today" : days === 1 ? "1 day ago" : days + " days ago"})` : ""}` : ""],
+    ["Practice", practice], ["Missed this season", thisSeason ? `${thisSeason} week${thisSeason > 1 ? "s" : ""}` : ""],
+    ["History", past ? `Listed with a ${sp.injury_body_part.toLowerCase()} injury in ${past} earlier season${past > 1 ? "s" : ""}` : ""]
+  ].filter(r => r[1]);
+  const est = returnEstimate(sp, news);
+  return `<div class="pc-status ${cls}"><b>${esc(label)}${sp.injury_body_part ? " · " + esc(sp.injury_body_part) : ""}</b>
+    <dl class="pc-inj">${rows.slice(1).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl>
+    ${est ? `<div class="pc-est"><small>Estimated time out</small><b>${esc(est.head)}</b>${est.sub ? `<span>${esc(est.sub)}</span>` : ""}<p>${esc(est.conf)}: ${esc(est.why)} This is Front Office's estimate, not a team report.</p></div>` : ""}
+  </div>${news?.length ? newsBlock(news) : ""}`;
+}
+function newsBlock(news){
+  return `<div class="pc-news"><small>Latest injury news · FantasyPros</small>${news.slice(0, 3).map(n => `<article><b>${esc(n[1])}</b>${n[2] ? `<p>${esc(n[2])}</p>` : ""}<time>${esc(dateText(n[0]))}</time></article>`).join("")}</div>`;
 }
 async function openPlayerCard(pid){
   const sp = S.sleeperPlayers?.[pid] || {}, a = S.assets?.get("p:" + pid);
@@ -2404,7 +2515,7 @@ async function openPlayerCard(pid){
     </header>
     <div class="pc-body">
       <dl class="pc-facts">${facts.map(([k, v]) => `<div${k === "Fantasy team" || k === "College" ? ' class="wide"' : ""}><dt>${esc(k)}</dt><dd>${k === "Fantasy team" && a?.owner != null ? `<span class="pc-ft">${teamPhoto(a.owner, "sm")}${esc(v)}</span>` : esc(v)}</dd></div>`).join("")}</dl>
-      <h3>Current Status</h3>${currentStatus(sp)}
+      <h3>Current Status</h3><div id="pcNow">${currentStatus(sp)}</div>
       <h3>Career Stats</h3><div id="pcStats"><p class="pc-loading">Loading stats…</p></div>
       <h3>Injury History</h3><div id="pcInj"><p class="pc-loading">Loading injury history…</p></div>
       <p class="pc-note">Current status and career stats from Sleeper. Injury history from FantasyPros, updated daily. Regular season only. Fantasy points use standard full-PPR scoring.</p>
@@ -2421,6 +2532,7 @@ async function openPlayerCard(pid){
   const rec = { s: [...bySeason.values()].sort((x, y) => x[0] - y[0]), i: rec0?.i || [] };
   const season = liveSeasonYear();
   $("pcStats").innerHTML = data || live.ok ? statsTable(rec, pos, season) : `<p class="empty">Stats aren't available right now. Try again in a minute.</p>`;
+  $("pcNow").innerHTML = currentStatus(sp, rec, rec0?.n || []);
   $("pcInj").innerHTML = !data ? `<p class="empty">Injury history isn't available right now. Try again in a minute.</p>`
     : !(data.fp_injury_seasons || []).length ? `<p class="empty">Injury history from FantasyPros will appear after the next daily update.</p>` : injuryTable(rec);
 }
@@ -2432,6 +2544,10 @@ document.addEventListener("click", e => {
 }, true);
 $("pcard").addEventListener("click", e => { if (e.target === $("pcard") || e.target.closest(".pc-close")) closePlayerCard(); });
 document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("pcard").hidden) closePlayerCard(); });
+$("valuesBody").addEventListener("keydown", e => {
+  if (e.key !== "Enter" && e.key !== " ") return;
+  const tr = e.target.closest("tr[data-id^='p:']"); if (tr){ e.preventDefault(); openPlayerCard(tr.dataset.id.slice(2)); }
+});
 $("valuesBody").addEventListener("click", e => {
   const tr = e.target.closest("tr[data-id^='p:']"); if (tr) openPlayerCard(tr.dataset.id.slice(2));
 });
@@ -2606,7 +2722,7 @@ function renderStrategy(){
 
   // Line 1: player name with position and age. Line 2: the fantasy team that owns him.
   const tgtBtn = a => `<button class="tgt" data-id="${esc(a.id)}"><span class="info">
-      <span class="l1">${esc(a.name)}<small>${esc(a.pos)}, ${esc(ageText(a.age)||"?")}</small></span>
+      <span class="l1">${esc(a.name)}${injTag(a.pid)}<small>${esc(a.pos)}, ${esc(ageText(a.age)||"?")}</small></span>
       <span class="l2">${teamPhoto(a.owner, true)}<span>${esc(S.teams.get(a.owner)?.name)}</span></span>
     </span><span class="val">${fmt(a.value)}</span></button>`;
   const cell = p => { const r = me.pos[p].rank, cls = r <= third ? "good" : r > N-third ? "bad" : ""; return `<div class="pg ${cls}"><b>${p}</b><span>${ordinal(r)}</span><small>depth ${ordinal(me.pos[p].depthRank)}</small></div>`; };
@@ -2631,7 +2747,7 @@ function renderStrategy(){
       <div class="box"><h3>Recommended Moves</h3><ul class="moves">${moves.concat(tips).map(m=>`<li>${esc(m)}</li>`).join("") || "<li>Your roster is balanced. Look for value trades rather than filling holes.</li>"}</ul></div>
       ${needs.map(p => { const list = targetsFor(p); return `<div class="box"><h3>${buying ? "Targets" : "Young Targets"} at ${p}</h3>${list.length ? `<p class="note" style="margin:0">${buying ? "Proven players on non-contending teams. Tap to open in the trade calculator." : "Young players with upside. Tap to open in the trade calculator."}</p><div class="targets">${list.map(tgtBtn).join("")}</div>` : `<p class="note">No clear targets in range.</p>`}</div>`; }).join("")}
       ${sells.length ? `<div class="box"><h3>${buying ? "Sell for Help Now" : "Sell Before They Decline"}</h3><div class="targets">${sells.map(a => { const buyers = !buying ? buyersFor(a) : []; return `<div class="tgt" style="cursor:default"><span class="info">
-      <span class="l1">${esc(a.name)}<small>${esc(a.pos)}, ${esc(ageText(a.age)||"?")}</small></span>
+      <span class="l1">${esc(a.name)}${injTag(a.pid)}<small>${esc(a.pos)}, ${esc(ageText(a.age)||"?")}</small></span>
       <span class="l2">${buyers.length ? `<span>Possible buyers: ${esc(buyers.join(", "))}</span>` : `<span>${buying ? "Bench piece to package" : "Aging, sell soon"}</span>`}</span>
     </span><span class="val">${fmt(a.value)}</span></div>`; }).join("")}</div></div>` : ""}
       ${historyInsightsHTML(t.rid)}
@@ -2761,7 +2877,7 @@ function renderScores(data, week){
       const pl = playerLabel(pid), sp = m.starters_points?.[i];
       const slot = slotName[slots[i]] || slots[i] || "";
       const raw = sp ?? m.players_points?.[pid];
-      return pl ? `<div class="lu"><span><i>${esc(slot)}</i>${scorePhoto(pid, pl)}${esc(pl.name)}</span><b>${notStarted(pid) && !Number(raw) ? "–" : ptsText(raw)}</b></div>`
+      return pl ? `<div class="lu"><span><i>${esc(slot)}</i>${scorePhoto(pid, pl)}${esc(pl.name)}${injTag(pid)}</span><b>${notStarted(pid) && !Number(raw) ? "–" : ptsText(raw)}</b></div>`
                 : `<div class="lu empty"><span><i>${esc(slot)}</i>Empty</span><b>0.00</b></div>`;
     }).join("");
     // Bench = everyone on the roster who isn't starting, highest scorers first
@@ -2772,7 +2888,7 @@ function renderScores(data, week){
         .filter(x => x.pl).sort((a, b) => b.p - a.p);
     };
     const bench = m => { const b = benchOf(m);
-      return b.length ? b.map(x => `<div class="lu"><span><i>${esc(x.pl.pos || "BN")}</i>${scorePhoto(x.pid, x.pl)}${esc(x.pl.name)}</span><b>${notStarted(x.pid) && !x.p ? "–" : ptsText(x.p)}</b></div>`).join("")
+      return b.length ? b.map(x => `<div class="lu"><span><i>${esc(x.pl.pos || "BN")}</i>${scorePhoto(x.pid, x.pl)}${esc(x.pl.name)}${injTag(x.pid)}</span><b>${notStarted(x.pid) && !x.p ? "–" : ptsText(x.p)}</b></div>`).join("")
         + `<div class="lu total"><span>Bench total</span><b>${ptsText(b.reduce((s, x) => s + x.p, 0))}</b></div>`
         : `<div class="lu empty"><span>No bench players</span><b></b></div>`; };
     return `<article class="mu${mine ? " mine" : ""}">${mine ? `<div class="mu-tag">Your matchup</div>` : ""}
@@ -3072,7 +3188,7 @@ function renderHistory(){
       <div class="trade-sides">${sides.map(x => `
         <div class="tside${team !== "all" && x.owner === team ? " focus" : ""}">
           <div class="tside-head">${avatar(x.photo, x.name, "md")}<span class="nm"><b>${esc(x.name)}</b><small>Received</small></span>${tagFor(x)}</div>
-          ${x.items.map(i => `<div class="titem">${i.photoPid ? avatar(PLAYER_IMG(i.photoPid), i.usedOn || i.name, "sm").replace('class="av', 'class="av pl') : ""}<span class="tn">${esc(i.name)}<small class="${i.usedOn ? "used" : ""}">${esc(i.sub)}</small></span><span class="tv">${fmt(i.value)}</span></div>`).join("") || `<div class="titem"><span class="tn">Nothing but FAAB</span></div>`}
+          ${x.items.map(i => `<div class="titem">${i.photoPid ? avatar(PLAYER_IMG(i.photoPid), i.usedOn || i.name, "sm").replace('class="av', 'class="av pl') : ""}<span class="tn">${esc(i.name)}${i.usedOn ? "" : injTag(i.photoPid)}<small class="${i.usedOn ? "used" : ""}">${esc(i.sub)}</small></span><span class="tv">${fmt(i.value)}</span></div>`).join("") || `<div class="titem"><span class="tn">Nothing but FAAB</span></div>`}
           ${x.faab ? `<div class="titem"><span class="tn">$${x.faab} FAAB<small>Not valued</small></span><span class="tv">–</span></div>` : ""}
           <div class="ttotal"><span>Received, value today</span><span>${fmt(x.total)}</span></div>
           <div class="ttotal gave"><span>Gave up, value today</span><span>${fmt(x.sentTotal)}</span></div>
@@ -3884,13 +4000,13 @@ function renderFinder(){
     const a = S.assets.get(tfTarget), owner = S.teams.get(a.owner);
     $("tfOptsTitle").textContent = "Find a Player";
     $("tfSending").innerHTML = `<button type="button" class="tf-target" id="tfClearTarget" aria-label="Stop looking for ${esc(a.name)}">
-      ${assetPhoto(a, "sm")}<span class="bi-text"><b>${esc(a.name)}</b><small>${esc([a.pos + (a.lgPosRank || ""), a.nfl, a.age ? "age " + ageText(a.age) : "", "from " + (owner?.name || "")].filter(Boolean).join(", "))}</small></span><span class="v">${fmt(a.value)}</span><span class="tf-x" aria-hidden="true">✕</span></button>`;
+      ${assetPhoto(a, "sm")}<span class="bi-text"><b>${esc(a.name)}${injTag(a.pid)}</b><small>${esc([a.pos + (a.lgPosRank || ""), a.nfl, a.age ? "age " + ageText(a.age) : "", "from " + (owner?.name || "")].filter(Boolean).join(", "))}</small></span><span class="v">${fmt(a.value)}</span><span class="tf-x" aria-hidden="true">✕</span></button>`;
     findForTarget(me, a);
     return;
   }
   $("tfOptsTitle").textContent = "Find a Player";
   $("tfSending").innerHTML = sending.length ? sending.map(a => `<button type="button" class="tf-chip" data-id="${esc(a.id)}" aria-label="Remove ${esc(a.name)}">
-      ${assetPhoto(a, "sm")}<span class="bi-text"><b>${esc(a.name)}</b><small>${esc(a.kind === "player" ? [a.pos + (a.lgPosRank || ""), a.nfl, a.age ? "age " + ageText(a.age) : ""].filter(Boolean).join(", ") : a.nfl)}</small></span><span class="v">${fmt(a.value)}</span><span class="tf-x" aria-hidden="true">✕</span></button>`).join("")
+      ${assetPhoto(a, "sm")}<span class="bi-text"><b>${esc(a.name)}${injTag(a.pid)}</b><small>${esc(a.kind === "player" ? [a.pos + (a.lgPosRank || ""), a.nfl, a.age ? "age " + ageText(a.age) : ""].filter(Boolean).join(", ") : a.nfl)}</small></span><span class="v">${fmt(a.value)}</span><span class="tf-x" aria-hidden="true">✕</span></button>`).join("")
       + (sending.length > 1 ? `<div class="tf-total"><span>Package value</span><span>${fmt(V)}</span></div>` : "")
     : "";
   findTrades(me, sending, V);
@@ -3985,7 +4101,7 @@ function renderRecs(me){
     const cost = priceFrom(spare, r.a.value);
     const costTxt = cost ? `Could cost: ${cost.map(x => x.name).join(" + ")}` : "";
     return `<div class="tf-rec${tfTarget === r.a.id ? " on" : ""}">
-      ${assetPhoto(r.a, "md")}<span class="tn"><b>${esc(r.a.name)}</b><small>${esc([r.a.pos + (r.a.lgPosRank || ""), r.a.nfl, r.a.age ? "age " + ageText(r.a.age) : "", S.teams.get(r.a.owner)?.name].filter(Boolean).join(", "))}</small><span class="why">${esc(r.why)}</span>${costTxt ? `<span class="cost">${esc(costTxt)}</span>` : ""}</span>
+      ${assetPhoto(r.a, "md")}<span class="tn"><b>${esc(r.a.name)}${injTag(r.a.pid)}</b><small>${esc([r.a.pos + (r.a.lgPosRank || ""), r.a.nfl, r.a.age ? "age " + ageText(r.a.age) : "", S.teams.get(r.a.owner)?.name].filter(Boolean).join(", "))}</small><span class="why">${esc(r.why)}</span>${costTxt ? `<span class="cost">${esc(costTxt)}</span>` : ""}</span>
       <span class="v">${fmt(r.a.value)}</span><button type="button" class="ghost go" data-target="${esc(r.a.id)}">Find a deal</button></div>`;
   }).join("")
     : `<p class="empty">No affordable targets${want !== "fit" && want !== "PICK" ? " at that position" : ""}${partner !== "any" ? " on that team" : ""} right now. Your bench and picks may not stretch that far.</p>`;
@@ -4045,7 +4161,7 @@ function findForTarget(me, target){
     return `<article class="tf-card${i === 0 ? " best" : ""}">
       <div class="tf-card-head"><span class="tf-rank" title="Rank ${i + 1} of ${top.length}">${i === 0 ? "#1 Best trade" : "#" + (i + 1)}</span>${teamPhoto(rid, "md")}<span class="nm"><b>${esc(th.team.name)}</b><small>${statusText[th.team.status]}</small></span></div>
       <div class="tf-get"><div class="lbl">You send</div>
-        ${r.pack.map(a => `<div class="tf-row">${assetPhoto(a, "md")}<span class="tn"><b>${esc(a.name)}</b><small>${esc(a.kind === "player" ? [a.pos + (a.lgPosRank || ""), a.nfl, a.age ? "age " + ageText(a.age) : ""].filter(Boolean).join(", ") : a.nfl)}</small></span><span class="v">${fmt(a.value)}</span></div>`).join("")}
+        ${r.pack.map(a => `<div class="tf-row">${assetPhoto(a, "md")}<span class="tn"><b>${esc(a.name)}${injTag(a.pid)}</b><small>${esc(a.kind === "player" ? [a.pos + (a.lgPosRank || ""), a.nfl, a.age ? "age " + ageText(a.age) : ""].filter(Boolean).join(", ") : a.nfl)}</small></span><span class="v">${fmt(a.value)}</span></div>`).join("")}
       </div>
       <ul class="tf-why">${why.slice(0, 3).map(w => `<li>${esc(w)}</li>`).join("")}</ul>
       <div class="tf-foot"><span class="tf-verdict" style="color:${verdict[1]}">${verdict[0]}</span>
@@ -4156,7 +4272,7 @@ function findTrades(me, sending, V){
     return `<article class="tf-card${i === 0 ? " best" : ""}">
       <div class="tf-card-head"><span class="tf-rank" title="Rank ${i + 1} of ${picks.length}">${i === 0 ? "#1 Best trade" : "#" + (i + 1)}</span>${teamPhoto(r.rid, "md")}<span class="nm"><b>${esc(th.name)}</b><small>${statusText[th.status]}</small></span></div>
       <div class="tf-get"><div class="lbl">You get</div>
-        ${r.pack.map(a => `<div class="tf-row">${assetPhoto(a, "md")}<span class="tn"><b>${esc(a.name)}</b><small>${esc(a.kind === "player" ? [a.pos + (a.lgPosRank || ""), a.nfl, a.age ? "age " + ageText(a.age) : ""].filter(Boolean).join(", ") : a.nfl)}</small></span><span class="v">${fmt(a.value)}</span></div>`).join("")}
+        ${r.pack.map(a => `<div class="tf-row">${assetPhoto(a, "md")}<span class="tn"><b>${esc(a.name)}${injTag(a.pid)}</b><small>${esc(a.kind === "player" ? [a.pos + (a.lgPosRank || ""), a.nfl, a.age ? "age " + ageText(a.age) : ""].filter(Boolean).join(", ") : a.nfl)}</small></span><span class="v">${fmt(a.value)}</span></div>`).join("")}
       </div>
       <ul class="tf-why">${why.slice(0, 3).map(w => `<li>${esc(w)}</li>`).join("")}</ul>
       <div class="tf-foot"><span class="tf-verdict" style="color:${verdict[1]}">${verdict[0]}</span>
