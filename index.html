@@ -2261,7 +2261,7 @@ $("posFilter").addEventListener("click", e => {
 // PLAYER CARDS
 // Click a player's photo anywhere (or a player row on Player Values) to open his card:
 // photo, bio and current injury come from Sleeper; career stats and past injury reports
-// come from data/players.json, written daily by the GitHub Action from nflverse open data.
+// come live from Sleeper (backup: data/players.json); injury history comes from FantasyPros via the daily GitHub Action.
 // ============================================================
 const NFL_TEAMS = {ARI:"Arizona Cardinals",ATL:"Atlanta Falcons",BAL:"Baltimore Ravens",BUF:"Buffalo Bills",CAR:"Carolina Panthers",CHI:"Chicago Bears",CIN:"Cincinnati Bengals",CLE:"Cleveland Browns",DAL:"Dallas Cowboys",DEN:"Denver Broncos",DET:"Detroit Lions",GB:"Green Bay Packers",HOU:"Houston Texans",IND:"Indianapolis Colts",JAX:"Jacksonville Jaguars",KC:"Kansas City Chiefs",LV:"Las Vegas Raiders",LAC:"Los Angeles Chargers",LAR:"Los Angeles Rams",LA:"Los Angeles Rams",MIA:"Miami Dolphins",MIN:"Minnesota Vikings",NE:"New England Patriots",NO:"New Orleans Saints",NYG:"New York Giants",NYJ:"New York Jets",PHI:"Philadelphia Eagles",PIT:"Pittsburgh Steelers",SF:"San Francisco 49ers",SEA:"Seattle Seahawks",TB:"Tampa Bay Buccaneers",TEN:"Tennessee Titans",WAS:"Washington Commanders"};
 const CARD_DATA = "data/players.json";
@@ -2269,38 +2269,39 @@ let cardData = null, cardDataLoad = null;
 function loadCardData(){
   if (!cardDataLoad) cardDataLoad = fetch(CARD_DATA + "?v=" + new Date().toISOString().slice(0, 10))
     .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
-    .then(d => {
-      const byName = new Map();
-      for (const [id, p] of Object.entries(d.players || {})) byName.set(normName(p.n) + "|" + (p.p === "FB" ? "RB" : p.p), id);
-      cardData = { ...d, byName };
-      return cardData;
-    })
+    .then(d => (cardData = d))
     .catch(() => { cardDataLoad = null; return null; });
   return cardDataLoad;
 }
-// Current season straight from Sleeper's stats feed (updates during games), so the card
-// doesn't wait for the overnight nflverse file. Falls back quietly if Sleeper doesn't answer.
-async function liveSeasonRow(pid, sp){
-  const season = Number(S.nflState?.season) || (cardData && cardData.season) || new Date().getFullYear();
+// Career stats straight from Sleeper, one request per season he's played (they run side by side),
+// so the card is as current as Sleeper itself. data/players.json is the backup.
+const careerCache = new Map();
+const liveSeasonYear = () => Number(S.nflState?.season) || (cardData && cardData.season) || new Date().getFullYear();
+async function sleeperSeason(pid, season, sp){
   try {
-    const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 5000);
+    const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 6000);
     const r = await fetch(`https://api.sleeper.com/stats/nfl/player/${encodeURIComponent(pid)}?season_type=regular&season=${season}&grouping=season`, { signal: ctl.signal });
     clearTimeout(t);
-    if (!r.ok) return null;
+    if (!r.ok) return { ok: false };
     const d = await r.json(), x = d && d.stats;
-    if (!x || !x.gp) return { season, row: null };
+    if (!x || !x.gp) return { ok: true, row: null };
     const v = k => Number(x[k]) || 0;
-    return { season, row: [season, sp?.team || "", v("gp"), v("pass_cmp"), v("pass_att"), v("pass_yd"), v("pass_td"), v("pass_int"),
+    return { ok: true, row: [season, d.team || (season === liveSeasonYear() ? sp?.team : "") || "", v("gp"), v("pass_cmp"), v("pass_att"), v("pass_yd"), v("pass_td"), v("pass_int"),
       v("rush_att"), v("rush_yd"), v("rush_td"), v("rec_tgt"), v("rec"), v("rec_yd"), v("rec_td"), v("fum_lost"), v("pts_ppr")] };
-  } catch(e){ return null; }
+  } catch(e){ return { ok: false }; }
 }
-function cardRecord(pid, sp, a){
-  if (!cardData) return null;
-  const g = String(sp?.gsis_id || "").trim();
-  if (g && cardData.players[g]) return cardData.players[g];
-  const id = cardData.byName.get(normName(a?.name || sp?.full_name || "") + "|" + (a?.pos || sp?.position));
-  return id ? cardData.players[id] : null;
+async function liveCareer(pid, sp){
+  if (careerCache.has(pid)) return careerCache.get(pid);
+  const now = liveSeasonYear();
+  let first = Number(sp?.metadata?.rookie_year) || (now - (Number(sp?.years_exp) || 0));
+  first = Math.max(2012, Math.min(now, first));
+  const years = []; for (let y = first; y <= now; y++) years.push(y);
+  const res = await Promise.all(years.map(y => sleeperSeason(pid, y, sp)));
+  const out = { ok: res.filter(r => r.ok).length, okYears: new Set(years.filter((y, i) => res[i].ok)), rows: res.filter(r => r.row).map(r => { r.row.live = true; return r.row; }) };
+  if (out.ok) careerCache.set(pid, out);
+  return out;
 }
+function cardRecord(pid){ return cardData?.players?.[pid] || null; }
 const INJ_LABEL = { Questionable: ["Questionable", "q"], Doubtful: ["Doubtful", "d"], Out: ["Out", "o"], IR: ["Injured Reserve", "o"], PUP: ["PUP list", "o"], NFI: ["Non-football injury list", "o"], Sus: ["Suspended", "o"], COV: ["COVID list", "o"], NA: ["Not active", "d"], DNR: ["Did not report", "d"] };
 function heightText(h){
   if (!h) return "";
@@ -2326,22 +2327,22 @@ function statsTable(rec, pos, season){
              : ["g","tgt","rec","recy","rectd","ry","pts","ppg"];
   const tot = [0, "", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
   rows.forEach(r => { for (let i = 2; i < tot.length; i++) tot[i] += Number(r[i]) || 0; });
-  const body = [...rows].reverse().map(r => `<tr><td>${r[0]}${r[0] >= season ? ` <small>(${r.live ? "live" : "so far"})</small>` : ""}</td><td class="l">${esc(r[1])}</td>${cols.map(k => `<td>${C[k][1](r)}</td>`).join("")}</tr>`).join("");
+  const body = [...rows].reverse().map(r => `<tr><td>${r[0]}${r[0] >= season ? ` <small>(${r.live ? "live" : "so far"})</small>` : ""}</td><td class="l">${esc(r[1] || "–")}</td>${cols.map(k => `<td>${C[k][1](r)}</td>`).join("")}</tr>`).join("");
   const yrs = new Set(rows.map(r => r[0])).size;
   return `<div class="pc-scroll"><table><thead><tr><th>Season</th><th class="l">Team</th>${cols.map(k => `<th>${C[k][0]}</th>`).join("")}</tr></thead>
     <tbody>${body}<tr class="tot"><td>Career</td><td class="l">${yrs} season${yrs > 1 ? "s" : ""}</td>${cols.map(k => `<td>${C[k][1](tot)}</td>`).join("")}</tr></tbody></table></div>`;
 }
 function injuryTable(rec){
   const rows = rec?.i || [];
-  if (!rows.length) return `<p class="empty">Not listed on an NFL injury report since 2012.</p>`;
+  if (!rows.length) return `<p class="empty">No injury report listings on record.</p>`;
   const body = rows.map(r => {
     const wk = r[2] === r[3] ? `Week ${r[2]}` : `Weeks ${r[2]}–${r[3]}`;
-    const listed = [r[4] ? `Out ${r[4]}` : "", r[5] ? `Doubtful ${r[5]}` : "", r[6] ? `Questionable ${r[6]}` : ""].filter(Boolean).join(", ");
+    const listed = [r[7] ? `Injured Reserve/PUP ${r[7]}` : "", r[4] ? `Out ${r[4]}` : "", r[5] ? `Doubtful ${r[5]}` : "", r[6] ? `Questionable ${r[6]}` : ""].filter(Boolean).join(", ");
     return `<tr><td>${r[0]}</td><td class="l">${esc(r[1])}</td><td class="l">${wk}</td><td class="l">${listed}</td></tr>`;
   }).join("");
-  const outWeeks = rows.reduce((t, r) => t + r[4], 0);
+  const outWeeks = rows.reduce((t, r) => t + r[4] + (r[7] || 0), 0);
   return `<div class="pc-scroll"><table><thead><tr><th>Season</th><th class="l">Injury</th><th class="l">When</th><th class="l">Weeks listed</th></tr></thead><tbody>${body}</tbody></table></div>
-    <p class="pc-note">${rows.length} injury listing${rows.length > 1 ? "s" : ""}, ${outWeeks} week${outWeeks === 1 ? "" : "s"} ruled out. Regular season only.</p>`;
+    <p class="pc-note">${rows.length} injury listing${rows.length > 1 ? "s" : ""}, ${outWeeks} week${outWeeks === 1 ? "" : "s"} missed (Out, IR or PUP). Regular season only.${(cardData?.fp_injury_seasons || []).length ? ` FantasyPros injury reports, ${cardData.fp_injury_seasons[0]}${cardData.fp_injury_seasons.length > 1 ? "–" + cardData.fp_injury_seasons.at(-1) : ""}.` : ""}</p>`;
 }
 function currentStatus(sp){
   const st = sp?.injury_status, lab = INJ_LABEL[st];
@@ -2377,22 +2378,22 @@ async function openPlayerCard(pid){
       <h3>Current Status</h3>${currentStatus(sp)}
       <h3>Career Stats</h3><div id="pcStats"><p class="pc-loading">Loading stats…</p></div>
       <h3>Injury History</h3><div id="pcInj"><p class="pc-loading">Loading injury history…</p></div>
-      <p class="pc-note">Current status and this season&#8217;s stats come live from Sleeper. Earlier seasons and injury reports come from nflverse open data, updated daily. Regular season only. Fantasy points use standard full-PPR scoring.</p>
+      <p class="pc-note">Current status and career stats from Sleeper. Injury history from FantasyPros, updated daily. Regular season only. Fantasy points use standard full-PPR scoring.</p>
     </div></div>`;
   $("pcard").hidden = false; document.body.style.overflow = "hidden";
   $("pcard").querySelector(".pc-close").focus();
-  const [data, live] = await Promise.all([loadCardData(), liveSeasonRow(pid, sp)]);
+  const [data, live] = await Promise.all([loadCardData(), liveCareer(pid, sp)]);
   if ($("pcard").hidden) return;
-  const rec0 = data ? cardRecord(pid, sp, a) : null;
-  // past seasons from nflverse, this season from Sleeper when it answered
-  const rec = { s: (rec0?.s || []).slice(), i: rec0?.i || [] };
-  if (live){
-    rec.s = rec.s.filter(r => r[0] !== live.season);
-    if (live.row){ live.row.live = true; if (!live.row[1]) live.row[1] = (rec0?.s || []).find(r => r[0] === live.season)?.[1] || ""; rec.s.push(live.row); }
-  }
-  const season = live?.season || data?.season || new Date().getFullYear();
-  $("pcStats").innerHTML = data || live ? statsTable(rec, pos, season) : `<p class="empty">Stats aren't available right now. Try again in a minute.</p>`;
-  $("pcInj").innerHTML = data ? injuryTable(rec) : `<p class="empty">Injury history isn't available right now. Try again in a minute.</p>`;
+  const rec0 = data ? cardRecord(pid) : null;
+  // every season Sleeper answered live; the daily file fills any season it didn't
+  const bySeason = new Map();
+  (rec0?.s || []).forEach(r => { if (!live.okYears?.has(r[0])) bySeason.set(r[0], r); });
+  live.rows.forEach(r => bySeason.set(r[0], r));
+  const rec = { s: [...bySeason.values()].sort((x, y) => x[0] - y[0]), i: rec0?.i || [] };
+  const season = liveSeasonYear();
+  $("pcStats").innerHTML = data || live.ok ? statsTable(rec, pos, season) : `<p class="empty">Stats aren't available right now. Try again in a minute.</p>`;
+  $("pcInj").innerHTML = !data ? `<p class="empty">Injury history isn't available right now. Try again in a minute.</p>`
+    : !(data.fp_injury_seasons || []).length ? `<p class="empty">Injury history from FantasyPros will appear after the next daily update.</p>` : injuryTable(rec);
 }
 function closePlayerCard(){ $("pcard").hidden = true; $("pcard").innerHTML = ""; document.body.style.overflow = ""; }
 // Capture phase, so tapping a photo inside a roster row opens the card instead of adding him to a trade
