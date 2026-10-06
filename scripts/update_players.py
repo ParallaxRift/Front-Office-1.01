@@ -28,22 +28,19 @@ FIRST_SEASON = 2012              # oldest season of stats to include
 SLEEPER_PLAYERS = "https://api.sleeper.app/v1/players/nfl"
 SLEEPER_SEASON = "https://api.sleeper.app/v1/stats/nfl/regular/{season}"
 
-FP_FIRST_SEASON = 2015           # oldest season of FantasyPros injury reports to try
+FP_FIRST_SEASON = 2015           # oldest season of FantasyPros injury reports to collect
 FP_WEEKS = 18
 FP_URLS = [   # tried in order until one works; data/fp-status.json shows which
-    "https://api.fantasypros.com/public/v2/json/nfl/{season}/injuries?week={week}",
     "https://api.fantasypros.com/public/v2/json/nfl/injuries?season={season}&week={week}",
-    "https://api.fantasypros.com/public/v2/json/nfl/{season}/injuries?week={week}&practice=true",
-    "https://api.fantasypros.com/v2/json/nfl/{season}/injuries?week={week}",
-    "https://api.fantasypros.com/v2/json/nfl/injuries?season={season}&week={week}",
+    "https://api.fantasypros.com/public/v2/json/nfl/{season}/injuries?week={week}",
 ]
-
 FP_NEWS_URLS = [   # latest injury news; tried in order until one works
     "https://api.fantasypros.com/public/v2/json/nfl/news?category=injury&limit=500",
     "https://api.fantasypros.com/public/v2/json/nfl/news?category=injury",
-    "https://api.fantasypros.com/v2/json/nfl/news?category=injury&limit=500",
     "https://api.fantasypros.com/public/v2/json/nfl/news",
 ]
+FP_PAUSE = 2.5                   # seconds between FantasyPros requests (they limit how fast we can ask)
+FP_MAX_CALLS = 45                # FantasyPros requests per run; older seasons fill in over a few runs
 NEWS_DAYS = 45                   # ignore injury news older than this
 
 HERE = os.path.dirname(__file__)
@@ -119,7 +116,7 @@ for y in range(FIRST_SEASON, CURRENT + 1):
         players[pid]["s"].append([y, ""] + [int(n) if n == int(n) else n for n in row])
     print(f"{y}: {len(season)} player seasons")
 
-# ---------- 3) FantasyPros injury reports ----------
+# ---------- 3) FantasyPros: injury news, then weekly injury reports ----------
 def pick(d, *keys):
     for k in keys:
         v = d.get(k) if isinstance(d, dict) else None
@@ -131,11 +128,11 @@ def pick(d, *keys):
 
 
 def flatten(data):
-    """Find the list of injury records wherever FantasyPros puts it."""
+    """Find the list of records wherever FantasyPros puts it."""
     if isinstance(data, list):
         return data
     if isinstance(data, dict):
-        for k in ("injuries", "players", "data", "items", "results"):
+        for k in ("injuries", "players", "data", "items", "results", "news"):
             if isinstance(data.get(k), list):
                 return data[k]
         for v in data.values():
@@ -144,53 +141,79 @@ def flatten(data):
     return []
 
 
-fp_url, fp_logged = None, False
-fp_report = {"checked": now.isoformat(timespec="seconds"), "key_present": bool(API_KEY), "injuries": [], "news": []}
+fp_report = {"checked": now.isoformat(timespec="seconds"), "key_present": bool(API_KEY), "calls": 0,
+             "rate_limited": 0, "injuries": [], "news": [], "seasons": {}}
+fp_stop = False          # set when FantasyPros keeps saying "too many requests"
 
 
 def note(kind, url, **info):
     """Remember what FantasyPros said (status, short reply), so it can be checked without the log."""
-    if len(fp_report[kind]) < 12:
+    if len(fp_report[kind]) < 8:
         fp_report[kind].append({"url": url, **info})
 
 
+def fp_get(url):
+    """One FantasyPros request: paced, and patient when they say 'too many requests'.
+    Returns (data, status). data is None if it failed."""
+    global fp_stop
+    if fp_stop or fp_report["calls"] >= FP_MAX_CALLS:
+        return None, "budget"
+    for wait in (0, 30, 60, 90):
+        if wait:
+            print(f"[FP] FantasyPros asked us to slow down; waiting {wait}s")
+            time.sleep(wait)
+        if fp_report["calls"]:
+            time.sleep(FP_PAUSE)
+        fp_report["calls"] += 1
+        try:
+            return get_json(url, {"x-api-key": API_KEY}), 200
+        except urllib.error.HTTPError as e:
+            if e.code == 429:
+                fp_report["rate_limited"] += 1
+                continue
+            return None, (e.code, e.read().decode("utf-8", "replace")[:300])
+        except Exception as e:
+            return None, ("no connection", str(e)[:300])
+    fp_stop = True
+    print("[FP] Still rate-limited after waiting; the rest will be collected on the next run")
+    return None, (429, "Too Many Requests")
+
+
+def row_of(it):
+    """[name, pos, team, status, injury, comment, chance of playing, practice 1-3, updated]"""
+    return [pick(it, "name", "player_name", "full_name", "player"),
+            pick(it, "position_id", "player_position_id", "position", "pos").upper()[:2],
+            pick(it, "team_id", "player_team_id", "team"),
+            pick(it, "status", "injury_status", "game_status", "designation", "report_status"),
+            pick(it, "injury_type", "injury", "injury_body_part", "body_part", "practice_report_injury_type"),
+            pick(it, "comment", "notes", "note"),
+            pick(it, "probability_of_playing"),
+            pick(it, "practice_1"), pick(it, "practice_2"), pick(it, "practice_3"),
+            pick(it, "injury_update_date", "updated", "date")]
+
+
+fp_url = None
+
+
 def fp_week(season, week):
-    """One week of injury records as [name, pos, team, status, injury] rows. None = request failed."""
-    global fp_url, fp_logged
+    """One week of injury rows; None if the request failed."""
+    global fp_url
     for pattern in ([fp_url] if fp_url else FP_URLS):
         url = pattern.format(season=season, week=week)
-        try:
-            data = get_json(url, {"x-api-key": API_KEY})
-        except urllib.error.HTTPError as e:
+        data, status = fp_get(url)
+        if data is None:
             if not fp_url:
-                body = e.read().decode('utf-8', 'replace')[:300]
-                print(f"[FP injuries] {url.split('?')[0]} -> error {e.code}: {body[:200]}")
-                note("injuries", url, status=e.code, reply=body)
+                note("injuries", url, status=status[0] if isinstance(status, tuple) else status,
+                     reply=status[1] if isinstance(status, tuple) else "")
+            if status == "budget" or fp_stop:
+                return None
             continue
-        except Exception as e:
-            print(f"[FP injuries] could not reach FantasyPros: {e}")
-            note("injuries", url, status="no connection", reply=str(e)[:300])
-            return None
         items = flatten(data)
-        if not fp_logged:
-            note("injuries", url, status=200, fields=list(data.keys())[:20] if isinstance(data, dict) else "list",
-                 records=len(items), sample=json.dumps(items[0])[:500] if items else None)
+        if not fp_url:
+            note("injuries", url, status=200, records=len(items), sample=json.dumps(items[0])[:300] if items else None)
             print(f"[FP injuries] Using {pattern.split('?')[0]}")
-            print(f"[FP injuries] Top-level fields: {list(data.keys()) if isinstance(data, dict) else 'list'}")
-            if items:
-                print(f"[FP injuries] Fields on each record: {sorted(items[0].keys())}")
-                print(f"[FP injuries] Sample record: {json.dumps(items[0])[:400]}")
-            fp_logged = True
         fp_url = pattern
-        rows = []
-        for it in items:
-            name = pick(it, "player_name", "name", "full_name", "player")
-            pos = pick(it, "player_position_id", "position", "pos").upper()[:2]
-            if name and pos in POSITIONS + ("FB",):
-                rows.append([name, pos, pick(it, "player_team_id", "team", "team_id"),
-                             pick(it, "injury_status", "status", "game_status", "designation", "report_status"),
-                             pick(it, "injury", "injury_type", "injury_body_part", "body_part", "injury_desc", "description")])
-        return rows
+        return [r for r in (row_of(it) for it in items) if r[0] and r[1] in POSITIONS + ("FB",)]
     return None
 
 
@@ -204,55 +227,102 @@ def fp_status(text):
     return None
 
 
+def pid_of(name, pos):
+    return by_name.get(norm(name) + "|" + ("RB" if pos == "FB" else pos))
+
+
 NOT_INJURIES = ("coach", "rest", "not injury", "non-injury", "non injury", "personal", "suspen", "team decision")
+news_count = 0
 fp_seasons = {}
 if not API_KEY:
-    print("[FP injuries] No FANTASYPROS_API_KEY secret, so cards will have no injury history.")
+    print("[FP] No FANTASYPROS_API_KEY secret, so cards will have no injury history or news.")
 else:
-    os.makedirs(FP_CACHE, exist_ok=True)
-    fp_week(CURRENT, 1)        # find the address that works using this season, which FantasyPros surely covers
-    for y in range(FP_FIRST_SEASON, CURRENT + 1):
-        path = os.path.join(FP_CACHE, f"{y}.json")
-        if y < CURRENT and os.path.exists(path):
-            with open(path, encoding="utf-8") as f:
-                fp_seasons[y] = json.load(f)
+    # 3a) News first: one request, so it never gets squeezed out by the weekly reports
+    names = sorted(((p.get("full_name") or "", pid) for pid, p in skill.items() if p.get("team") and p.get("full_name")),
+                   key=lambda x: -len(x[0]))
+    items = []
+    for url in FP_NEWS_URLS:
+        data, status = fp_get(url)
+        if data is None:
+            note("news", url, status=status[0] if isinstance(status, tuple) else status, reply=status[1] if isinstance(status, tuple) else "")
+            if fp_stop:
+                break
             continue
-        weeks, failed = {}, False
-        for w in range(1, FP_WEEKS + 1):
+        items = flatten(data)
+        note("news", url, status=200, records=len(items), sample=json.dumps(items[0])[:300] if items else None)
+        break
+    cutoff = now.timestamp() - NEWS_DAYS * 86400
+    for it in items:
+        title = pick(it, "title", "headline")
+        desc = pick(it, "desc", "description", "body", "summary", "news")
+        when = pick(it, "created", "date", "published", "updated")
+        try:
+            ts = datetime.fromisoformat(when.replace("Z", "+00:00").replace(" ", "T")).timestamp() if when else now.timestamp()
+        except ValueError:
+            ts = now.timestamp()
+        if ts < cutoff or not title:
+            continue
+        who = pick(it, "player_name", "name")
+        pid = pid_of(who, pick(it, "position_id", "position").upper()[:2]) if who else None
+        if not pid:
+            low = title.lower()
+            pid = next((pid for nm, pid in names if nm.lower() in low), None)
+        if pid and len(players[pid].setdefault("n", [])) < 3:
+            players[pid]["n"].append([datetime.fromtimestamp(ts, timezone.utc).strftime("%Y-%m-%d"), title[:200], desc[:600]])
+            news_count += 1
+    print(f"[FP news] {len(items)} items, {news_count} matched to players")
+
+    # 3b) Weekly injury reports: this season first, then older seasons, newest first.
+    # Each season is saved as it goes, so a run that hits the request limit picks up where it left off.
+    os.makedirs(FP_CACHE, exist_ok=True)
+    for y in [CURRENT] + list(range(CURRENT - 1, FP_FIRST_SEASON - 1, -1)):
+        path = os.path.join(FP_CACHE, f"{y}.json")
+        saved = {"weeks": {}, "complete": False}
+        if os.path.exists(path):
+            with open(path, encoding="utf-8") as f:
+                saved = json.load(f)
+        weeks = saved["weeks"]
+        if y < CURRENT and saved.get("complete"):
+            fp_seasons[y] = weeks
+            continue
+        if y == CURRENT:
+            have = sorted(int(w) for w in weeks)
+            start = max(1, (have[-1] - 1) if have else 1)       # re-check the latest weeks; reports change all week
+        else:
+            start = max([int(w) for w in weeks] + [0]) + 1
+        done = True
+        for w in range(start, FP_WEEKS + 1):
             rows = fp_week(y, w)
             if rows is None:
-                failed = True
+                done = False
                 break
-            if rows:
-                weeks[str(w)] = rows
-            time.sleep(0.25)          # be gentle with the API
-        if failed:
-            print(f"[FP injuries] {y}: request failed")
-            if fp_url is None:
-                break                 # no address works, so stop trying
-            continue
-        # Some APIs ignore the week and return the same list every time; that isn't weekly history
-        if len(weeks) >= 10 and len({json.dumps(v, sort_keys=True) for v in weeks.values()}) == 1:
-            print(f"[FP injuries] {y}: every week came back identical (current statuses only), so it isn't used as history")
-            continue
+            if not rows and y == CURRENT and w > 1:
+                break                                            # future weeks of this season
+            weeks[str(w)] = rows
+        saved = {"weeks": weeks, "complete": done and y < CURRENT}
         with open(path, "w", encoding="utf-8") as f:
-            json.dump(weeks, f, separators=(",", ":"))
-        fp_seasons[y] = weeks
-        print(f"[FP injuries] {y}: {sum(len(v) for v in weeks.values())} records across {len(weeks)} weeks")
+            json.dump(saved, f, separators=(",", ":"))
+        fp_report["seasons"][str(y)] = f"{len(weeks)} weeks" + ("" if done else " (more next run)")
+        if len(weeks) >= 10 and any(weeks.values()) and len({json.dumps(v, sort_keys=True) for v in weeks.values()}) == 1:
+            print(f"[FP injuries] {y}: every week came back identical, so it isn't used as history")
+        else:
+            fp_seasons[y] = weeks
+        print(f"[FP injuries] {y}: {sum(len(v) for v in weeks.values())} records across {len(weeks)} weeks" + ("" if done else ", continuing next run"))
+        if not done:
+            break
 
-# One line per player, season and injury: first and last week listed, and how many
-# weeks he was listed Out, Doubtful, Questionable, or on Injured Reserve / PUP.
+# Turn the weekly reports into one line per player, season and injury.
 unmatched = set()
 for y, weeks in fp_seasons.items():
     spells = {}
-    for w, rows in (weeks or {}).items():
+    for w, rows in weeks.items():
         w = int(w)
-        for name, pos, team, status, injury in rows:
+        for r in rows:
+            name, pos, status, injury = r[0], r[1], r[3], (r[4] or "Not listed").strip().title()
             col = fp_status(status)
-            injury = (injury or "Not listed").strip().title()
             if col is None or any(x in injury.lower() for x in NOT_INJURIES):
                 continue
-            pid = by_name.get(norm(name) + "|" + ("RB" if pos == "FB" else pos))
+            pid = pid_of(name, pos)
             if not pid:
                 unmatched.add(name)
                 continue
@@ -267,60 +337,21 @@ for y, weeks in fp_seasons.items():
 if unmatched:
     print(f"[FP injuries] {len(unmatched)} names didn't match a Sleeper player, e.g. {sorted(unmatched)[:5]}")
 
-
-# ---------- 3b) FantasyPros injury news (shown on the card under Current Status) ----------
-news_count = 0
-if API_KEY:
-    items = []
-    for url in FP_NEWS_URLS:
-        try:
-            data = get_json(url, {"x-api-key": API_KEY})
-        except urllib.error.HTTPError as e:
-            body = e.read().decode('utf-8', 'replace')[:300]
-            print(f"[FP news] {url.split('?')[0]} -> error {e.code}: {body[:200]}")
-            note("news", url, status=e.code, reply=body)
-            continue
-        except Exception as e:
-            print(f"[FP news] could not reach FantasyPros: {e}")
-            note("news", url, status="no connection", reply=str(e)[:300])
-            break
-        items = flatten(data)
-        note("news", url, status=200, fields=list(data.keys())[:20] if isinstance(data, dict) else "list",
-             records=len(items), sample=json.dumps(items[0])[:500] if items else None)
-        print(f"[FP news] {len(items)} injury news items" + (f"; fields: {sorted(items[0].keys())}" if items else ""))
-        break
-    # Index Sleeper players by full name, longest names first so "Josh Allen" doesn't grab "Josh Allen Jr."
-    names = sorted(((p.get("full_name") or "", pid) for pid, p in skill.items() if p.get("team") and p.get("full_name")),
-                   key=lambda x: -len(x[0]))
-    cutoff = now.timestamp() - NEWS_DAYS * 86400
-    for it in items:
-        title = pick(it, "title", "headline")
-        desc = pick(it, "desc", "description", "body", "summary", "news")
-        when = pick(it, "created", "date", "published", "updated")
-        try:
-            ts = datetime.fromisoformat(when.replace("Z", "+00:00").replace(" ", "T")).timestamp() if when else now.timestamp()
-        except ValueError:
-            ts = now.timestamp()
-        if ts < cutoff or not title:
-            continue
-        who = pick(it, "player_name", "name")
-        pid = by_name.get(norm(who) + "|" + pick(it, "position", "player_position_id").upper()[:2]) if who else None
-        if not pid:
-            low = title.lower()
-            pid = next((pid for nm, pid in names if nm.lower() in low), None)
-        if not pid:
-            continue
-        lst = players[pid].setdefault("n", [])
-        if len(lst) < 3:
-            lst.append([datetime.fromtimestamp(ts, timezone.utc).strftime("%Y-%m-%d"), title[:200], desc[:600]])
-            news_count += 1
-    print(f"[FP news] {news_count} news items matched to players")
+# This week's FantasyPros details for anyone on the latest report (chance of playing, practices, comment)
+cur = fp_seasons.get(CURRENT) or {}
+if cur:
+    wk = max(int(w) for w in cur)
+    for r in cur[str(wk)]:
+        pid = pid_of(r[0], r[1])
+        if pid and len(r) >= 11:
+            players[pid]["c"] = {"wk": wk, "st": r[3], "inj": r[4], "note": r[5][:400], "prob": r[6],
+                                 "prac": [x for x in r[7:10] if x], "upd": r[10]}
 
 # ---------- 4) Save ----------
 # Keep players who are on a team or played/were hurt in the last five seasons (their whole career is kept)
 recent = CURRENT - 4
 players = {pid: p for pid, p in players.items()
-           if skill.get(pid, {}).get("team") or p.get("n") or any(r[0] >= recent for r in p["s"]) or any(r[0] >= recent for r in p["i"])}
+           if skill.get(pid, {}).get("team") or p.get("n") or p.get("c") or any(r[0] >= recent for r in p["s"]) or any(r[0] >= recent for r in p["i"])}
 for p in players.values():
     p["s"].sort(key=lambda r: r[0])
     p["i"].sort(key=lambda r: (-r[0], r[2]))
@@ -328,11 +359,12 @@ out = {
     "updated": now.isoformat(timespec="seconds"),
     "source": "Sleeper (season stats) and FantasyPros (injury reports)",
     "season": CURRENT,
-    "fp_injury_seasons": sorted(y for y, w in fp_seasons.items() if w),
+    "fp_injury_seasons": sorted(y for y, w in fp_seasons.items() if any(w.values())),
     "players": players,
 }
 os.makedirs(os.path.dirname(OUTPUT), exist_ok=True)
 fp_report["injury_seasons_saved"] = out["fp_injury_seasons"]
+fp_report["players_with_this_week"] = sum(1 for p in players.values() if p.get("c"))
 fp_report["news_matched"] = news_count
 with open(STATUS_FILE, "w", encoding="utf-8") as f:
     json.dump(fp_report, f, indent=1)
