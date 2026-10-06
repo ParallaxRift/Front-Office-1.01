@@ -316,10 +316,6 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 .ttotal.gave span:last-child{font-size:17px;font-weight:700}
 
 /* League tuning indicator */
-.vmode{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:-4px 0 14px}
-.vmode-l{font-weight:700;font-size:14px}
-.vmode .info-btn{margin-left:0}
-#vmodeNote{color:var(--muted);font-size:13px;flex-basis:100%}
 .tuning{display:flex;align-items:flex-start;gap:12px;background:var(--card);border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:14px}
 .tuning:empty{display:none}
 .light{width:14px;height:14px;border-radius:50%;flex:none;margin-top:4px;background:var(--line)}
@@ -1289,15 +1285,6 @@ th .info-btn:hover{color:var(--ink)}
 
   <section class="panel" id="panel-values">
     <div class="tuning" id="tuningLight" role="status" aria-live="polite"></div>
-    <div class="vmode">
-      <span class="vmode-l">Values</span>
-      <div class="seg" id="valueMode" role="group" aria-label="Value type">
-        <button type="button" aria-pressed="true" data-mode="dynasty">Dynasty</button>
-        <button type="button" aria-pressed="false" data-mode="current">Current Day</button>
-      </div>
-      <button type="button" class="info-btn" data-info="val-mode" aria-label="What's the difference between Dynasty and Current Day values?">?</button>
-      <small id="vmodeNote"></small>
-    </div>
     <div class="controls">
       <div class="seg" id="posFilter">
         <button aria-pressed="true" data-pos="ALL">All</button>
@@ -1313,7 +1300,7 @@ th .info-btn:hover{color:var(--ink)}
     <p style="margin:0 0 10px;font-size:14px;color:var(--muted)">Tap any player to open his player card. On other tabs, tap a player's photo.</p>
     <div class="tablewrap">
       <table>
-        <thead><tr><th class="n">#</th><th>Player</th><th>Pos</th><th class="n">Age</th><th class="hide-sm">League team</th><th class="n" title="This League: The player's value in your league after all of Front Office's adjustments: scoring, lineup, trade habits, age and starter role. This is the number the calculator uses. With Current Day values on, it also counts the games he'll miss to injury.">This league<button type="button" class="info-btn" data-info="col-league" aria-label="What does This league mean?">?</button></th><th class="n hide-sm" title="Market: The same player's value from the plain rankings, before any league adjustments. It shows what he'd be worth in a generic league.">Market<button type="button" class="info-btn" data-info="col-market" aria-label="What does Market mean?">?</button></th><th class="n hide-sm" title="Change: How far your league's value is from the market value. It stays blank when the difference is under 1%, so small moves don't clutter the table.">Change<button type="button" class="info-btn" data-info="col-change" aria-label="What does Change mean?">?</button></th></tr></thead>
+        <thead><tr><th class="n">#</th><th>Player</th><th>Pos</th><th class="n">Age</th><th class="hide-sm">League team</th><th class="n" title="This League: The player's value in your league after all of Front Office's adjustments: scoring, lineup, trade habits, age and starter role. This is the number the calculator uses.">This league<button type="button" class="info-btn" data-info="col-league" aria-label="What does This league mean?">?</button></th><th class="n hide-sm" title="Market: The same player's value from the plain rankings, before any league adjustments. It shows what he'd be worth in a generic league.">Market<button type="button" class="info-btn" data-info="col-market" aria-label="What does Market mean?">?</button></th><th class="n hide-sm" title="Change: How far your league's value is from the market value. It stays blank when the difference is under 1%, so small moves don't clutter the table.">Change<button type="button" class="info-btn" data-info="col-change" aria-label="What does Change mean?">?</button></th></tr></thead>
         <tbody id="valuesBody"></tbody>
       </table>
     </div>
@@ -1540,7 +1527,6 @@ const FAIR_BAND = 0.05;      // within 5% counts as fair
 // STATE
 // ============================================================
 const S = {
-  valueMode: "dynasty",   // "dynasty" or "current" (Current Day: counts games missed to injury)
   user: null, season: null, leagues: [], sleeperPlayers: null, market: null,
   league: null, rosters: [], users: [], traded: [], cfg: null,
   assets: new Map(), teams: new Map(), myRid: null,
@@ -1923,35 +1909,6 @@ function scoringFactors(list, cfg){
   raw.forEach((f, id) => out.set(id, Math.min(PROJ_MAX, Math.max(PROJ_MIN, Math.pow(f / mean, PROJ_WEIGHT)))));
   return out;
 }
-// ---------- Current Day values ----------
-// Dynasty value is roughly the sum of a player's future seasons. "Current Day" removes the part of THIS
-// season he's expected to miss: weeks missed / 17 x the share of his dynasty value that one season
-// represents. Young players' value is mostly future seasons (a season is ~18% of a 22-year-old's value);
-// veterans' value is more about now (~55% at 34). RBs skew a bit more to the present, QBs a bit less.
-const SEASON_SHARE = [[22, 0.18], [25, 0.22], [28, 0.30], [31, 0.42], [34, 0.55]];
-const SEASON_SHARE_POS = { RB: 0.04, QB: -0.04 };
-const FANTASY_WEEKS = 17;
-function seasonShare(a){ return Math.min(0.65, Math.max(0.12, lerpPts(a.age || 26, SEASON_SHARE) + (SEASON_SHARE_POS[a.pos] || 0))); }
-function lastFantasyWeek(){ const st = S.league?.settings || {}, start = Number(st.playoff_week_start) || 15, n = Number(st.playoff_teams) || 6; return Math.min(18, start + (n > 4 ? 2 : 1)); }
-function weeksMissed(a){
-  const sp = S.sleeperPlayers?.[a.pid], st = sp?.injury_status;
-  if (!st) return 0;
-  const inSeason = S.nflState?.season_type === "regular", left = inSeason ? Math.max(0, lastFantasyWeek() - currentWeek() + 1) : FANTASY_WEEKS;
-  if (!left) return 0;
-  const c = cardData?.players?.[a.pid], prob = Number(c?.c?.prob);
-  if (st === "Questionable") return inSeason ? (isNaN(prob) ? 0.25 : Math.max(0, 1 - prob)) : 0;
-  if (st === "Doubtful") return inSeason ? 0.8 : 0;
-  const est = returnEstimate(sp, c?.n || [], c?.c);
-  if (!est) return 0;
-  if (est.lo >= 99) return left;                      // out for the season
-  if (!inSeason) return 0;                            // offseason: short injuries heal before Week 1
-  return Math.min(left, (est.lo + est.hi) / 2);
-}
-function currentDayFactor(a){
-  if (a.kind !== "player") return { f: 1 };
-  const w = weeksMissed(a), share = seasonShare(a);
-  return { f: Math.max(0.3, 1 - share * w / FANTASY_WEEKS), weeks: w, share };
-}
 // ---------- Strength of the age and role adjustments ----------
 // FantasyPros' experts already rank older players lower and update ranks when starters change,
 // so these apply at reduced strength to avoid counting the same thing twice. Role: half strength.
@@ -2112,16 +2069,8 @@ function buildValues(){
   const topRaw = Math.max(1, top5(list.map(a => a.raw)) * 1.025, Math.max(...list.map(a => a.raw)) * 0.97);
   const topBase = Math.max(1, top5(list.map(a => a.base)) * 1.025, Math.max(...list.map(a => a.base)) * 0.97);
   for (const a of list){ a.value = a.raw/topRaw*10000; a.market = a.base/topBase*10000; assets.set(a.id, a); }
-  // Current Day values: take off the part of this season he'll miss to injury (healthy players unchanged).
-  // Picks, waiver level and the elite line stay on dynasty values so they don't move with the toggle.
-  const dynByValue = list.map(a => a.value).sort((a, b) => b - a);
-  S.injuredDown = 0;
-  for (const a of list){
-    a.dynValue = a.value; a.missInfo = null;
-    if (S.valueMode === "current"){ const c = currentDayFactor(a); if (c.f < 0.999){ a.value *= c.f; a.missInfo = c; S.injuredDown++; } }
-  }
   // Waiver-level value: roughly the player every team could pick up for free
-  const byValue = dynByValue;
+  const byValue = list.map(a => a.value).sort((a, b) => b - a);
   S.playerCurve = byValue;                     // draft picks are valued from this league's player values
   S.pickTiming = draftTiming();
   S.eliteValue = byValue[Math.min(byValue.length - 1, 11)] || 9000;
@@ -2487,8 +2436,6 @@ function renderCalc(){
   const sgn = n => (n >= 0 ? "+" : "−") + fmt(Math.abs(Math.round(n)));
   if (Math.abs(youImp) >= 50 || Math.abs(themImp) >= 50)
     hint = (hint ? hint + " " : "") + `Lineup impact (starters only, not part of the grade): your lineup ${sgn(youImp)}, theirs ${sgn(themImp)}.`;
-  if (S.valueMode === "current" && [...S.sendIds, ...S.getIds].some(id => S.assets.get(id)?.missInfo))
-    hint = (hint ? hint + " " : "") + "Using Current Day values: injured players are marked down for the games they'll miss.";
   $("hint").textContent = hint;
 
   // suggest assets to even it out
@@ -2585,7 +2532,7 @@ function renderTuningLight(){
 }
 
 function renderValues(){
-  renderTuningLight(); renderValueMode();
+  renderTuningLight();
   $("valueClear").hidden = !$("valueSearch").value;
   const q = normName($("valueSearch").value), pos = S.posFilter, rosteredOnly = $("rosteredOnly").checked;
   const rows = [...S.assets.values()]
@@ -2597,25 +2544,12 @@ function renderValues(){
     const team = a.owner != null ? S.teams.get(a.owner)?.name : "Free agent";
     const teamHTML = a.owner != null ? `<span class="teamcell">${teamPhoto(a.owner, true)}${esc(team)}</span>` : "Free agent";
     const ch = a.market ? (a.value/a.market - 1) * 100 : 0;
-    const why = a.missInfo ? ` title="Current Day: about ${a.missInfo.weeks >= 10 ? Math.round(a.missInfo.weeks) : Math.round(a.missInfo.weeks * 10) / 10} game${a.missInfo.weeks === 1 ? "" : "s"} missed this season takes ${Math.round((1 - a.missInfo.f) * 100)}% off his dynasty value of ${fmt(a.dynValue)}"` : "";
-    const chTxt = a.kind === "pick" || Math.abs(ch) < 1 ? "" : `<span class="${ch>0?"up":"down"}"${why}>${ch>0?"+":""}${Math.round(ch)}%</span>`;
+    const chTxt = a.kind === "pick" || Math.abs(ch) < 1 ? "" : `<span class="${ch>0?"up":"down"}">${ch>0?"+":""}${Math.round(ch)}%</span>`;
     return `<tr data-id="${esc(a.id)}"${a.kind === "player" ? ' tabindex="0"' : ""}${a.id === S.valuesHL ? ' class="hl"' : ""}><td class="n">${a.kind === "player" && a.lgRank ? a.lgRank : i+1}</td><td><span class="teamcell">${assetPhoto(a, true)}${esc(a.name)}${injTag(a.pid)}</span></td><td>${esc(a.pos)}</td><td class="n">${esc(ageText(a.age))}</td>
       <td class="hide-sm">${teamHTML}</td><td class="n big">${fmt(a.value)}</td><td class="n hide-sm">${a.kind==="pick"?"":fmt(a.market)}</td><td class="n hide-sm">${chTxt}</td></tr>`;
   }).join("") || `<tr><td colspan="8" class="empty">No players match. Try a different search or filter.</td></tr>`;
 }
 $("valueSearch").addEventListener("input", renderValues);
-function renderValueMode(){
-  for (const b of $("valueMode").children) b.setAttribute("aria-pressed", b.dataset.mode === S.valueMode);
-  $("vmodeNote").textContent = S.valueMode === "current"
-    ? `Current Day values: ${S.injuredDown || 0} player${S.injuredDown === 1 ? "" : "s"} marked down for games they'll miss to injury. Used across the whole site, including the calculator.`
-    : "Dynasty values: long-term value, the way dynasty trade markets price players.";
-}
-$("valueMode").addEventListener("click", async e => {
-  const b = e.target.closest("button[data-mode]"); if (!b || b.dataset.mode === S.valueMode || !S.league) return;
-  S.valueMode = b.dataset.mode;
-  if (S.valueMode === "current") await loadCardData();   // FantasyPros chance of playing and injury news sharpen the estimates
-  buildValues(); rerenderKeepingPlace(); renderValueMode();
-});
 // ✕ inside the search box: clear the search, show everyone, and keep the player you were looking at in view
 $("valueClear").addEventListener("click", () => {
   const keep = S.valuesHL || $("valuesBody").querySelector("tr[data-id]")?.dataset.id;
@@ -3314,8 +3248,6 @@ async function loadHistory(league){
 
     // Learn the league's habits: first the shape of the value curve, then the per-position tuning
     S.nudge = null;
-    const modeWas = S.valueMode;                        // league tuning always learns from dynasty values
-    if (modeWas !== "dynasty"){ S.valueMode = "dynasty"; buildValues(); }
     const fit = fitCurve(trades), curveChanged = fit.B !== (S.curveB || 1) || fit.T !== (S.curveT || 1);
     S.curveB = fit.B; S.curveT = fit.T;
     if (curveChanged) buildValues();
@@ -3325,8 +3257,7 @@ async function loadHistory(league){
     const nudge = learnNudge(trades);
     if (nudge){ S.nudge = nudge; buildValues(); }
     S.accuracy = tradeAccuracy(trades);
-    if (modeWas !== "dynasty"){ S.valueMode = modeWas; buildValues(); }
-    if (nudge || curveChanged || ageChanged || modeWas !== "dynasty") rerenderKeepingPlace();
+    if (nudge || curveChanged || ageChanged) rerenderKeepingPlace();
     else { renderHistory(); renderStrategy(); renderTuningLight(); }
     if (typeof renderSettings === "function" && S.cfg) renderSettings();
     updatePickOdds();
@@ -4651,8 +4582,7 @@ document.addEventListener("keydown", e => { if (e.key === "Escape") closePop(); 
 window.addEventListener("scroll", () => { if (popEl && Math.abs(window.scrollY - popScrollY) > 40) closePop(); }, { passive: true });
 
 const COLUMN_INFO = {
-  "col-league": ["This League", "The player's value in your league after all of Front Office's adjustments: scoring, lineup, trade habits, age and starter role. This is the number the calculator uses. With Current Day values on, it also counts the games he'll miss to injury."],
-  "val-mode": ["Dynasty or Current Day?", "<b>Dynasty</b> values a player for the long run: his whole remaining career, the way dynasty trade markets do. A short injury barely matters.</p><p><b>Current Day</b> also counts the games he'll miss this season. A player on IR or out for the season loses the share of his value that comes from this season. Young players lose less, because more of their value is in future seasons. Healthy players don't change.</p><p>The choice applies across the whole site, including the calculator and Trade Finder. Draft picks don't change."],
+  "col-league": ["This League", "The player's value in your league after all of Front Office's adjustments: scoring, lineup, trade habits, age and starter role. This is the number the calculator uses."],
   "col-market": ["Market", "The same player's value from the plain rankings, before any league adjustments. It shows what he'd be worth in a generic league."],
   "col-change": ["Change", "How far your league's value is from the market value. It stays blank when the difference is under 1%, so small moves don't clutter the table."]
 };
