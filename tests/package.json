@@ -1,0 +1,7 @@
+{
+  "name": "front-office-tests",
+  "private": true,
+  "description": "Automated checks for the Front Office site",
+  "scripts": { "test": "node run-all.js" },
+  "devDependencies": { "playwright": "^1.48.0" }
+}

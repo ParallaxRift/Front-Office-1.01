@@ -1,0 +1,63 @@
+// Front Office: Popovers: team statuses, value adjustment, column definitions
+// Part of the site; loaded in order by index.html. All files share one global scope.
+// ============================================================
+// POPOVERS: status meanings and the value adjustment explainer
+// ============================================================
+const STATUS_INFO = {
+  contend: ["Contender", "The strongest third of the league by roster strength. Built to win now, so Front Office steers contenders toward proven starters."],
+  middle:  ["Middle", "The middle third. Close enough to push for a title or start a retool; age and draft picks decide which way Front Office leans."],
+  rebuild: ["Rebuilding", "The weakest third. Better served building for the future, so recommendations favor young players and draft picks."]
+};
+let popEl = null;
+function closePop(){ popEl?.remove(); popEl = null; }
+let popScrollY = 0;
+function showPop(anchor, html){
+  closePop();
+  popEl = document.createElement("div"); popEl.className = "pop"; popEl.setAttribute("role", "dialog");
+  popEl.innerHTML = `<button type="button" class="pop-x" aria-label="Close">✕</button>` + html;
+  document.body.appendChild(popEl);
+  const r = anchor.getBoundingClientRect(), w = popEl.offsetWidth, h = popEl.offsetHeight;
+  let left = Math.min(Math.max(8, r.left), window.innerWidth - w - 8);
+  let top = r.bottom + 8; if (top + h > window.innerHeight - 8) top = Math.max(8, r.top - h - 8);
+  popEl.style.left = left + "px"; popEl.style.top = top + "px";
+  popEl.querySelector(".pop-x").focus({ preventScroll: true });
+  popScrollY = window.scrollY;
+}
+function openStatusKey(){
+  closePop();
+  $("tabs").querySelector('[data-tab="standings"]').click();   // works in either mode
+  const key = document.querySelector(".status-key");
+  if (key){ key.scrollIntoView({ behavior: "smooth", block: "center" }); key.classList.add("flash"); setTimeout(() => key.classList.remove("flash"), 1600); }
+}
+document.addEventListener("click", e => {
+  if (popEl && e.target.closest(".pop-x")){ closePop(); return; }
+  if (popEl && e.target.closest(".pop-link")){ openStatusKey(); return; }
+  const badge = e.target.closest(".badge.b-contend, .badge.b-middle, .badge.b-rebuild");
+  if (badge){
+    e.preventDefault(); e.stopPropagation();
+    const k = badge.classList.contains("b-contend") ? "contend" : badge.classList.contains("b-middle") ? "middle" : "rebuild";
+    showPop(badge, `<h4>${STATUS_INFO[k][0]}</h4><p>${STATUS_INFO[k][1]}</p><button type="button" class="pop-link">See What the Team Statuses Mean</button>`);
+    return;
+  }
+  const info = e.target.closest(".info-btn[data-info]");
+  if (info && (info.dataset.info === "adjust" || COLUMN_INFO[info.dataset.info])){
+    e.preventDefault(); e.stopPropagation();
+    const c = COLUMN_INFO[info.dataset.info];
+    showPop(info, c ? `<h4>${c[0]}</h4><p>${c[1]}</p>` : ADJUST_INFO_HTML); return; }
+  if (popEl && !e.target.closest(".pop")) closePop();
+}, true);
+document.addEventListener("keydown", e => { if (e.key === "Escape") closePop(); });
+// close on a real scroll, not the few pixels the browser may move while opening the popup
+window.addEventListener("scroll", () => { if (popEl && Math.abs(window.scrollY - popScrollY) > 40) closePop(); }, { passive: true });
+
+const COLUMN_INFO = {
+  "col-league": ["This League", "The player's value in your league after all of Front Office's adjustments: scoring, lineup, trade habits, age and starter role. This is the number the calculator uses."],
+  "col-market": ["Market", "The same player's value from the plain rankings, before any league adjustments. It shows what he'd be worth in a generic league."],
+  "col-change": ["Change", "How far your league's value is from the market value. It stays blank when the difference is under 1%, so small moves don't clutter the table."]
+};
+const ADJUST_INFO_HTML = `<h4>What Is the Value Adjustment?</h4>
+  <p>A fantasy roster has limited spots and limited starters, so one difference-maker is worth more than the same total value spread across several lesser players. Front Office adds a bonus to the side giving up the best piece, so a pile of depth can't "equal" a star.</p>
+  <h4>How Is It Worked Out?</h4>
+  <p>Each side's best piece counts in full. Every extra piece is discounted by how far it falls below the best piece it's being traded for, and by more when that piece is a true star. Each extra roster spot costs about one waiver-wire player, charged against the smallest pieces and never more than a piece is worth, so adding something to a side never lowers it. The difference between the two sides becomes the bonus. It uses league market values only; how the trade fits each roster is shown separately as lineup impact.</p>
+  <p>Front Office also shows a player on the other roster worth about the same as the bonus, so you know what it would take to even things out.</p>`;
+

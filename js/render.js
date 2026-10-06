@@ -1,0 +1,443 @@
+// Front Office: Rendering: league header, trade calculator, player values
+// Part of the site; loaded in order by index.html. All files share one global scope.
+// ============================================================
+// RENDERING
+// ============================================================
+function renderLeague(){
+  const c = S.cfg;
+  $("leagueBar").style.display = "block";
+  $("tabs").style.display = "flex";
+  $("modeBar").hidden = false; applyMode(currentMode(), true);
+  $("leagueName").textContent = S.league.name;
+  $("leagueAv").innerHTML = avatar(S.league.avatar, S.league.name, "lg");
+  const myT = S.teams.get(S.myRid);
+  $("myTeamLine").innerHTML = myT ? `<span class="teamcell">${teamPhoto(S.myRid, "sm")}${esc(myT.name)}</span>` : "";
+  const recLabel = c.rec >= 1 ? "Full PPR" : c.rec >= .5 ? "Half PPR" : c.rec > 0 ? c.rec + " PPR" : "Standard";
+  const chips = [`${c.teams} teams`, c.superflex ? "Superflex" : "1QB", recLabel];
+  if (c.tep) chips.push(`TE premium +${c.tep}`);
+  if (c.flex > 1) chips.push(`${c.flex} flex spots`);
+  const rosterSpots = c.rp.filter(x => !["IR","TAXI"].includes(x)).length;
+  chips.push(`${rosterSpots} roster spots`);
+  chips.push(`${c.st.reserve_slots || 0} IR spots`);
+  chips.push(`${c.st.taxi_slots || 0} taxi spots`);
+  if (!c.dynasty) chips.push("Not a dynasty league");
+  $("chips").innerHTML = "";   // league format details now live only on the League Settings tab
+  $("champSlot").replaceChildren();
+  loadChampion(S.league);
+  const tuned = S.nudge ? `, and tuned to ${S.nudge.n} of your league's trades` : "";
+  $("source").textContent = S.market.kind === "fp"
+    ? `Market values: Expert consensus from top fantasy football experts (rankings via FantasyPros), adjusted for this league's settings${tuned}.`
+    : S.market.kind === "dp"
+    ? `Market values: Expert consensus via DynastyProcess open data, adjusted for this league's settings${tuned}.`
+    : `Market values: Estimated from Sleeper's player rankings and age curves, adjusted for this league's settings${tuned}.`;
+  renderUpdated();
+  const opts = [...S.teams.values()].map(t => `<option value="${t.rid}">${esc(t.name)}</option>`).join("");
+  $("teamA").innerHTML = opts; $("teamB").innerHTML = opts;
+  $("teamA").value = S.myRid;
+  const other = [...S.teams.keys()].find(r => r !== S.myRid);
+  $("teamB").value = other ?? S.myRid;
+  $("board").style.display = "block"; $("sides").style.display = "grid";
+  $("stratTeam").innerHTML = opts; $("stratTeam").value = S.myRid;
+  $("tfTeam").innerHTML = opts; $("tfTeam").value = S.myRid;
+  renderCalc(); renderValues(); renderSettings(); renderStrategy(); setupScores();
+  if (S.history) renderHistory();
+}
+
+// ============================================================
+// LAST YEAR'S CHAMPION
+// Follows the league's link to last season, finds the winner of the
+// 1st-place game in that playoff bracket, and adds a chip at the end.
+// ============================================================
+const TROPHY = `<svg class="trophy" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 3h10v2h3v3a4 4 0 0 1-4 4h-.3A5 5 0 0 1 13 14.9V18h3v3H8v-3h3v-3.1A5 5 0 0 1 8.3 12H8a4 4 0 0 1-4-4V5h3V3zm-1 4v1a2 2 0 0 0 2 2V7H6zm12 0v3a2 2 0 0 0 2-2V7h-2z"/></svg>`;
+async function loadChampion(league){
+  const prevId = league.previous_league_id;
+  if (!prevId || prevId === "0") return;
+  try {
+    const [prev, bracket, rosters, users] = await Promise.all([
+      getJSON(`/league/${prevId}`), getJSON(`/league/${prevId}/winners_bracket`),
+      getJSON(`/league/${prevId}/rosters`), getJSON(`/league/${prevId}/users`)
+    ]);
+    const final = (bracket || []).find(m => m.p === 1 && m.w);
+    if (!final || S.league?.league_id !== league.league_id) return;
+    const ro = (rosters || []).find(r => r.roster_id === final.w);
+    const u = (users || []).find(x => x.user_id === ro?.owner_id);
+    // Prefer the champ's current team name and photo if they're still in the league
+    const now = [...S.teams.values()].find(t => t.owner === ro?.owner_id);
+    const name = now?.name || u?.metadata?.team_name || u?.display_name || "Unknown";
+    const photo = now ? now.photo : (u?.metadata?.avatar || u?.avatar);
+    const chip = document.createElement("span");
+    chip.className = "chip champ";
+    chip.title = `${prev?.season || "Last season"} champion`;
+    chip.innerHTML = `${avatar(photo, name)}${TROPHY}${esc(prev?.season || "Last year")} champ: ${esc(name)}`;
+    $("champSlot").replaceChildren(chip);
+  } catch(e){ console.warn("Couldn't load last season's champion", e); }
+}
+
+const statusText = { contend:"Contender", middle:"Middle", rebuild:"Rebuilding" };
+const badgeClass = { contend:"b-contend", middle:"b-middle", rebuild:"b-rebuild" };
+
+function teamAssets(rid){
+  return [...S.assets.values()].filter(a => a.owner === rid && a.value > 0).sort((a,b) => b.value - a.value);
+}
+// Player headshots come from Sleeper's image server (same place the Sleeper app gets them).
+// Picks show the logo of the team the pick originally belonged to. Missing images fall back to the football icon.
+const PLAYER_IMG = pid => `https://sleepercdn.com/content/nfl/players/thumb/${encodeURIComponent(pid)}.jpg`;
+// Injury designation tag shown next to a player's name everywhere (live from Sleeper's player list)
+const INJ_SHORT = { Questionable: ["Q", "q"], Doubtful: ["D", "d"], Out: ["O", "o"], IR: ["IR", "o"], PUP: ["PUP", "o"], NFI: ["NFI", "o"], Sus: ["SUS", "o"], COV: ["COV", "o"], NA: ["NA", "d"], DNR: ["DNR", "d"] };
+function injTag(pid){
+  const sp = pid != null ? S.sleeperPlayers?.[pid] : null, st = sp?.injury_status, t = INJ_SHORT[st];
+  if (!t) return "";
+  const full = (INJ_LABEL[st]?.[0] || st) + (sp.injury_body_part ? ": " + sp.injury_body_part : "");
+  return ` <span class="inj inj-${t[1]}" title="${esc(full)}" aria-label="${esc(full)}">${t[0]}</span>`;
+}
+const NFL_COLORS = {ARI:"#97233F",ATL:"#A71930",BAL:"#241773",BUF:"#00338D",CAR:"#0085CA",CHI:"#0B162A",CIN:"#FB4F14",CLE:"#311D00",DAL:"#041E42",DEN:"#FB4F14",DET:"#0076B6",GB:"#203731",HOU:"#03202F",IND:"#002C5F",JAX:"#006778",KC:"#E31837",LV:"#000000",LAC:"#0080C6",LAR:"#003594",LA:"#003594",MIA:"#008E97",MIN:"#4F2683",NE:"#002244",NO:"#101820",NYG:"#0B2265",NYJ:"#125740",PHI:"#004C54",PIT:"#101820",SF:"#AA0000",SEA:"#002244",TB:"#D50A0A",TEN:"#0C2340",WAS:"#5A1414"};
+// The player's CURRENT NFL team, straight from Sleeper's player list (reloaded every time a league opens)
+const currentTeam = pid => { const t = S.sleeperPlayers?.[pid]?.team; return t && NFL_COLORS[t] ? t : null; };
+const teamBgStyle = t => t ? `--tm:${NFL_COLORS[t]};--tm-logo:url('https://sleepercdn.com/images/team_logos/nfl/${t.toLowerCase()}.png')` : "";
+function assetPhoto(a, size){
+  if (a.kind === "player"){
+    const t = currentTeam(a.pid);
+    return avatar(PLAYER_IMG(a.pid), a.name, size)
+      .replace('class="av', `data-pid="${esc(a.pid)}"${t ? ` style="${teamBgStyle(t)}"` : ""} class="av pl${t ? " tm" : ""}`)
+      .replace(/title="[^"]*"/, `title="${esc(a.name)}: tap for player card"`);
+  }
+  const orig = Number(String(a.id).split("-").pop());
+  return S.teams.has(orig) ? teamPhoto(orig, size) : avatar(null, a.name, size);
+}
+// "WR5, #11 overall" in bold, from this league's values
+const rankHTML = a => [a.lgPosRank ? a.pos + a.lgPosRank : "", a.lgRank ? "#" + a.lgRank + " overall" : ""].filter(Boolean).map(x => `<strong class="rk-b">${x}</strong>`).join(", ");
+function assetRow(a, sel, showOwner){
+  // second line; the player's position rank and overall rank are in bold
+  const sub = a.kind === "pick" ? esc([a.nfl, showOwner ? S.teams.get(a.owner)?.name : ""].filter(Boolean).join(", "))
+    : [esc(a.nfl), a.age ? "age " + ageText(a.age) : "", rankHTML(a), showOwner ? esc(S.teams.get(a.owner)?.name || "") : ""].filter(Boolean).join(", ");
+  return `<button class="asset${sel?" sel":""}" data-id="${esc(a.id)}" aria-pressed="${sel}">
+    <span class="pos">${esc(a.pos)}</span>
+    ${assetPhoto(a, "row")}
+    <span class="nm"><b>${esc(a.name)}${injTag(a.pid)}</b><small>${sub}</small></span>
+    <span class="val">${fmt(a.value)}</span></button>`;
+}
+function renderSide(rid, listEl, badgeEl, set){
+  const t = S.teams.get(rid);
+  badgeEl.textContent = statusText[t.status]; badgeEl.className = "badge " + badgeClass[t.status];
+  const side = listEl.id === "listA" ? "A" : "B";
+  listEl.classList.toggle("browse", !!browseAll[side]);   // "All Players" keeps its own scroll; a team roster shows in full
+  const f = $("pos" + side).value;
+  const q = browseAll[side] ? normName($("browse" + side).value) : "";
+  const pool = browseAll[side] ? [...S.assets.values()].filter(a => a.owner != null && a.value > 0 && (!q || normName(a.name).includes(q))).sort((a, b) => b.value - a.value).slice(0, 300)
+                               : teamAssets(rid);
+  const items = pool.filter(a => f === "EVERY" ? true : f === "ALL" ? a.kind === "player" : f === "PICK" ? a.kind === "pick" : a.pos === f);
+  listEl.innerHTML = items.length ? items.map(a => assetRow(a, set.has(a.id), browseAll[side])).join("") : `<p class="empty">${browseAll[side] ? "No players or picks match." : f === "EVERY" || f === "ALL" ? "No valued players on this roster yet." : "None on this roster."}</p>`;
+}
+const eq = vals => Math.pow(vals.reduce((s,v) => s + Math.pow(v, STUD_EXPONENT), 0), 1/STUD_EXPONENT);
+
+// ---------- Trade value adjustment ----------
+// Several lesser pieces never add up to one difference-maker. For one side of a trade:
+//  1. Its best piece counts in full.
+//  2. Every extra piece is discounted by how far it falls below the best piece in the whole trade
+//     (half as valuable counts about 80%, a quarter as valuable about 66%, a tenth about 55%).
+//  3. Each extra roster spot it takes (receiving more pieces than you send) costs about one
+//     waiver-level player (the best player nobody in the league has room for), since someone has to be cut.
+const DEPTH_FLOOR = 0.4, DEPTH_CURVE = 0.6;
+// Team-aware version used by the Trade Calculator. On top of tradeValue's rules it:
+//  - discounts depth more when the best piece is a true star (top of the league),
+//  - discounts less for extra pieces that would crack the receiving team's starting lineup,
+//  - charges less for roster spots when the receiving team actually has open spots.
+const STAR_EXTRA = 0.12;      // up to 12% more depth discount against an elite piece
+// (Team-specific relief for pieces that would start, and cheaper roster spots for teams with open
+// spots, were removed from the grade: trades are graded on league market value only.)
+function teamOpenSpots(rid){
+  const r = S.rosters.find(x => x.roster_id === rid); if (!r) return 0;
+  const size = (S.cfg.rp || []).filter(x => !["IR","TAXI"].includes(x)).length;
+  const active = (r.players || []).length - (r.taxi || []).length - (r.reserve || []).length;
+  return Math.max(0, size - active);
+}
+function wouldStart(a, rid, leaving){
+  if (!a || a.kind !== "player" || rid == null) return false;
+  const k = Math.ceil(slotNeeds()[a.pos] || 0); if (!k) return false;
+  const vals = teamAssets(rid).filter(x => x.kind === "player" && x.pos === a.pos && !leaving.has(x.id)).map(x => x.value).sort((x, y) => y - x);
+  return vals.length < k || a.value > vals[k - 1];
+}
+// One side's adjusted trade value. Rules:
+//  - Its best piece counts in full.
+//  - Every other piece is discounted by how far it falls short of the best piece it's being traded
+//    FOR (the other side's best): about 80% at half as valuable, 66% at a quarter, 55% at a tenth,
+//    and up to 12% more when that piece is a true star. Measuring against the OTHER side keeps the
+//    math monotonic: adding something to a side can never lower that side's total.
+//  - Each extra roster spot the side takes (more pieces in than out) costs about one waiver-level
+//    player, charged against its smallest pieces and never more than a piece is worth, so a throw-in
+//    can only add value, never subtract it.
+//  - It uses league market values only. How a trade fits a particular roster is shown separately
+//    (lineup impact) and never changes the grade.
+function tradeValue(getVals, giveVals){
+  if (!getVals.length) return 0;
+  const v = [...getVals].sort((a, b) => b - a), best = v[0];
+  const ref = giveVals.length ? Math.max(1, ...giveVals) : best;           // the best piece this side is getting traded for
+  const eliteLine = S.eliteValue || 9000;
+  const starness = Math.max(0, Math.min(1, (ref - eliteLine * 0.75) / (10000 - eliteLine * 0.75)));
+  const contrib = [{ c: best, w: 1 }];
+  for (let i = 1; i < v.length; i++){
+    const w = (DEPTH_FLOOR + (1 - DEPTH_FLOOR) * Math.pow(Math.min(1, v[i] / ref), DEPTH_CURVE)) * (1 - STAR_EXTRA * starness);
+    contrib.push({ c: v[i] * w, w });
+  }
+  // The roster-spot charge is the waiver level on the same discounted scale as the piece, so a piece
+  // is never penalized twice, and never charged more than it's worth.
+  const extra = Math.max(0, getVals.length - giveVals.length), rep = S.replacement || 0;
+  const charge = [...contrib].sort((a, b) => a.c - b.c).slice(0, extra).reduce((t, x) => t + Math.min(rep * x.w, x.c), 0);
+  return Math.max(0, contrib.reduce((t, x) => t + x.c, 0) - charge);
+}
+// Kept for the calculator: same market-only math, from assets instead of numbers
+function tradeValueFor(getAssets, giveAssets){
+  if (!getAssets.length) return { total: 0, raw: 0 };
+  const g = getAssets.map(a => a.value), s = giveAssets.map(a => a.value);
+  return { total: tradeValue(g, s), raw: g.reduce((t, x) => t + x, 0) };
+}
+// Lineup impact: how much a team's projected starting lineup (by league value) changes after the trade.
+// Shown next to the grade as roster fit; it never changes the grade itself.
+function lineupValue(players){
+  const need = slotNeeds(); let total = 0;
+  for (const p of ["QB", "RB", "WR", "TE"]){
+    const vals = players.filter(a => a.pos === p).map(a => a.value).sort((x, y) => y - x), k = need[p] || 0, whole = Math.floor(k);
+    total += vals.slice(0, whole).reduce((t, x) => t + x, 0) + (vals[whole] || 0) * (k - whole);
+  }
+  return total;
+}
+function lineupImpact(rid, outIds, inAssets){
+  const before = teamAssets(rid).filter(a => a.kind === "player");
+  const after = before.filter(a => !outIds.has(a.id)).concat(inAssets.filter(a => a.kind === "player"));
+  return lineupValue(after) - lineupValue(before);
+}
+
+function renderCalc(){
+  const ra = Number($("teamA").value), rb = Number($("teamB").value);
+  syncPicker("teamA"); syncPicker("teamB");
+  // drop selections that no longer belong to the chosen teams
+  for (const id of [...S.sendIds]) if (S.assets.get(id)?.owner !== ra) S.sendIds.delete(id);
+  for (const id of [...S.getIds]) if (S.assets.get(id)?.owner !== rb) S.getIds.delete(id);
+  renderSide(ra, $("listA"), $("badgeA"), S.sendIds);
+  renderSide(rb, $("listB"), $("badgeB"), S.getIds);
+  $("avA").innerHTML = teamPhoto(ra, "md"); $("avB").innerHTML = teamPhoto(rb, "md");
+
+  const send = [...S.sendIds].map(id => S.assets.get(id).value);
+  const get = [...S.getIds].map(id => S.assets.get(id).value);
+  // Value adjustment, shown KeepTradeCut-style: nobody's players lose value. Instead, the side with
+  // the fewer, better pieces gets a bonus added on top, worth the difference the depth/roster-spot
+  // math finds. (The comparison comes out exactly the same as discounting the other side.)
+  const rawS = send.reduce((a, b) => a + b, 0), rawG = get.reduce((a, b) => a + b, 0);
+  const both = send.length && get.length;
+  const sendA = [...S.sendIds].map(id => S.assets.get(id)).filter(Boolean), getA = [...S.getIds].map(id => S.assets.get(id)).filter(Boolean);
+  // what you get lands on your team (ra); what you send lands on theirs (rb)
+  const adjDiff = both ? (rawG - tradeValueFor(getA, sendA, ra).total) - (rawS - tradeValueFor(sendA, getA, rb).total) : 0;
+  const bonusS = Math.max(0, Math.round(adjDiff)), bonusG = Math.max(0, Math.round(-adjDiff));
+  const eS = rawS + bonusS, eG = rawG + bonusG;
+  $("sendNum").textContent = fmt(eS); $("getNum").textContent = fmt(eG);
+  // Team name + logo on each side, and the players/picks being traded (tap one to remove it)
+  const tA = S.teams.get(ra), tB = S.teams.get(rb);
+  $("sendTeam").innerHTML = tA ? `${teamPhoto(ra, true)}<span class="nm">${esc(tA.name)}</span>` : "";
+  $("getTeam").innerHTML = tB ? `${teamPhoto(rb, true)}<span class="nm">${esc(tB.name)}</span>` : "";
+  const itemsHTML = (ids, side) => [...ids].map(id => S.assets.get(id)).filter(Boolean).sort((a, b) => b.value - a.value)
+    .map(a => {
+      const sub = a.kind === "player" ? [esc(a.nfl), a.age ? "age " + ageText(a.age) : "", rankHTML(a)].filter(Boolean).join(", ") : esc(a.nfl);
+      return `<div class="bitem">
+        <button type="button" class="bi-link" data-show="${esc(a.id)}" title="${a.kind === "player" ? "Open " + esc(a.name) + "'s player card" : "See " + esc(a.name) + " in Player Values"}">
+          ${assetPhoto(a, "trade")}<span class="bi-text"><b>${esc(a.name)}${injTag(a.pid)}</b><small>${sub}</small></span></button>
+        <span class="bi-val">${fmt(a.value)}</span>
+        <button type="button" class="bi-x" data-side="${side}" data-id="${esc(a.id)}" aria-label="Remove ${esc(a.name)} from the trade">✕</button></div>`;
+    }).join("");
+  // The team that would need to add value is the one receiving the bonus's opposite side
+  const equivalent = (n, fromRid, exclude) => {
+    if (n < 300 || fromRid == null) return null;
+    const pool = teamAssets(fromRid).filter(a => !exclude.has(a.id) && a.value > 0);
+    return pool.sort((a, b) => Math.abs(a.value - n) - Math.abs(b.value - n))[0] || null;
+  };
+  const adjRow = (n, fromRid, exclude) => {
+    if (n < 1) return "";
+    const eqA = equivalent(n, fromRid, exclude);
+    return `<div class="badj"><span><span>Value adjustment<button type="button" class="info-btn" data-info="adjust" aria-label="What is the value adjustment?">?</button></span>${eqA ? `<small class="badj-eq">About the same as them adding ${esc(eqA.name)}${injTag(eqA.pid)} (${fmt(eqA.value)})</small>` : ""}</span><b>+${fmt(n)}</b></div>`;
+  };
+  // bonus on your side = the other team (rb) would need to add; bonus on their side = you (ra) would
+  $("sendItems").innerHTML = itemsHTML(S.sendIds, "send") + adjRow(bonusS, rb, S.getIds);
+  $("getItems").innerHTML = itemsHTML(S.getIds, "get") + adjRow(bonusG, ra, S.sendIds).replace("them adding", "you adding");
+  $("bPlayers").hidden = !S.sendIds.size && !S.getIds.size;
+  $("swCountA").textContent = S.sendIds.size ? `(${S.sendIds.size})` : ""; $("swCountB").textContent = S.getIds.size ? `(${S.getIds.size})` : "";
+  $("swTeamA").textContent = browseAll.A ? "All Players" : (tA?.name || ""); $("swTeamB").textContent = browseAll.B ? "All Players" : (tB?.name || "");
+  $("resetTrade").disabled = !S.sendIds.size && !S.getIds.size;
+  $("sendRaw").textContent = bonusS ? `+${fmt(bonusS)} value adjustment` : "";
+  $("getRaw").textContent = bonusG ? `+${fmt(bonusG)} value adjustment` : "";
+  const total = eS + eG;
+  $("fill").style.width = (total ? (eS/total*100) : 50) + "%";
+  $("fill").className = "fill";   // gold until both sides have something
+
+  const sug = $("suggest"); sug.innerHTML = "";
+  if (!send.length && !get.length){ $("verdict").textContent = "Tap players and picks to build a trade."; $("hint").textContent = ""; return; }
+  if (!send.length || !get.length){ $("verdict").textContent = "Add something to both sides."; $("hint").textContent = ""; return; }
+  const gap = eG - eS, pct = Math.abs(gap) / Math.max(eS, eG);
+  // Bar color: blue = even, green = you win, red = you overpay
+  $("fill").classList.add(pct <= FAIR_BAND ? "even" : gap > 0 ? "win" : "lose");
+  if (pct <= FAIR_BAND){ $("verdict").textContent = "Fair trade"; }
+  else if (gap > 0){ $("verdict").textContent = `You win by ${fmt(gap)}`; }
+  else { $("verdict").textContent = `You overpay by ${fmt(-gap)}`; }
+
+  // context hint
+  const me = S.teams.get(ra);
+  const getPicks = [...S.getIds].filter(id => S.assets.get(id).kind === "pick").length;
+  const getYoung = [...S.getIds].filter(id => { const a=S.assets.get(id); return a.kind==="player" && a.age && a.age <= 24; }).length;
+  let hint = "";
+  if (me.status === "rebuild" && (getPicks || getYoung)) hint = "Picks and young players fit your rebuild.";
+  else if (me.status === "contend" && (getPicks || getYoung) && !(gap > 0)) hint = "You're contending, so trading proven players for futures could hurt this season.";
+  // Explain the value adjustment when it changes the picture noticeably
+  const bonus = Math.max(bonusS, bonusG);
+  if (bonus > 0.05 * Math.max(rawS, rawG))
+    hint = (hint ? hint + " " : "") + `The ${bonusS ? "side you send" : "side you get"} gets a +${fmt(bonus)} value adjustment, because one difference-maker is worth more than several smaller pieces that take up roster spots.`;
+  // Roster fit, shown separately from the grade: how each team's starting lineup changes
+  const youImp = lineupImpact(ra, S.sendIds, getA), themImp = lineupImpact(rb, S.getIds, sendA);
+  const sgn = n => (n >= 0 ? "+" : "−") + fmt(Math.abs(Math.round(n)));
+  if (Math.abs(youImp) >= 50 || Math.abs(themImp) >= 50)
+    hint = (hint ? hint + " " : "") + `Lineup impact (starters only, not part of the grade): your lineup ${sgn(youImp)}, theirs ${sgn(themImp)}.`;
+  $("hint").textContent = hint;
+
+  // suggest assets to even it out
+  if (pct > FAIR_BAND){
+    const needFromThem = gap < 0; // you overpay: ask them to add
+    const pool = teamAssets(needFromThem ? rb : ra).filter(a => !(needFromThem ? S.getIds : S.sendIds).has(a.id));
+    const target = Math.abs(gap);
+    const picks = pool.sort((a,b) => Math.abs(a.value-target) - Math.abs(b.value-target)).slice(0,3);
+    if (picks.length){
+      const lbl = document.createElement("span"); lbl.className="hint";
+      lbl.textContent = needFromThem ? "Ask them to add:" : "You could add:";
+      sug.appendChild(lbl);
+      for (const a of picks){
+        const b = document.createElement("button");
+        b.textContent = `${a.name} (${fmt(a.value)})`;
+        b.addEventListener("click", () => { (needFromThem ? S.getIds : S.sendIds).add(a.id); renderCalc(); });
+        sug.appendChild(b);
+      }
+    }
+  }
+}
+
+function isPhone(){ return window.matchMedia("(max-width:600px)").matches; }
+function addedNote(set, id, wasIn){
+  if (!isPhone()) return;
+  const a = S.assets.get(id); if (!a) return;
+  toast(wasIn ? `Removed ${a.name}` : `${a.name} added to ${set === S.sendIds ? "You Send" : "You Get"}`);
+}
+function toggle(set, e){
+  const btn = e.target.closest(".asset"); if (!btn) return;
+  const id = btn.dataset.id, wasIn = set.has(id);
+  wasIn ? set.delete(id) : set.add(id); renderCalc(); addedNote(set, id, wasIn);
+}
+// Phone: show one roster at a time, chosen with the You Send / You Get switch
+function setSideSwitch(side){
+  for (const b of $("sideSwitch").children) b.setAttribute("aria-selected", b.dataset.side === side);
+  $("sides").dataset.show = side;
+}
+$("sideSwitch").addEventListener("click", e => { const b = e.target.closest("button"); if (b) setSideSwitch(b.dataset.side); });
+setSideSwitch("A");
+$("listA").addEventListener("click", e => browseAll.A ? browseClick("A", e) : toggle(S.sendIds, e));
+$("resetTrade").addEventListener("click", () => { S.sendIds.clear(); S.getIds.clear(); renderCalc(); });
+$("board").addEventListener("click", e => {
+  const x = e.target.closest(".bi-x");
+  if (x){ (x.dataset.side === "send" ? S.sendIds : S.getIds).delete(x.dataset.id); renderCalc(); return; }
+  const l = e.target.closest(".bi-link");
+  if (!l) return;
+  const a = S.assets.get(l.dataset.show);
+  if (a && a.kind === "player") openPlayerCard(a.pid);    // players open their player card
+  else showInValues(l.dataset.show);                      // picks still jump to Player Values
+});
+// Jump to a player's (or pick's) row in League Values and highlight it
+function showInValues(id){
+  const a = S.assets.get(id); if (!a) return;
+  const valuesTab = $("tabs").querySelector('[data-tab="values"]');
+  valuesTab.click();
+  S.posFilter = a.kind === "pick" ? "PICK" : "ALL";
+  for (const x of $("posFilter").children) x.setAttribute("aria-pressed", x.dataset.pos === S.posFilter);
+  $("valueSearch").value = a.name;
+  if (a.owner == null) $("rosteredOnly").checked = false;
+  renderValues();
+  const row = $("valuesBody").querySelector(`tr[data-id="${CSS.escape(id)}"]`);
+  S.valuesHL = id;
+  if (row){ row.classList.add("hl"); row.scrollIntoView({ behavior: "smooth", block: "center" }); }
+}
+$("listB").addEventListener("click", e => browseAll.B ? browseClick("B", e) : toggle(S.getIds, e));
+$("teamA").addEventListener("change", renderCalc);
+$("posA").addEventListener("change", renderCalc);
+$("posB").addEventListener("change", renderCalc);
+$("teamB").addEventListener("change", renderCalc);
+
+// Green light = league tuning active, yellow = not active yet, grey = still checking
+function renderTuningLight(){
+  const el = $("tuningLight"); if (!el || !S.league) return;
+  const link = `<a class="tlink" href="#tuning">How tuning works</a>`;
+  if (S.historyError){
+    el.innerHTML = `<span class="light off" aria-hidden="true"></span><div class="tuning-text"><b>League Tuning Is Off</b><p>Couldn't check your league's trade history, so values use expert consensus and your league settings only. Reopen the league to try again.</p>${link}</div>`;
+    return;
+  }
+  if (!S.history){
+    el.innerHTML = `<span class="light wait" aria-hidden="true"></span><div class="tuning-text"><b>Checking Your League's Trade History...</b><p>Values may adjust slightly in a moment.</p>${link}</div>`;
+    return;
+  }
+  const twoTeam = S.history.trades.filter(t => t.sides.length >= 2).length;
+  if (S.nudge){
+    const adj = ["QB","RB","WR","TE","PICK"].map(k => ({ k, m: S.nudge[k] }))
+      .map(x => `<span class="chip">${x.k === "PICK" ? "Picks" : x.k + "s"} ×${(Math.round(x.m*100)/100).toFixed(2)}</span>`).join("");
+    el.innerHTML = `<span class="light on" aria-hidden="true"></span><div class="tuning-text"><b>League Tuning Is On</b><p>These values include your league's trade habits, learned from ${S.nudge.n} trades. Your league's own evidence counts for ${Math.round((S.nudge.weight || 0) * 100)}% so far and grows as you trade; expert consensus makes up the rest.</p><div class="chips">${adj}</div>${link}</div>`;
+  } else {
+    const left = Math.max(0, NUDGE_MIN_TRADES - twoTeam);
+    const pct = Math.min(100, Math.round(twoTeam / NUDGE_MIN_TRADES * 100));
+    el.innerHTML = `<span class="light off" aria-hidden="true"></span><div class="tuning-text"><b>League Tuning Is Off for Now: ${left} More Trade${left === 1 ? "" : "s"} to Go</b><p>Your league has ${twoTeam} of the ${NUDGE_MIN_TRADES} trades needed. Until then, values use expert consensus and your league settings only.</p><div class="tprog" role="progressbar" aria-valuemin="0" aria-valuemax="${NUDGE_MIN_TRADES}" aria-valuenow="${twoTeam}" aria-label="Trades toward league tuning"><span style="width:${pct}%"></span></div><small class="tprog-label">${twoTeam} / ${NUDGE_MIN_TRADES} trades</small>${link}</div>`;
+  }
+}
+
+// "Values updated 3 hours ago", from the time stamp the daily update writes into values.json
+function updatedAgo(iso){
+  const t = Date.parse(iso || ""); if (isNaN(t)) return "";
+  const m = Math.max(0, Math.round((Date.now() - t) / 60000));
+  if (m < 2) return "just now";
+  if (m < 60) return `${m} minutes ago`;
+  const h = Math.round(m / 60); if (h < 24) return `${h} hour${h === 1 ? "" : "s"} ago`;
+  const d = Math.round(h / 24); return d === 1 ? "yesterday" : `${d} days ago`;
+}
+function renderUpdated(){
+  const iso = S.market?.updated, ago = updatedAgo(iso);
+  const stale = ago && Date.now() - Date.parse(iso) > 36 * 3600000;   // the update runs 3 times a day, so 36 hours means it's stuck
+  const txt = !ago ? "" : stale ? `Values may be out of date: last updated ${ago}.` : `Values updated ${ago}.`;
+  for (const id of ["valuesUpdated", "footUpdated"]){ const el = $(id); if (el){ el.textContent = txt; el.classList.toggle("stale", !!stale); el.title = iso ? new Date(iso).toLocaleString() : ""; } }
+}
+function renderValues(){
+  renderTuningLight(); renderUpdated();
+  $("valueClear").hidden = !$("valueSearch").value;
+  const q = normName($("valueSearch").value), pos = S.posFilter, rosteredOnly = $("rosteredOnly").checked;
+  const rows = [...S.assets.values()]
+    .filter(a => pos === "ALL" ? a.kind === "player" : pos === "PICK" ? a.kind === "pick" : a.pos === pos)
+    .filter(a => !rosteredOnly || a.owner != null)
+    .filter(a => !q || normName(a.name).includes(q))
+    .sort((a,b) => b.value - a.value).slice(0, 400);
+  $("valuesBody").innerHTML = rows.map((a,i) => {
+    const team = a.owner != null ? S.teams.get(a.owner)?.name : "Free agent";
+    const teamHTML = a.owner != null ? `<span class="teamcell">${teamPhoto(a.owner, true)}${esc(team)}</span>` : "Free agent";
+    const ch = a.market ? (a.value/a.market - 1) * 100 : 0;
+    const chTxt = a.kind === "pick" || Math.abs(ch) < 1 ? "" : `<span class="${ch>0?"up":"down"}">${ch>0?"+":""}${Math.round(ch)}%</span>`;
+    return `<tr data-id="${esc(a.id)}"${a.kind === "player" ? ' tabindex="0"' : ""}${a.id === S.valuesHL ? ' class="hl"' : ""}><td class="n">${a.kind === "player" && a.lgRank ? a.lgRank : i+1}</td><td><span class="teamcell">${assetPhoto(a, true)}${esc(a.name)}${injTag(a.pid)}</span></td><td>${esc(a.pos)}</td><td class="n">${esc(ageText(a.age))}</td>
+      <td class="hide-sm">${teamHTML}</td><td class="n big">${fmt(a.value)}</td><td class="n hide-sm">${a.kind==="pick"?"":fmt(a.market)}</td><td class="n hide-sm">${chTxt}</td></tr>`;
+  }).join("") || `<tr><td colspan="8" class="empty">No players match. Try a different search or filter.</td></tr>`;
+}
+$("valueSearch").addEventListener("input", renderValues);
+// ✕ inside the search box: clear the search, show everyone, and keep the player you were looking at in view
+$("valueClear").addEventListener("click", () => {
+  const keep = S.valuesHL || $("valuesBody").querySelector("tr[data-id]")?.dataset.id;
+  $("valueSearch").value = ""; S.posFilter = "ALL";
+  for (const x of $("posFilter").children) x.setAttribute("aria-pressed", x.dataset.pos === "ALL");
+  S.valuesHL = keep || null;
+  renderValues();
+  if (keep) $("valuesBody").querySelector(`tr[data-id="${CSS.escape(keep)}"]`)?.scrollIntoView({ block: "center" });
+  setTimeout(() => { S.valuesHL = null; $("valuesBody").querySelector("tr.hl")?.classList.remove("hl"); }, 4000);
+  $("valueSearch").focus();
+});
+$("rosteredOnly").addEventListener("change", renderValues);
+$("posFilter").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  S.posFilter = b.dataset.pos;
+  for (const x of $("posFilter").children) x.setAttribute("aria-pressed", x === b);
+  renderValues();
+});
+

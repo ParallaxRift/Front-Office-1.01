@@ -12,6 +12,7 @@
 #      player under each league's own rules
 #   5. Saves everything to data/values.json for the website, and what
 #      FantasyPros answered to data/values-status.json (never the key)
+#   6. Keeps a compact daily snapshot in data/history/ (one file per day)
 #
 # The website turns ranks into values itself (it can fine-tune the curve to
 # each league's trades), so this file stores ranks, not final values.
@@ -51,6 +52,7 @@ HERE = os.path.dirname(__file__)
 OUTPUT = os.path.join(HERE, "..", "data", "values.json")
 HISTORY = os.path.join(HERE, "..", "data", "rank-history.json")
 STATUS = os.path.join(HERE, "..", "data", "values-status.json")
+HISTORY_DIR = os.path.join(HERE, "..", "data", "history")   # one snapshot per day
 # ---------------------------------------------
 
 API_KEY = os.environ.get("FANTASYPROS_API_KEY", "").strip()
@@ -280,6 +282,19 @@ out = {
 }
 with open(OUTPUT, "w", encoding="utf-8") as f:
     json.dump(out, f, separators=(",", ":"))
+# Daily snapshot: one compact file per day in data/history/, written by the first update of the day.
+# It keeps each player's ranks, spread, tier and projections, so the site can later rebuild any
+# league's values as they were on that date (fair grading of old trades, trend charts, accuracy tests).
+SNAP_FIELDS = ["name", "pos", "team", "r1", "r2", "sd1", "sd2", "tier1", "tier2", "pj"]
+snap_path = os.path.join(HISTORY_DIR, out["updated"][:10] + ".json")
+if not os.path.exists(snap_path):
+    os.makedirs(HISTORY_DIR, exist_ok=True)
+    snap = {"date": out["updated"][:10], "updated": out["updated"], "fields": SNAP_FIELDS,
+            "players": [[p.get(k) for k in SNAP_FIELDS] for p in out["players"]]}
+    with open(snap_path, "w", encoding="utf-8") as f:
+        json.dump(snap, f, separators=(",", ":"))
+    print(f"Saved today's snapshot to data/history/{os.path.basename(snap_path)}")
+status["snapshot"] = os.path.basename(snap_path)
 status["calls"] = calls
 with open(STATUS, "w", encoding="utf-8") as f:
     json.dump(status, f, indent=1)
