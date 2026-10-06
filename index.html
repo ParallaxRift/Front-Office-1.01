@@ -1221,6 +1221,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
         <tr><td>Standard (no PPR)</td><td>RB ×1.10, WR ×0.85, TE ×0.85</td><td>Pass catchers and running backs</td></tr>
         <tr><td>6-point passing TDs</td><td>×1.10</td><td>Quarterbacks</td></tr>
         <tr><td>Each flex spot beyond one</td><td>×1.05</td><td>RBs, WRs and TEs outside the top 24</td></tr>
+        <tr><td>Player is 29 or older</td><td>At 29: RB −9%, WR −4.8%, TE −5%, QB −3%. At 30: RB −17%, WR −9.3%, TE −10%, QB −6%. At 31: RB −24%, WR −13.4%, TE −15%, QB −9%. At 32: RB −32%, WR −15%, TE −21%, QB −12%. Anyone 33 or older gets the age-33 discount: RB −34%, WR −18.6%, TE −23%, QB −14%</td><td>Older players at every position</td></tr>
         <tr><td>3 or more starting WRs</td><td>×1.05</td><td>Wide receivers</td></tr>
         <tr><td>Your league's trade habits (15+ trades)</td><td>Up to ×0.925 to ×1.075, learned from your trades</td><td>QBs, RBs, WRs, TEs and picks, each separately</td></tr>
       </tbody>
@@ -1662,6 +1663,34 @@ function exactAge(p){
   return p?.age ? Number(p.age) : null;
 }
 const ageText = a => a == null || a === "" ? "" : Number(a).toFixed(1);
+// ---------- Age discount (29 and older) ----------
+// Dynasty value is about future seasons, so an older player is worth less than a
+// similar younger one. Starting at age 29, each year (counted to the decimal) takes
+// a position-based bite, capped so legends don't drop to zero.
+const AGE_START = 28;                                     // discount begins after age 28, i.e. at 29
+const AGE_MAX = 33;                                       // 33 through 99 all get the age-33 discount
+const AGE_RATE = { RB: 0.12, WR: 0.08, TE: 0.07, QB: 0.04 };
+const AGE_FLOOR = 0.55;                                   // full-strength cap (45% off)
+const AGE_SCALE = 0.75;                                   // apply 75% of the full-strength discount
+const AGE_POS_SCALE = { WR: 0.83 * 0.97 };                // WRs: 17% smaller discount, then 3% smaller again
+const AGE_SET = { WR: { 32: 0.15, 33: 0.186 } };          // exact discounts chosen by Pat
+function ageCurve(pos, age){                              // discount (0-1) on the smooth curve
+  const yrs = Math.min(age, AGE_MAX) - AGE_START, rate = AGE_RATE[pos] ?? 0.08;
+  const full = 1 - Math.max(AGE_FLOOR, Math.pow(1 - rate, yrs));
+  return full * AGE_SCALE * (AGE_POS_SCALE[pos] ?? 1);
+}
+function ageDiscount(pos, age){
+  if (!age || age <= AGE_START) return 1;
+  let d;
+  if (age <= 31) d = ageCurve(pos, age);
+  else {
+    const set = AGE_SET[pos] || {};
+    const d31 = ageCurve(pos, 31), d33 = set[33] ?? ageCurve(pos, 33), d32 = set[32] ?? d33 - 0.02;   // age 32 = 2 points less than 33+ unless set
+    d = age <= 32 ? d31 + (d32 - d31) * (age - 31)
+      : age < 33 ? d32 + (d33 - d32) * (age - 32) : d33;
+  }
+  return 1 - d;
+}
 function buildValues(){
   const cfg = S.cfg, P = S.sleeperPlayers, assets = new Map();
   const owner = new Map();
@@ -1716,9 +1745,11 @@ function buildValues(){
     rules.push({ m: "League", t: `Your league's trade habits (${S.nudge.n} trades)`,
       d: parts.length ? parts.join(", ") + ". A light adjustment based on how your league has actually traded." : "Your league trades close to market value, so no adjustment was needed." });
   }
+  rules.push({ m: "Age", t: "Players 29 and older", d: "Value drops each year from 29 to 33, then holds. At 29: RB −9%, WR −4.8%, TE −5%, QB −3%. At 30: RB −17%, WR −9.3%, TE −10%, QB −6%. At 32: RB −32%, WR −15%, TE −21%, QB −12%. At 33 and older: RB −34%, WR −18.6%, TE −23%, QB −14%. An older player is worth less than a similar younger one." });
   S.rules = rules;
   for (const a of list){
     let m = S.nudge ? (S.nudge[a.pos] || 1) : 1;
+    m *= ageDiscount(a.pos, a.age);
     if (S.market.kind === "sleeper" && cfg.superflex && a.pos==="QB") m *= a.posRank<=12 ? 1.7 : a.posRank<=24 ? 2.2 : 1.3;
     if (a.pos==="TE") m *= tepMult;
     if (a.rank > 36) m *= sizeMult;
