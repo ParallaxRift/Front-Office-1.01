@@ -1314,7 +1314,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
         <tr><td>Standard (no PPR)</td><td>RB ×1.10, WR ×0.85, TE ×0.85</td><td>Pass catchers and running backs</td></tr>
         <tr><td>6-point passing TDs</td><td>×1.10</td><td>Quarterbacks</td></tr>
         <tr><td>Each flex spot beyond one</td><td>×1.05</td><td>RBs, WRs and TEs outside the top 24</td></tr>
-        <tr><td>Player is 29 or older</td><td>At 29: RB −9%, WR −4.8%, TE −5%, QB −3%. At 30: RB −17%, WR −9.3%, TE −10%, QB −6%. At 31: RB −24%, WR −13.4%, TE −15%, QB −9%. At 32: RB −32%, WR −15%, TE −21%, QB −12%. Anyone 33 or older gets the age-33 discount: RB −34%, WR −18.6%, TE −23%, QB −14%</td><td>Older players at every position</td></tr>
+        <tr><td>Player is 29 or older</td><td>At 29: RB −9%, WR −4.8%, TE −5%, QB −2%. At 30: RB −17%, WR −9.3%, TE −10%, QB −3.5%. At 31: RB −24%, WR −13.4%, TE −15%, QB −4.2%. At 32: RB −32%, WR −15%, TE −21%, QB −5.5%. Anyone 33 or older gets the age-33 discount: RB −34%, WR −18.6%, TE −23%, QB −8%</td><td>Older players at every position</td></tr>
         <tr><td>3 or more starting WRs</td><td>×1.05</td><td>Wide receivers</td></tr>
         <tr><td>Your league's trade habits (15+ trades)</td><td>Up to ×0.925 to ×1.075, learned from your trades</td><td>QBs, RBs, WRs, TEs and picks, each separately</td></tr>
       </tbody>
@@ -1772,8 +1772,15 @@ function ageCurve(pos, age){                              // discount (0-1) on t
   const full = 1 - Math.max(AGE_FLOOR, Math.pow(1 - rate, yrs));
   return full * AGE_SCALE * (AGE_POS_SCALE[pos] ?? 1);
 }
+// Positions with a fully hand-set table: discount at each age, straight lines between ages, flat from 33 on
+const AGE_TABLE = { QB: { 28: 0, 29: 0.02, 30: 0.035, 31: 0.042, 32: 0.055, 33: 0.08 } };   // set by Pat
 function ageDiscount(pos, age){
   if (!age || age <= AGE_START) return 1;
+  const tbl = AGE_TABLE[pos];
+  if (tbl){
+    const a = Math.min(age, AGE_MAX), lo = Math.floor(a), hi = Math.min(AGE_MAX, lo + 1);
+    return 1 - (tbl[lo] + (tbl[hi] - tbl[lo]) * (a - lo));
+  }
   let d;
   if (age <= 31) d = ageCurve(pos, age);
   else {
@@ -1838,7 +1845,7 @@ function buildValues(){
     rules.push({ m: "League", t: `Your league's trade habits (${S.nudge.n} trades)`,
       d: parts.length ? parts.join(", ") + ". A light adjustment based on how your league has actually traded." : "Your league trades close to market value, so no adjustment was needed." });
   }
-  rules.push({ m: "Age", t: "Players 29 and older", d: "Value drops each year from 29 to 33, then holds. At 29: RB −9%, WR −4.8%, TE −5%, QB −3%. At 30: RB −17%, WR −9.3%, TE −10%, QB −6%. At 32: RB −32%, WR −15%, TE −21%, QB −12%. At 33 and older: RB −34%, WR −18.6%, TE −23%, QB −14%. An older player is worth less than a similar younger one." });
+  rules.push({ m: "Age", t: "Players 29 and older", d: "Value drops each year from 29 to 33, then holds. At 29: RB −9%, WR −4.8%, TE −5%, QB −2%. At 30: RB −17%, WR −9.3%, TE −10%, QB −3.5%. At 32: RB −32%, WR −15%, TE −21%, QB −5.5%. At 33 and older: RB −34%, WR −18.6%, TE −23%, QB −8%. An older player is worth less than a similar younger one." });
   S.rules = rules;
   for (const a of list){
     let m = S.nudge ? (S.nudge[a.pos] || 1) : 1;
