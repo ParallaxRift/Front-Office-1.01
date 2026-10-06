@@ -622,6 +622,49 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 .mc-freak{border-color:var(--ink);border-width:2px}
 .about .mode-compare + h2{margin-top:28px}
 
+/* Trade calculator on phones: one roster at a time, clearly labeled */
+.side-switch{display:none}
+.side-label{display:none}
+.bp-label{display:none}
+.bcol{min-width:0}
+@media (max-width:600px){
+  .side-switch{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:14px 0 0;position:sticky;top:0;z-index:6;background:var(--paper);padding:6px 0}
+  .side-switch button{display:flex;flex-direction:column;align-items:center;border:2px solid var(--line);background:var(--card);border-radius:12px;padding:6px 8px;font-family:var(--display);font-weight:800;font-size:19px;color:var(--muted);cursor:pointer}
+  .side-switch button small{font-family:var(--body);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+  .side-switch button em{font-style:normal}
+  .side-switch button i{font-style:normal;font-family:var(--body);font-weight:600;font-size:12px;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  /* scoreboard side labels match the switch colors */
+  .board .bside .side-label{display:block;background:none;padding:0;margin:0;font-family:var(--body);font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.04em}
+  .board .bside:first-child .side-label{color:#FF8A80}
+  .board .bside.right .side-label{color:#7BE0A6}
+  .toast{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+  .side-switch button[data-side=A][aria-selected=true]{border-color:var(--loss);color:var(--loss);background:var(--loss-soft)}
+  .side-switch button[data-side=B][aria-selected=true]{border-color:var(--field);color:var(--field);background:var(--field-soft)}
+  #sides{margin-top:8px}
+  #sides[data-show=A] .side[data-side=B],#sides[data-show=B] .side[data-side=A]{display:none}
+  .side-label{display:block;font-weight:700;font-size:14px;margin:0 0 8px;padding:6px 10px;border-radius:8px}
+  .side-label.send{background:var(--loss-soft);color:var(--loss)}
+  .side-label.get{background:var(--field-soft);color:var(--field)}
+  .bp-label{display:block;font-family:var(--display);font-weight:800;font-size:15px;text-transform:uppercase;letter-spacing:.04em;margin:2px 2px 6px}
+  .bp-label.send{color:var(--loss)}
+  .bp-label.get{color:var(--field)}
+  .bcol + .bcol{margin-top:6px;padding-top:8px;border-top:1px dashed var(--line)}
+  .bplayers .bitems:empty{display:block}
+  .bplayers .bitems:empty::after{content:"Nothing yet";display:block;color:var(--muted);font-size:13px;padding:4px 2px}
+}
+
+/* League name opens League Settings */
+.league-link{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:10px;flex-wrap:wrap;border-radius:8px}
+.league-link:focus-visible{outline:3px solid var(--field);outline-offset:3px}
+.league-link #leagueName{text-decoration:underline;text-decoration-color:transparent;text-underline-offset:6px;text-decoration-thickness:3px;transition:text-decoration-color .15s}
+.league-link:hover #leagueName,.league-link[aria-pressed=true] #leagueName{text-decoration-color:var(--field)}
+.ll-hint{display:inline-flex;align-items:center;gap:5px;font-family:var(--body);font-weight:600;font-size:13px;color:var(--field);border:1.5px solid var(--line);border-radius:999px;padding:3px 10px 3px 6px;background:var(--card);line-height:1.3}
+.ll-hint .fb{width:15px;height:15px;color:var(--field)}
+.league-link:hover .ll-hint{border-color:var(--field)}
+.league-link[aria-pressed=true] .ll-hint{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.league-link[aria-pressed=true] .ll-hint .fb{color:var(--gold)}
+@media (max-width:600px){.ll-hint{font-size:12px;padding:2px 8px 2px 5px}}
+
 /* Build notes */
 .notes{margin-top:18px}
 .notes-head{display:flex;align-items:center;gap:10px;margin-bottom:4px}
@@ -856,9 +899,8 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
   </section>
 
   <section class="leaguebar" id="leagueBar">
-    <div class="leaguehead"><span id="leagueAv"></span><div><div class="lname-row"><h2 id="leagueName"></h2><span class="champ-col"><span id="champSlot"></span></span></div><small id="myTeamLine"></small></div>
+    <div class="leaguehead"><span id="leagueAv"></span><div><div class="lname-row"><h2><button type="button" class="league-link" id="settingsBtn" aria-pressed="false" aria-controls="panel-settings" title="See this league's settings"><span id="leagueName"></span><span class="ll-hint" id="settingsIcon"></span></button></h2><span class="champ-col"><span id="champSlot"></span></span></div><small id="myTeamLine"></small></div>
       <div class="modebar" id="modeBar" hidden>
-        <button type="button" class="settings-btn" id="settingsBtn" aria-pressed="false" aria-controls="panel-settings"><span id="settingsIcon"></span>League settings</button>
         <div class="mode-toggle" id="modeToggle" role="radiogroup" aria-label="How much to show">
           <button type="button" role="radio" data-mode="basics" aria-checked="false">The Basics</button>
           <button type="button" role="radio" data-mode="freak" aria-checked="true">Freakshow</button>
@@ -890,22 +932,28 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
       <div class="track" aria-hidden="true"><div class="fill" id="fill" style="width:50%"></div><div class="mid"></div></div>
       <div class="vrow"><p class="verdict" id="verdict">Tap players and picks to build a trade.</p><p class="hint" id="hint"></p></div>
       <div class="bplayers" id="bPlayers" hidden>
-        <div class="bitems" id="sendItems"></div>
-        <div class="bitems" id="getItems"></div>
+        <div class="bcol"><div class="bp-label send">You send</div><div class="bitems" id="sendItems"></div></div>
+        <div class="bcol"><div class="bp-label get">You get</div><div class="bitems" id="getItems"></div></div>
       </div>
       <div class="brow">
         <div class="suggest" id="suggest"></div>
         <button type="button" class="reset-btn" id="resetTrade">Reset</button>
       </div>
     </div>
+    <div class="side-switch" id="sideSwitch" role="tablist" aria-label="Which side are you adding players to?">
+      <button type="button" role="tab" data-side="A" aria-selected="true"><small>Add to</small><span>You Send <em id="swCountA"></em></span><i id="swTeamA"></i></button>
+      <button type="button" role="tab" data-side="B" aria-selected="false"><small>Add to</small><span>You Get <em id="swCountB"></em></span><i id="swTeamB"></i></button>
+    </div>
     <div class="sides" id="sides" style="display:none">
-      <div class="side">
+      <div class="side" data-side="A">
+        <div class="side-label send">You send: tap your players to give them up</div>
         <div class="teamline"><span id="avA"></span><select id="teamA" aria-label="Your team"></select><span class="badge" id="badgeA"></span></div>
         <input type="search" class="browse-in" id="browseA" placeholder="Search all players and picks" aria-label="Search all players and picks" hidden>
         <div class="side-filter"><label for="posA">Show</label><select id="posA"><option value="EVERY">All players and picks</option><option value="ALL">Players only</option><option value="QB">Quarterbacks</option><option value="RB">Running backs</option><option value="WR">Wide receivers</option><option value="TE">Tight ends</option><option value="PICK">Draft picks</option></select></div>
         <div class="list" id="listA"></div>
       </div>
-      <div class="side">
+      <div class="side" data-side="B">
+        <div class="side-label get">You get: tap their players to ask for them</div>
         <div class="teamline"><span id="avB"></span><select id="teamB" aria-label="Trade partner"></select><span class="badge" id="badgeB"></span></div>
         <input type="search" class="browse-in" id="browseB" placeholder="Search all players and picks" aria-label="Search all players and picks" hidden>
         <div class="side-filter"><label for="posB">Show</label><select id="posB"><option value="EVERY">All players and picks</option><option value="ALL">Players only</option><option value="QB">Quarterbacks</option><option value="RB">Running backs</option><option value="WR">Wide receivers</option><option value="TE">Tight ends</option><option value="PICK">Draft picks</option></select></div>
@@ -1931,6 +1979,8 @@ function renderCalc(){
   $("sendItems").innerHTML = itemsHTML(S.sendIds, "send") + adjRow(bonusS, rb, S.getIds);
   $("getItems").innerHTML = itemsHTML(S.getIds, "get") + adjRow(bonusG, ra, S.sendIds).replace("them adding", "you adding");
   $("bPlayers").hidden = !S.sendIds.size && !S.getIds.size;
+  $("swCountA").textContent = S.sendIds.size ? `(${S.sendIds.size})` : ""; $("swCountB").textContent = S.getIds.size ? `(${S.getIds.size})` : "";
+  $("swTeamA").textContent = browseAll.A ? "All Players" : (tA?.name || ""); $("swTeamB").textContent = browseAll.B ? "All Players" : (tB?.name || "");
   $("resetTrade").disabled = !S.sendIds.size && !S.getIds.size;
   $("sendRaw").textContent = bonusS ? `+${fmt(bonusS)} value adjustment` : "";
   $("getRaw").textContent = bonusG ? `+${fmt(bonusG)} value adjustment` : "";
@@ -1981,10 +2031,24 @@ function renderCalc(){
   }
 }
 
+function isPhone(){ return window.matchMedia("(max-width:600px)").matches; }
+function addedNote(set, id, wasIn){
+  if (!isPhone()) return;
+  const a = S.assets.get(id); if (!a) return;
+  toast(wasIn ? `Removed ${a.name}` : `${a.name} added to ${set === S.sendIds ? "You Send" : "You Get"}`);
+}
 function toggle(set, e){
   const btn = e.target.closest(".asset"); if (!btn) return;
-  const id = btn.dataset.id; set.has(id) ? set.delete(id) : set.add(id); renderCalc();
+  const id = btn.dataset.id, wasIn = set.has(id);
+  wasIn ? set.delete(id) : set.add(id); renderCalc(); addedNote(set, id, wasIn);
 }
+// Phone: show one roster at a time, chosen with the You Send / You Get switch
+function setSideSwitch(side){
+  for (const b of $("sideSwitch").children) b.setAttribute("aria-selected", b.dataset.side === side);
+  $("sides").dataset.show = side;
+}
+$("sideSwitch").addEventListener("click", e => { const b = e.target.closest("button"); if (b) setSideSwitch(b.dataset.side); });
+setSideSwitch("A");
 $("listA").addEventListener("click", e => browseAll.A ? browseClick("A", e) : toggle(S.sendIds, e));
 $("resetTrade").addEventListener("click", () => { S.sendIds.clear(); S.getIds.clear(); renderCalc(); });
 $("board").addEventListener("click", e => {
@@ -2774,7 +2838,7 @@ function historyInsightsHTML(rid){
 }
 
 // League settings opens from the football button beside the league name (not a tab)
-$("settingsIcon").innerHTML = FOOTBALL;
+$("settingsIcon").innerHTML = FOOTBALL + "<span>League settings</span>";
 function openSettingsPanel(){
   for (const t of $("tabs").children) t.setAttribute("aria-selected", "false");
   for (const name of ["calc","finder","standings","trophy","history","feedback","scores","values","settings","strategy"]) $("panel-"+name).classList.toggle("on", name === "settings");
@@ -3264,8 +3328,9 @@ function browseClick(side, e){
   const a = S.assets.get(b.dataset.id); if (!a) return;
   const sel = $(side === "A" ? "teamA" : "teamB"), set = side === "A" ? S.sendIds : S.getIds;
   if (Number(sel.value) !== a.owner){ sel.value = a.owner; set.clear(); }
-  set.has(a.id) ? set.delete(a.id) : set.add(a.id);
-  renderCalc();
+  const wasIn = set.has(a.id);
+  wasIn ? set.delete(a.id) : set.add(a.id);
+  renderCalc(); addedNote(set, a.id, wasIn);
 }
 
 // ============================================================
