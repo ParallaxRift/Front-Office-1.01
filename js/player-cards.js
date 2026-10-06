@@ -194,7 +194,7 @@ async function openPlayerCard(pid){
   const owner = a?.owner != null ? S.teams.get(a.owner)?.name : "Free agent";
   const facts = [
     ["Age", a?.age ? ageText(a.age) : sp.age], ["Height", heightText(sp.height)], ["Weight", sp.weight ? sp.weight + " lb" : ""],
-    ["College", sp.college], ["Experience", expText(sp.years_exp)], ["Role", a ? roleText(a) : ""], ["Fantasy team", owner]
+    ["College", sp.college], ["Experience", expText(sp.years_exp)], ["Role", a ? roleText(a) : ""], ["Expert range", a && a.lo != null ? (valueRangeText(a).replace("Range ", "") || "Experts agree") : ""], ["Fantasy team", owner]
   ].filter(f => f[1] !== undefined && f[1] !== null && f[1] !== "");
   $("pcard").innerHTML = `<div class="pc" role="dialog" aria-modal="true" aria-labelledby="pcName">
     <button type="button" class="pc-close" aria-label="Close player card">×</button>
@@ -204,7 +204,7 @@ async function openPlayerCard(pid){
         <div class="pc-sub"><span>${esc(pos)}${sp.number ? " · #" + esc(sp.number) : ""}</span>
           ${team ? `<span><img src="https://sleepercdn.com/images/team_logos/nfl/${esc(team.toLowerCase())}.png" alt="" onerror="this.remove()"> ${esc(NFL_TEAMS[team] || team)}</span>` : `<span>Free agent</span>`}
           <span class="pc-tag ${lab ? lab[1] : sp.injury_status ? "o" : "h"}">${esc(lab ? lab[0] : sp.injury_status || "Healthy")}</span></div></div>
-      ${a ? `<div class="pc-val"><b>${fmt(a.value)}</b><small>${[a.lgPosRank ? pos + a.lgPosRank : "", a.lgRank ? "#" + a.lgRank + " overall" : ""].filter(Boolean).join(" · ")} in your league</small>${valueRangeText(a) ? `<small class="pc-range" title="Where most experts would put him: one spread of their rankings up or down. A wide range means experts disagree.">${valueRangeText(a)}</small>` : ""}</div>` : ""}
+      ${a ? `<div class="pc-val"><b>${fmt(a.value)}</b><small>${[a.lgPosRank ? pos + a.lgPosRank : "", a.lgRank ? "#" + a.lgRank + " overall" : ""].filter(Boolean).join(" · ")} in your league</small></div>` : ""}
     </header>
     <div class="pc-body">
       <dl class="pc-facts">${facts.map(([k, v]) => `<div${k === "Fantasy team" || k === "College" ? ' class="wide"' : ""}><dt>${esc(k)}</dt><dd>${k === "Fantasy team" && a?.owner != null ? `<span class="pc-ft">${teamPhoto(a.owner, "sm")}${esc(v)}</span>` : esc(v)}</dd></div>`).join("")}</dl>

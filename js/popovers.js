@@ -52,6 +52,7 @@ window.addEventListener("scroll", () => { if (popEl && Math.abs(window.scrollY -
 
 const COLUMN_INFO = {
   "col-league": ["This League", "The player's value in your league after all of Front Office's adjustments: scoring, lineup, trade habits, age and starter role. This is the number the calculator uses."],
+  "col-range": ["Expert Range", "Where most experts would put him: his value one spread of expert rankings up and down, with your league's adjustments applied. A wide range means experts disagree; no range means they mostly agree."],
   "col-market": ["Market", "The same player's value from the plain rankings, before any league adjustments. It shows what he'd be worth in a generic league."],
   "col-change": ["Change", "How far your league's value is from the market value. It stays blank when the difference is under 1%, so small moves don't clutter the table."]
 };

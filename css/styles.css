@@ -412,7 +412,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 .strk.l{background:var(--loss-soft);color:var(--loss)}
 
 /* Verdict with the hint beside it; suggestions sit under the players */
-.vrow{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 16px}
+.vrow{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px}
 .vrow .verdict,.vrow .hint{margin:0}
 .board .suggest{margin-top:10px}
 .board .suggest:empty{display:none}
@@ -1059,3 +1059,17 @@ th.sortable[aria-sort=ascending],th.sortable[aria-sort=descending]{color:var(--i
 .board .raw .rawsum{display:block;font-family:var(--body);font-weight:500;font-size:14px;opacity:.8;margin:3px 0 1px}
 .board .raw b{display:block;font-weight:700}
 .pc-val .pc-range{display:block;margin-top:2px;opacity:.85}
+/* Trade Analysis Breakdown: button beside the verdict, opens the reasoning */
+.ta-btn{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.08);color:inherit;border:1.5px solid rgba(255,255,255,.35);border-radius:8px;padding:6px 11px;font:inherit;font-size:14px;font-weight:600;cursor:pointer}
+.ta-btn[hidden]{display:none}
+.ta-btn:hover{background:rgba(255,255,255,.16)}
+.ta-btn .chev{transition:transform .15s}
+.ta-btn[aria-expanded=true] .chev{transform:rotate(180deg)}
+.ta-panel{margin:10px 0 0;padding:10px 14px;border-radius:10px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14)}
+.ta-panel[hidden]{display:none}
+.ta-list{list-style:none;margin:0;padding:0;display:grid;gap:7px}
+.ta-list li{display:grid;grid-template-columns:180px 1fr;gap:10px;font-size:14.5px;line-height:1.4}
+.ta-list b{font-weight:700}
+@media (max-width:600px){.ta-list li{grid-template-columns:1fr;gap:1px}}
+@media (prefers-color-scheme:dark){.ta-btn{border-color:rgba(0,0,0,.3);background:rgba(0,0,0,.05)}.ta-btn:hover{background:rgba(0,0,0,.1)}.ta-panel{background:rgba(0,0,0,.05);border-color:rgba(0,0,0,.12)}}
+.range-cell{color:var(--muted);font-size:14px}
