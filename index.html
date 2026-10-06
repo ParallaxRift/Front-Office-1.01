@@ -2417,10 +2417,10 @@ const INJURY_TIMES = [
   [/knee/, 1, 4, ""], [/ankle/, 1, 3, ""], [/foot/, 1, 4, ""], [/toe/, 1, 3, ""], [/elbow|wrist|forearm/, 1, 3, ""],
   [/hand|finger|thumb/, 0, 2, ""], [/illness|sick|flu/, 0, 1, ""]
 ];
-function returnEstimate(sp, news){
+function returnEstimate(sp, news, fpNow){
   const st = sp?.injury_status;
   if (!st || st === "Sus" || st === "NA" || st === "DNR") return null;
-  const text = [sp.injury_body_part, sp.injury_notes, ...(news || []).slice(0, 2).map(n => n[1] + " " + n[2])].filter(Boolean).join(" ").toLowerCase();
+  const text = [sp.injury_body_part, sp.injury_notes, fpNow?.inj, fpNow?.note, ...(news || []).slice(0, 2).map(n => n[1] + " " + n[2])].filter(Boolean).join(" ").toLowerCase();
   const wk = currentWeek(), inSeason = S.nflState?.season_type === "regular";
   const since = Date.parse((sp.injury_start_date || "") + (/^\d{4}-\d{2}-\d{2}$/.test(sp.injury_start_date || "") ? "T12:00:00" : ""));
   const out = isNaN(since) ? 0 : Math.max(0, Math.floor((Date.now() - since) / (7 * 864e5)));
@@ -2440,7 +2440,12 @@ function returnEstimate(sp, news){
     if (/surgery/.test(text)){ lo = Math.max(lo, 4); hi = Math.max(hi, 8); why.push("surgery adds time"); }
   }
   // 2) the designation sets a floor or ceiling
-  if (st === "Questionable"){ lo = 0; hi = Math.min(hi, 1); why.push("Questionable players usually play or miss one game"); }
+  const prob = fpNow && fpNow.prob !== "" && fpNow.prob != null ? Number(fpNow.prob) : NaN;
+  if (st === "Questionable" && !isNaN(prob)){
+    lo = 0; hi = prob >= 0.5 ? 0 : 1;
+    why.push(`FantasyPros gives him a ${Math.round(prob * 100)}% chance to play this week`);
+  }
+  else if (st === "Questionable"){ lo = 0; hi = Math.min(hi, 1); why.push("Questionable players usually play or miss one game"); }
   else if (st === "Doubtful"){ lo = 1; hi = Math.min(Math.max(hi, 1), 2); why.push("Doubtful players usually miss this week"); }
   else if (["IR", "PUP", "NFI"].includes(st) && lo < 99){ lo = Math.max(lo, 4); hi = Math.max(hi, 4); why.push(`${INJ_LABEL[st][0]} means at least 4 games`); }
   else if (st === "Out" || st === "COV"){ lo = Math.max(lo, 1); hi = Math.max(hi, 1); }
@@ -2449,8 +2454,8 @@ function returnEstimate(sp, news){
   // In words
   let head, sub;
   if (lo >= 99){ head = "Out for the season"; sub = "Expected back next season"; }
-  else if (hi === 0){ head = "Expected to play this week"; sub = ""; }
-  else if (st === "Questionable"){ head = "Game-time decision"; sub = "Most likely misses 0–1 games"; }
+  else if (hi === 0){ head = st === "Questionable" ? "Likely to play this week" : "Expected to play this week"; sub = !isNaN(prob) ? `${Math.round(prob * 100)}% chance of playing` : ""; }
+  else if (st === "Questionable"){ head = "Game-time decision"; sub = !isNaN(prob) ? `${Math.round(prob * 100)}% chance of playing; most likely misses 0–1 games` : "Most likely misses 0–1 games"; }
   else {
     const span = (a, b) => b > 8 ? (Math.round(a / 4.3) === Math.round(b / 4.3) ? `About ${Math.round(a / 4.3)} months` : `About ${Math.round(a / 4.3)}–${Math.round(b / 4.3)} months`)
       : a === b ? `About ${a} week${a === 1 ? "" : "s"}` : `About ${a}–${b} weeks`;
@@ -2461,7 +2466,7 @@ function returnEstimate(sp, news){
       sub = !inSeason ? "" : w1 === w2 ? `Likely back Week ${w1}` : `Likely back between Week ${w1} and ${w2 > 18 ? "the end of the season" : "Week " + w2}`;
     }
   }
-  const conf = why[0]?.startsWith("Reports") ? "Based on reported timeline" : "Rough estimate";
+  const conf = why[0]?.startsWith("Reports") ? "Based on reported timeline" : why.some(w => w.startsWith("FantasyPros gives")) ? "Based on FantasyPros' odds" : "Rough estimate";
   return { head, sub, why: why.join("; ") + ".", conf };
 }
 function currentStatus(sp, rec, news){
@@ -2474,17 +2479,21 @@ function currentStatus(sp, rec, news){
   const cls = lab && lab[1] === "q" ? "warn" : "hurt";
   const sinceT = Date.parse((sp.injury_start_date || "") + "T12:00:00");
   const days = isNaN(sinceT) ? null : Math.max(0, Math.round((Date.now() - sinceT) / 864e5));
-  const practice = [sp.practice_participation, sp.practice_description].filter(Boolean).join(": ");
+  const fp = rec?.c;
+  const PRAC = { dnp: "Did not practice", limit: "Limited", limited: "Limited", full: "Full" };
+  const pr = x => PRAC[String(x).toLowerCase()] || x;
+  const practice = fp?.prac?.length ? fp.prac.map(pr).join(" → ") : [sp.practice_participation, sp.practice_description].filter(Boolean).join(": ");
+  const chance = fp && fp.prob !== "" && fp.prob != null && !isNaN(Number(fp.prob)) ? `${Math.round(Number(fp.prob) * 100)}%` : "";
   const part = (sp.injury_body_part || "").toLowerCase();
   const past = part ? (rec?.i || []).filter(r => r[0] < (Number(S.nflState?.season) || 9999) && r[1].toLowerCase().includes(part)).length : 0;
   const thisSeason = (rec?.i || []).filter(r => r[0] === (Number(S.nflState?.season) || 0)).reduce((t, r) => t + r[4] + (r[7] || 0), 0);
   const rows = [
-    ["Designation", label], ["Details", sp.injury_notes],
+    ["Designation", label], ["Details", sp.injury_notes], ["Chance of playing", chance], ["Team report", fp?.note],
     ["Since", sp.injury_start_date ? `${dateText(sp.injury_start_date)}${days != null ? ` (${days === 0 ? "today" : days === 1 ? "1 day ago" : days + " days ago"})` : ""}` : ""],
-    ["Practice", practice], ["Missed this season", thisSeason ? `${thisSeason} week${thisSeason > 1 ? "s" : ""}` : ""],
+    ["Practice this week", practice], ["Missed this season", thisSeason ? `${thisSeason} week${thisSeason > 1 ? "s" : ""}` : ""],
     ["History", past ? `Listed with a ${sp.injury_body_part.toLowerCase()} injury in ${past} earlier season${past > 1 ? "s" : ""}` : ""]
   ].filter(r => r[1]);
-  const est = returnEstimate(sp, news);
+  const est = returnEstimate(sp, news, fp);
   return `<div class="pc-status ${cls}"><b>${esc(label)}${sp.injury_body_part ? " · " + esc(sp.injury_body_part) : ""}</b>
     <dl class="pc-inj">${rows.slice(1).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl>
     ${est ? `<div class="pc-est"><small>Estimated time out</small><b>${esc(est.head)}</b>${est.sub ? `<span>${esc(est.sub)}</span>` : ""}<p>${esc(est.conf)}: ${esc(est.why)} This is Front Office's estimate, not a team report.</p></div>` : ""}
@@ -2532,7 +2541,7 @@ async function openPlayerCard(pid){
   const rec = { s: [...bySeason.values()].sort((x, y) => x[0] - y[0]), i: rec0?.i || [] };
   const season = liveSeasonYear();
   $("pcStats").innerHTML = data || live.ok ? statsTable(rec, pos, season) : `<p class="empty">Stats aren't available right now. Try again in a minute.</p>`;
-  $("pcNow").innerHTML = currentStatus(sp, rec, rec0?.n || []);
+  $("pcNow").innerHTML = currentStatus(sp, { ...rec, c: rec0?.c }, rec0?.n || []);
   $("pcInj").innerHTML = !data ? `<p class="empty">Injury history isn't available right now. Try again in a minute.</p>`
     : !(data.fp_injury_seasons || []).length ? `<p class="empty">Injury history from FantasyPros will appear after the next daily update.</p>` : injuryTable(rec);
 }
