@@ -332,6 +332,11 @@ function buildValues(){
   if ((S.curveB && Math.abs(S.curveB - 1) >= 0.01) || (S.curveT && Math.abs(S.curveT - 1) >= 0.01)) rules.push({ m: "Curve", t: "Value curve fit to your league's trades",
     d: [S.curveB && Math.abs(S.curveB - 1) >= 0.01 ? (S.curveB < 1 ? "Your league pays a bigger premium for elite players than the standard curve." : "Your league keeps more value in good starters than the standard curve.") : "",
         S.curveT && Math.abs(S.curveT - 1) >= 0.01 ? (S.curveT > 1 ? "Players past the top 60 fall off faster in your league." : "Players past the top 60 hold more value in your league.") : ""].filter(Boolean).join(" ") });
+  if (S.depth){
+    const d = S.depth, base = DEPTH_FLOOR + (1 - DEPTH_FLOOR) * Math.pow(0.5, DEPTH_CURVE), now = d.floor + (1 - d.floor) * Math.pow(0.5, d.curve);
+    rules.push({ m: "Depth", t: "Value adjustment fit to your league's trades",
+      d: `From ${S.depthFit.n} trades with 2+ pieces on a side. A piece half as valuable as the top piece now keeps ${Math.round(now * 100)}% of its value (default ${Math.round(base * 100)}%), so your league ${now > base ? "gives depth more credit" : "pays more of a premium for stars"} than the default.` });
+  }
   if (S.nudge){
     const parts = ["QB","RB","WR","TE","PICK"].filter(k => Math.abs(S.nudge[k]-1) >= 0.005)
       .map(k => `${k === "PICK" ? "Picks" : k + "s"} ×${r2(S.nudge[k])}`);

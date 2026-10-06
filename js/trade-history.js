@@ -83,10 +83,13 @@ async function loadHistory(league){
     const age = fitAge(trades), ageChanged = age.s !== (S.ageStrength ?? 1);
     S.ageStrength = age.s; S.ageFit = age.n ? age : null;
     if (ageChanged) buildValues();
+    const dfit = fitDepth(trades), depthChanged = JSON.stringify(dfit.depth) !== JSON.stringify(S.depth);
+    S.depth = dfit.depth; S.depthFit = dfit;
+    if (depthChanged) buildValues();
     const nudge = learnNudge(trades);
     if (nudge){ S.nudge = nudge; buildValues(); }
     S.accuracy = tradeAccuracy(trades);
-    if (nudge || curveChanged || ageChanged) rerenderKeepingPlace();
+    if (nudge || curveChanged || ageChanged || depthChanged) rerenderKeepingPlace();
     else { renderHistory(); renderStrategy(); renderTuningLight(); }
     if (typeof renderSettings === "function" && S.cfg) renderSettings();
     updatePickOdds();
@@ -222,6 +225,33 @@ function fitAge(trades){
   for (let st = AGE_FIT_MIN; st <= AGE_FIT_MAX + 1e-9; st += 0.25){ const e = errFor(st); if (e < bestErr - 1e-9){ best = st; bestErr = e; } }
   const w = Math.min(0.7, shrinkWeight(nEff));
   return { s: Math.round((1 + w * (best - 1)) * 1000) / 1000, best, weight: w, n: recent.length, nEff: Math.round(nEff * 10) / 10 };
+}
+// ---------- Fit the value adjustment to this league's trades ----------
+// The value adjustment's three settings (how much an extra piece keeps at minimum, how fast that
+// rises as it gets closer to the top piece, and the extra discount against elite pieces) start as
+// hand-set defaults. Trades where at least one side sends 2+ pieces show how this league really
+// prices depth against stars, so Front Office tests a grid of settings and leans toward the one that
+// makes those trades balance best, by the same evidence weight as the curve fit (at most 60%).
+const DEPTH_GRID = { floor: [0.3, 0.4, 0.5, 0.6], curve: [0.4, 0.6, 0.8, 1.0], star: [0, 0.12, 0.24] };
+function fitDepth(trades){
+  const multi = trades.filter(t => t.sides.length >= 2 && t.sides.some(sd => sd.gets.length >= 2));
+  const base = { floor: DEPTH_FLOOR, curve: DEPTH_CURVE, star: STAR_EXTRA };
+  if (multi.length < NUDGE_MIN_TRADES) return { depth: null, n: multi.length };
+  const tw = new Map(multi.map(t => [t, tradeWeight(t) * outlierWeight(t)]));
+  const nEff = [...tw.values()].reduce((x, y) => x + y, 0);
+  // each side's received and sent values, worked out once (values don't change between candidates)
+  const rows = multi.flatMap(t => { const g = gradeTrade(t); return g.sides.map(x => ({ w: tw.get(t), got: x.items.map(i => i.value), gave: x.sentItems.map(i => i.value) })).filter(r => r.got.length && r.gave.length); });
+  const was = S.depth;
+  const errFor = d => { S.depth = d; let e = 0; for (const r of rows){ const a = tradeValue(r.got, r.gave), b = tradeValue(r.gave, r.got); if (a + b > 0) e += r.w * ((a - b) / (a + b)) ** 2; } return e; };
+  let best = base, bestErr = errFor(base);
+  for (const floor of DEPTH_GRID.floor) for (const curve of DEPTH_GRID.curve) for (const star of DEPTH_GRID.star){
+    const d = { floor, curve, star }, e = errFor(d); if (e < bestErr - 1e-9){ best = d; bestErr = e; }
+  }
+  S.depth = was;
+  const w = Math.min(0.6, shrinkWeight(nEff)), mix = k => Math.round((base[k] + w * (best[k] - base[k])) * 1000) / 1000;
+  const depth = { floor: mix("floor"), curve: mix("curve"), star: mix("star") };
+  const same = Object.keys(base).every(k => Math.abs(depth[k] - base[k]) < 0.005);
+  return { depth: same ? null : depth, best, weight: w, n: multi.length, nEff: Math.round(nEff * 10) / 10 };
 }
 // ---------- Accuracy check ----------
 // How far apart the two sides of your league's real trades come out, on average, using Front Office's

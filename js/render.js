@@ -147,6 +147,8 @@ const DEPTH_FLOOR = 0.4, DEPTH_CURVE = 0.6;
 //  - discounts less for extra pieces that would crack the receiving team's starting lineup,
 //  - charges less for roster spots when the receiving team actually has open spots.
 const STAR_EXTRA = 0.12;      // up to 12% more depth discount against an elite piece
+// These three are the defaults; with enough trades they're fit to the league's own trades (S.depth)
+const depthSettings = () => S.depth || { floor: DEPTH_FLOOR, curve: DEPTH_CURVE, star: STAR_EXTRA };
 // (Team-specific relief for pieces that would start, and cheaper roster spots for teams with open
 // spots, were removed from the grade: trades are graded on league market value only.)
 function teamOpenSpots(rid){
@@ -180,7 +182,8 @@ function tradeValue(getVals, giveVals){
   const starness = Math.max(0, Math.min(1, (ref - eliteLine * 0.75) / (10000 - eliteLine * 0.75)));
   const contrib = [{ c: best, w: 1 }];
   for (let i = 1; i < v.length; i++){
-    const w = (DEPTH_FLOOR + (1 - DEPTH_FLOOR) * Math.pow(Math.min(1, v[i] / ref), DEPTH_CURVE)) * (1 - STAR_EXTRA * starness);
+    const D = depthSettings();
+    const w = (D.floor + (1 - D.floor) * Math.pow(Math.min(1, v[i] / ref), D.curve)) * (1 - D.star * starness);
     contrib.push({ c: v[i] * w, w });
   }
   // The roster-spot charge is the waiver level on the same discounted scale as the piece, so a piece
@@ -282,12 +285,12 @@ function renderCalc(){
   const adjRow = (n, fromRid, exclude) => {
     if (n < 1) return "";
     const eqA = equivalent(n, fromRid, exclude);
-    return `<div class="badj"><span><span>Value adjustment<button type="button" class="info-btn" data-info="adjust" aria-label="What is the value adjustment?">?</button></span>${eqA ? `<small class="badj-eq">About the same as them adding ${esc(eqA.name)}${injTag(eqA.pid)} (${fmt(eqA.value)})</small>` : ""}</span><b>+${fmt(n)}</b></div>`;
+    return `<div class="badj"><span><span>Value adjustment<button type="button" class="info-btn" data-info="adjust" aria-label="What is the value adjustment?">?</button></span>${eqA ? `<small class="badj-eq" title="A player with a market value close to the adjustment. Position and roster fit still matter, so it's a starting point, not an exact match.">Approximate balancing piece: ${esc(eqA.name)}${injTag(eqA.pid)} (${fmt(eqA.value)})</small>` : ""}</span><b>+${fmt(n)}</b></div>`;
   };
   // bonus on your side = the other team (rb) would need to add; bonus on their side = you (ra) would
   const faabRow = (amt, val, side) => amt > 0 ? `<div class="bitem faab-item"><span class="bi-link"><span class="faab-ico" aria-hidden="true">$</span><span class="bi-text"><b>$${fmt(amt)} FAAB</b><small>waiver budget</small></span></span><span class="bi-val">${fmt(val)}</span><button type="button" class="bi-x" data-faab="${side}" aria-label="Remove FAAB">✕</button></div>` : "";
   $("sendItems").innerHTML = itemsHTML(S.sendIds, "send") + faabRow(S.faab.send, fS, "send") + adjRow(bonusS, rb, S.getIds);
-  $("getItems").innerHTML = itemsHTML(S.getIds, "get") + faabRow(S.faab.get, fG, "get") + adjRow(bonusG, ra, S.sendIds).replace("them adding", "you adding");
+  $("getItems").innerHTML = itemsHTML(S.getIds, "get") + faabRow(S.faab.get, fG, "get") + adjRow(bonusG, ra, S.sendIds);
   $("bPlayers").hidden = !S.sendIds.size && !S.getIds.size && !S.faab.send && !S.faab.get;
   $("faabSend").value = S.faab.send || ""; $("faabGet").value = S.faab.get || "";
   $("swCountA").textContent = S.sendIds.size ? `(${S.sendIds.size})` : ""; $("swCountB").textContent = S.getIds.size ? `(${S.getIds.size})` : "";

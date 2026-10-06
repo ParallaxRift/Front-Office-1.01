@@ -159,6 +159,16 @@ async function openLeague(browser, viewport, opts){
     // Manager habits are learned from trade history
     const habits = await page.evaluate(() => { const m = managerHabits(); return [...m.values()].filter(h => h.trades > 0).length; });
     check('manager trade habits are learned from history', habits > 0, `${habits} managers with trades`);
+    // The value adjustment's depth settings fit to trades in the right direction
+    const dir = await page.evaluate(() => { const ps = [...S.assets.values()].filter(a => a.kind === 'player').sort((x, y) => y.value - x.value);
+      const fitFor = mult => { const trades = [];
+        for (let i = 0; i < 40; i++){ const star = ps[i % 20], pool = ps.filter(a => a !== star && a.value < star.value * 0.8), target = star.value * mult / 2;
+          const a = pool.reduce((b, c) => Math.abs(c.value - target) < Math.abs(b.value - target) ? c : b), rest = star.value * mult - a.value;
+          const c2 = pool.filter(x => x !== a).reduce((b, c) => Math.abs(c.value - rest) < Math.abs(b.value - rest) ? c : b);
+          trades.push({ created: Date.now() - i * 864e5, sides: [{ rid: 1, owner: 'x', gets: [{ kind: 'player', pid: star.pid, from: 2 }] }, { rid: 2, owner: 'y', gets: [{ kind: 'player', pid: a.pid, from: 1 }, { kind: 'player', pid: c2.pid, from: 1 }] }] }); }
+        return fitDepth(trades).depth; };
+      const lo = fitFor(1.05), hi = fitFor(1.45); return lo && hi && lo.floor > hi.floor ? 'ok' : JSON.stringify({ lo, hi }); });
+    check('value adjustment fits to how a league prices depth vs. stars', dir === 'ok', dir);
     check('desktop: no script errors during checks', !page.errors.length, page.errors.slice(0, 3).join(' | '));
     await page.close();
   } catch (e){ check('test run finished', false, e.message.split('\n')[0]); }
