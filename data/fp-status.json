@@ -1,5 +1,5 @@
 {
- "checked": "2026-10-06T13:50:50+00:00",
+ "checked": "2026-10-06T14:57:38+00:00",
  "key_present": true,
  "calls": 3,
  "rate_limited": 0,
@@ -16,7 +16,7 @@
    "url": "https://api.fantasypros.com/public/v2/json/nfl/news?category=injury&limit=500",
    "status": 200,
    "records": 6,
-   "sample": "{\"id\": 612458, \"created\": \"2026-10-06 13:35:44\", \"created_formated\": \"Tue, Oct 6th 1:35pm UTC\", \"author\": \"Nate Miller\", \"player_id\": 17233, \"team_id\": \"BAL\", \"title\": \"Lamar Jackson (ankle) unlikely to play in Week 5\", \"sport_id\": \"NFL\", \"categories\": [\"Commentary\", \"News\", \"Injury\", \"Breaking\"], \""
+   "sample": "{\"id\": 612459, \"created\": \"2026-10-06 14:43:58\", \"created_formated\": \"Tue, Oct 6th 2:43pm UTC\", \"author\": \"Nate Miller\", \"player_id\": 17279, \"team_id\": \"IND\", \"title\": \"Arden Key (hamstring) to miss a few weeks \", \"sport_id\": \"NFL\", \"categories\": [\"Commentary\", \"News\", \"Injury\"], \"link\": \"https://ww"
   }
  ],
  "seasons": {
@@ -27,5 +27,5 @@
   2026
  ],
  "players_with_this_week": 178,
- "news_matched": 3
+ "news_matched": 2
 }
