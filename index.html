@@ -508,6 +508,9 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 .status-key dl{display:grid;grid-template-columns:auto 1fr;gap:10px 14px;margin:0;align-items:start}
 .status-key dt{margin:0;padding-top:1px}
 .status-key dd{margin:0;font-size:15px}
+.status-key .note,.status-key .note.sec-sub{max-width:none;font-size:14px;line-height:1.5;text-wrap:pretty}
+.status-key .note.sec-sub{margin:2px 0 14px}
+.status-key .key-foot{margin:14px 0 0;padding-top:12px;border-top:1px solid var(--line)}
 .pw-bar{display:inline-block;height:8px;border-radius:4px;background:var(--field);vertical-align:middle;margin-left:8px}
 .luck{font-size:13px;font-weight:700}
 .luck.up{color:var(--field)}.luck.down{color:var(--loss)}
@@ -1157,7 +1160,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
         <dt><span class="badge b-middle">Middle</span></dt><dd><b>The middle third.</b> Close enough to push for a title or start a retool. Strategy picks a direction from the roster's age and draft picks: young or pick-rich teams lean toward building, older ones toward pushing in.</dd>
         <dt><span class="badge b-rebuild">Rebuilding</span></dt><dd><b>The weakest third.</b> Better served building for future seasons. Recommendations favor young players and draft picks, and suggest selling veterans before they lose value.</dd>
       </dl>
-      <p class="note" style="margin:10px 0 0">Statuses update automatically whenever rosters or values change. They describe roster strength, not a team's record, so a strong roster off to a slow start is still a Contender.</p>
+      <p class="note key-foot">Statuses update automatically whenever rosters or values change. They describe roster strength, not a team's record, so a strong roster off to a slow start is still a Contender.</p>
     </div>
   </section>
 
