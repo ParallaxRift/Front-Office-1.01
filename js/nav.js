@@ -7,14 +7,15 @@
 // The section bar picks a section; the row under it (only when a section has more
 // than one tab) picks the tab inside it. The tab buttons themselves are unchanged,
 // so every other part of the site still opens a tab the same way.
-// Feedback & Build Notes moved to the footer.
+// Feedback & Build Notes is its own section (and also linked from the footer).
 // ============================================================
 const NAV_GROUPS = [
   { id: "trade",  label: "Trade Tools",   tabs: ["calc", "finder", "history"], always: "calc" },
   { id: "values", label: "Player Values", tabs: ["values"] },
   { id: "team",   label: "My Team",       tabs: ["strategy"] },
-  { id: "league", label: "League Locker", tabs: ["standings", "trophy", "scores"] },
-  { id: "more",   label: "Feedback",      tabs: ["feedback"], footer: true }
+  { id: "league", label: "League Locker", tabs: ["standings", "trophy"] },
+  { id: "scores", label: "Live Scores",   tabs: ["scores"] },
+  { id: "more",   label: "Feedback & Build Notes", tabs: ["feedback"] }
 ];
 const navGroupOf = tab => NAV_GROUPS.find(g => g.tabs.includes(tab));
 const navTab = tab => $("tabs").querySelector(`[data-tab="${tab}"]`);
@@ -38,6 +39,7 @@ function syncNav(){
   $("tabs").classList.toggle("single", !active || visibleIn(active).length < 2);
   const fb = navTab("feedback");
   $("footFeedback").hidden = !S.league || !fb || fb.hidden;
+  const fbBtn = $("groups").querySelector('[data-group="more"]'); if (fbBtn) fbBtn.classList.add("group-notes");
 }
 $("groups").addEventListener("click", e => {
   const b = e.target.closest(".group"); if (!b) return;

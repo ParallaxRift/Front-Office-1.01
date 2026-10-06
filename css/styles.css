@@ -1162,3 +1162,7 @@ body:not(.has-league) .side-switch,body:not(.has-league) #miniBar{display:none!i
 .board .vrow{margin:14px 0 4px;justify-content:center}
 .board .vrow .verdict{text-align:center;width:100%}
 @media (max-width:600px){.board .tm-grid{column-gap:12px}.board .tm-grid > div:not(.tm-lbl):not(.tm-head){font-size:22px!important}.board .tm-grid div.tot:not(.tm-lbl){font-size:28px!important}.board .tm-lbl{font-size:11.5px!important}}
+.group.group-notes{font-style:italic}
+/* Selected sub-tab: green gradient (desktop and phone) */
+.tabs .tab[aria-selected=true]{background:linear-gradient(135deg,#1E6B47 0%,#2FA36B 100%)!important;color:#fff!important;border-color:transparent!important;border-radius:8px!important;box-shadow:0 2px 8px rgba(30,107,71,.25)}
+.tabs .tab{border-radius:8px}

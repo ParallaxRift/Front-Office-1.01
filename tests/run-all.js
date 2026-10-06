@@ -48,8 +48,7 @@ async function openLeague(browser, viewport, opts){
         for (const t of tabs){
           const before = page.errors.length;
           const group = await page.evaluate(t => navGroupOf(t).id, t);
-          if (group === 'more') await page.click('#footFeedback').catch(() => bad.push(`${t} footer link missing`));
-          else {
+          {
             await page.click(`#groups [data-group="${group}"]`).catch(() => bad.push(`${t} section button missing`));
             if (await page.$eval(`[data-tab="${t}"]`, e => e.offsetParent !== null)) await page.click(`[data-tab="${t}"]`);
           }
