@@ -1,98 +1,55 @@
 # ============================================================
-# Front Office: daily FantasyPros value update
+# Front Office: daily player card data (career stats + injury history)
 #
-# Runs on GitHub Actions once a day. It:
-#   1. Downloads FantasyPros dynasty rankings (1QB and Superflex)
-#   2. Turns each ranking into a 0-10,000 value
-#   3. Fills in deeper players from DynastyProcess if the
-#      FantasyPros list is short (the free key returns partial data)
-#   4. Saves everything to data/values.json for the website
+# Runs on GitHub Actions right after update_values.py. It:
+#   1. Downloads Sleeper's player list (to know every QB, RB, WR and TE)
+#   2. Downloads Sleeper's season stats for every season since 2012
+#      (one request per season; past seasons are saved and not downloaded again)
+#   3. Downloads FantasyPros injury reports, week by week, with your API key
+#   4. Saves everything to data/players.json for the player cards
 #
-# Your API key is NOT in this file. GitHub passes it in from the
-# secret named FANTASYPROS_API_KEY.
+# The website also asks Sleeper for stats live when a card opens; this file is
+# the backup if Sleeper is slow, and the only source for injury history.
+#
+# Your API key is NOT in this file. GitHub passes it in from the secret
+# named FANTASYPROS_API_KEY.
 # ============================================================
-import csv
-import io
 import json
-import math
 import os
-import sys
-import urllib.parse
+import time
+import urllib.error
 import urllib.request
+from collections import defaultdict
 from datetime import datetime, timezone
 
 # ---------- Settings you can tweak ----------
-SEASON = datetime.now(timezone.utc).year
-BASE = f"https://api.fantasypros.com/public/v2/json/nfl/{SEASON}/consensus-rankings"
+FIRST_SEASON = 2012              # oldest season of stats to include
+SLEEPER_PLAYERS = "https://api.sleeper.app/v1/players/nfl"
+SLEEPER_SEASON = "https://api.sleeper.app/v1/stats/nfl/regular/{season}"
 
-# Query settings for each list. If the first test run shows these
-# aren't right, only this section needs to change.
-QUERY_1QB = {"type": "dynasty", "scoring": "PPR", "position": "ALL"}
-QUERY_SF = {"type": "dynasty", "scoring": "PPR", "position": "OP"}
+FP_FIRST_SEASON = 2015           # oldest season of FantasyPros injury reports to try
+FP_WEEKS = 18
+FP_URLS = [   # tried in order until one works; the log shows which
+    "https://api.fantasypros.com/public/v2/json/nfl/{season}/injuries?week={week}",
+    "https://api.fantasypros.com/public/v2/json/nfl/injuries?season={season}&week={week}",
+]
 
-CURVE = 0.0125      # how fast value drops by rank (rank 1 = 10,000, rank 100 ≈ 2,900)
-DP_CSV = "https://raw.githubusercontent.com/dynastyprocess/data/master/files/values-players.csv"
-OUTPUT = os.path.join(os.path.dirname(__file__), "..", "data", "values.json")
+HERE = os.path.dirname(__file__)
+OUTPUT = os.path.join(HERE, "..", "data", "players.json")
+STATS_CACHE = os.path.join(HERE, "..", "data", "season-stats")
+FP_CACHE = os.path.join(HERE, "..", "data", "fp-injuries")
 # ---------------------------------------------
 
+POSITIONS = ("QB", "RB", "WR", "TE")
+now = datetime.now(timezone.utc)
+CURRENT = now.year if now.month >= 8 else now.year - 1      # NFL season starts in September
 API_KEY = os.environ.get("FANTASYPROS_API_KEY", "").strip()
-if not API_KEY:
-    sys.exit("No API key found. Add a repository secret named FANTASYPROS_API_KEY.")
 
 
-EXPERTS = {}  # how many experts contributed to each list, shown on the website
-
-
-def fetch_fp(query, label):
-    """Ask FantasyPros for one rankings list and print a summary for the log."""
-    url = BASE + "?" + urllib.parse.urlencode(query)
-    req = urllib.request.Request(url, headers={"x-api-key": API_KEY, "Accept": "application/json"})
-    try:
-        with urllib.request.urlopen(req, timeout=60) as r:
-            data = json.loads(r.read())
-    except urllib.error.HTTPError as e:
-        body = e.read().decode("utf-8", "replace")[:300]
-        print(f"[{label}] FantasyPros returned an error {e.code}: {body}")
-        return []
-    except Exception as e:
-        print(f"[{label}] Could not reach FantasyPros: {e}")
-        return []
-
-    players = data.get("players") if isinstance(data, dict) else data
-    players = players or []
-    if isinstance(data, dict):
-        try:
-            EXPERTS[label] = int(data.get("total_experts") or 0)
-        except (TypeError, ValueError):
-            pass
-        print(f"[{label}] Experts in this consensus: {EXPERTS.get(label, 'unknown')}")
-    print(f"[{label}] Request: {query}")
-    print(f"[{label}] Top-level fields: {list(data.keys()) if isinstance(data, dict) else 'list'}")
-    print(f"[{label}] Players returned: {len(players)}")
-    if players:
-        print(f"[{label}] Fields on each player: {sorted(players[0].keys())}")
-        sample = [f"{p.get('rank_ecr')}. {p.get('player_name')} ({p.get('player_position_id') or p.get('position')})" for p in players[:5]]
-        print(f"[{label}] First five: {sample}")
-    return players
-
-
-def to_value(rank):
-    return round(10000 * math.exp(-CURVE * (rank - 1)))
-
-
-def position_of(p):
-    pos = p.get("player_position_id") or p.get("position") or p.get("pos") or ""
-    pos = str(pos).upper()
-    return "".join(ch for ch in pos if ch.isalpha())[:2] or pos
-
-
-def rank_of(p, fallback):
-    for k in ("rank_ecr", "ecr", "rank"):
-        try:
-            return float(p[k])
-        except (KeyError, TypeError, ValueError):
-            continue
-    return float(fallback)
+def get_json(url, headers=None):
+    req = urllib.request.Request(url, headers={"Accept": "application/json", "User-Agent": "front-office", **(headers or {})})
+    with urllib.request.urlopen(req, timeout=120) as r:
+        return json.loads(r.read())
 
 
 def norm(name):
@@ -101,99 +58,205 @@ def norm(name):
     return " ".join("".join(ch for ch in w if ch.isalpha()) for w in words).strip()
 
 
-# ---------- 1) Download both lists ----------
-one_qb = fetch_fp(QUERY_1QB, "1QB")
-superflex = fetch_fp(QUERY_SF, "Superflex")
+# ---------- 1) Who are the players? ----------
+try:
+    sleeper = get_json(SLEEPER_PLAYERS)
+except Exception as e:
+    raise SystemExit(f"Couldn't download Sleeper's player list ({e}), so players.json was left unchanged.")
+skill = {pid: p for pid, p in sleeper.items() if p.get("position") in POSITIONS}
+by_name = {}
+for pid, p in skill.items():
+    nm = p.get("full_name") or f"{p.get('first_name', '')} {p.get('last_name', '')}"
+    key = norm(nm) + "|" + p["position"]
+    # prefer the player who is on a team (two players can share a name)
+    if key not in by_name or (p.get("team") and not skill[by_name[key]].get("team")):
+        by_name[key] = pid
+print(f"{len(skill)} QBs, RBs, WRs and TEs on Sleeper")
 
-if not one_qb:
-    sys.exit("No 1QB rankings came back, so values.json was left unchanged.")
+players = defaultdict(lambda: {"s": [], "i": []})
 
-# ---------- 2) Build values ----------
-players = {}
-for i, p in enumerate(one_qb, start=1):
-    name, pos = p.get("player_name"), position_of(p)
-    if not name or pos not in ("QB", "RB", "WR", "TE"):
-        continue
-    key = norm(name) + "|" + pos
-    players.setdefault(key, {
-        "name": name, "pos": pos, "team": p.get("player_team_id") or p.get("team") or "",
-        "rank_1qb": rank_of(p, i), "value_1qb": to_value(rank_of(p, i)),
-    })
-
-if superflex:
-    floor_1qb = min(p["value_1qb"] for p in players.values())
-    sf_only = 0
-    for i, p in enumerate(superflex, start=1):
-        name, pos = p.get("player_name"), position_of(p)
-        if not name or pos not in ("QB", "RB", "WR", "TE"):
+# ---------- 2) Season stats from Sleeper ----------
+os.makedirs(STATS_CACHE, exist_ok=True)
+for y in range(FIRST_SEASON, CURRENT + 1):
+    path = os.path.join(STATS_CACHE, f"{y}.json")
+    if y < CURRENT and os.path.exists(path):
+        with open(path, encoding="utf-8") as f:
+            season = json.load(f)
+    else:
+        try:
+            raw = get_json(SLEEPER_SEASON.format(season=y))
+        except Exception as e:
+            print(f"{y}: couldn't download stats ({e})")
             continue
-        key = norm(name) + "|" + pos
-        if key not in players:
-            # Ranked in Superflex but not in 1QB (usually depth QBs): keep them,
-            # with a 1QB value just below the last 1QB-ranked player
-            players[key] = {"name": name, "pos": pos, "team": p.get("player_team_id") or p.get("team") or "",
-                            "value_1qb": round(floor_1qb * 0.99)}
-            sf_only += 1
-        players[key]["rank_sf"] = rank_of(p, i)
-        players[key]["value_2qb"] = to_value(rank_of(p, i))
-    print(f"Added {sf_only} players ranked only in the Superflex list.")
-    sf_source = "FantasyPros Superflex rankings"
+        season = {}
+        for pid, x in (raw or {}).items():
+            if pid not in skill or not isinstance(x, dict) or not x.get("gp"):
+                continue
+            v = lambda k: round(float(x.get(k) or 0), 1)
+            # [games, cmp, att, pass yds, pass td, int, carries, rush yds, rush td,
+            #  targets, rec, rec yds, rec td, fumbles lost, PPR fantasy points]
+            season[pid] = [v("gp"), v("pass_cmp"), v("pass_att"), v("pass_yd"), v("pass_td"), v("pass_int"),
+                           v("rush_att"), v("rush_yd"), v("rush_td"), v("rec_tgt"), v("rec"), v("rec_yd"),
+                           v("rec_td"), v("fum_lost"), v("pts_ppr")]
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(season, f, separators=(",", ":"))
+        time.sleep(0.5)
+    for pid, row in season.items():
+        # [season, team, ...stats]; team is filled in live by the website
+        players[pid]["s"].append([y, ""] + [int(n) if n == int(n) else n for n in row])
+    print(f"{y}: {len(season)} player seasons")
+
+# ---------- 3) FantasyPros injury reports ----------
+def pick(d, *keys):
+    for k in keys:
+        v = d.get(k) if isinstance(d, dict) else None
+        if isinstance(v, dict):
+            v = v.get("name") or v.get("abbr") or v.get("id")
+        if v not in (None, ""):
+            return str(v).strip()
+    return ""
+
+
+def flatten(data):
+    """Find the list of injury records wherever FantasyPros puts it."""
+    if isinstance(data, list):
+        return data
+    if isinstance(data, dict):
+        for k in ("injuries", "players", "data", "items", "results"):
+            if isinstance(data.get(k), list):
+                return data[k]
+        for v in data.values():
+            if isinstance(v, list) and v and isinstance(v[0], dict):
+                return v
+    return []
+
+
+fp_url, fp_logged = None, False
+
+
+def fp_week(season, week):
+    """One week of injury records as [name, pos, team, status, injury] rows. None = request failed."""
+    global fp_url, fp_logged
+    for pattern in ([fp_url] if fp_url else FP_URLS):
+        url = pattern.format(season=season, week=week)
+        try:
+            data = get_json(url, {"x-api-key": API_KEY})
+        except urllib.error.HTTPError as e:
+            if not fp_url:
+                print(f"[FP injuries] {url.split('?')[0]} -> error {e.code}: {e.read().decode('utf-8', 'replace')[:200]}")
+            continue
+        except Exception as e:
+            print(f"[FP injuries] could not reach FantasyPros: {e}")
+            return None
+        items = flatten(data)
+        if not fp_logged:
+            print(f"[FP injuries] Using {pattern.split('?')[0]}")
+            print(f"[FP injuries] Top-level fields: {list(data.keys()) if isinstance(data, dict) else 'list'}")
+            if items:
+                print(f"[FP injuries] Fields on each record: {sorted(items[0].keys())}")
+                print(f"[FP injuries] Sample record: {json.dumps(items[0])[:400]}")
+            fp_logged = True
+        fp_url = pattern
+        rows = []
+        for it in items:
+            name = pick(it, "player_name", "name", "full_name", "player")
+            pos = pick(it, "player_position_id", "position", "pos").upper()[:2]
+            if name and pos in POSITIONS + ("FB",):
+                rows.append([name, pos, pick(it, "player_team_id", "team", "team_id"),
+                             pick(it, "injury_status", "status", "game_status", "designation", "report_status"),
+                             pick(it, "injury", "injury_type", "injury_body_part", "body_part", "injury_desc", "description")])
+        return rows
+    return None
+
+
+def fp_status(text):
+    """Which column a status counts in: 4 Out, 5 Doubtful, 6 Questionable, 7 IR/PUP."""
+    t = (text or "").lower()
+    if "question" in t: return 6
+    if "doubt" in t: return 5
+    if t in ("ir", "pup", "nfi") or "reserve" in t or "pup" in t or "injured" in t: return 7
+    if t.startswith("out") or t == "o": return 4
+    return None
+
+
+NOT_INJURIES = ("coach", "rest", "not injury", "non-injury", "non injury", "personal", "suspen", "team decision")
+fp_seasons = {}
+if not API_KEY:
+    print("[FP injuries] No FANTASYPROS_API_KEY secret, so cards will have no injury history.")
 else:
-    sf_source = "1QB rankings with a QB boost (Superflex list unavailable)"
+    os.makedirs(FP_CACHE, exist_ok=True)
+    for y in range(FP_FIRST_SEASON, CURRENT + 1):
+        path = os.path.join(FP_CACHE, f"{y}.json")
+        if y < CURRENT and os.path.exists(path):
+            with open(path, encoding="utf-8") as f:
+                fp_seasons[y] = json.load(f)
+            continue
+        weeks, failed = {}, False
+        for w in range(1, FP_WEEKS + 1):
+            rows = fp_week(y, w)
+            if rows is None:
+                failed = True
+                break
+            if rows:
+                weeks[str(w)] = rows
+            time.sleep(0.25)          # be gentle with the API
+        if failed:
+            print(f"[FP injuries] {y}: request failed")
+            if fp_url is None:
+                break                 # no URL pattern works, so stop trying
+            continue
+        # Some APIs ignore the week and return the same list every time; that isn't weekly history
+        if len(weeks) >= 10 and len({json.dumps(v, sort_keys=True) for v in weeks.values()}) == 1:
+            print(f"[FP injuries] {y}: every week came back identical (current statuses only), so it isn't used as history")
+            continue
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(weeks, f, separators=(",", ":"))
+        fp_seasons[y] = weeks
+        print(f"[FP injuries] {y}: {sum(len(v) for v in weeks.values())} records across {len(weeks)} weeks")
 
-# Any player missing a Superflex value gets the 1QB value with a QB boost
-qbs = sorted([p for p in players.values() if p["pos"] == "QB"], key=lambda p: p["rank_1qb"])
-qb_rank = {id(p): n for n, p in enumerate(qbs, start=1)}
-for p in players.values():
-    if "value_2qb" not in p:
-        boost = 1.0
-        if p["pos"] == "QB":
-            r = qb_rank[id(p)]
-            boost = 1.7 if r <= 12 else 2.2 if r <= 24 else 1.3
-        p["value_2qb"] = min(10000, round(p["value_1qb"] * boost))
-
-# ---------- 3) Fill in players FantasyPros doesn't rank ----------
-# Deep bench and taxi players still need a small value, so anyone missing
-# from both FantasyPros lists comes from DynastyProcess, always valued
-# below the lowest FantasyPros-ranked player.
-filled = False
-if True:
-    print(f"{len(players)} players from FantasyPros. Filling unranked players from DynastyProcess.")
-    try:
-        with urllib.request.urlopen(DP_CSV, timeout=60) as r:
-            rows = list(csv.DictReader(io.StringIO(r.read().decode("utf-8"))))
-        floor_1 = min(p["value_1qb"] for p in players.values())
-        floor_2 = min(p["value_2qb"] for p in players.values())
-        added = 0
-        for row in rows:
-            pos = (row.get("pos") or "").upper()
-            key = norm(row.get("player")) + "|" + pos
-            if pos not in ("QB", "RB", "WR", "TE") or key in players:
+# One line per player, season and injury: first and last week listed, and how many
+# weeks he was listed Out, Doubtful, Questionable, or on Injured Reserve / PUP.
+unmatched = set()
+for y, weeks in fp_seasons.items():
+    spells = {}
+    for w, rows in (weeks or {}).items():
+        w = int(w)
+        for name, pos, team, status, injury in rows:
+            col = fp_status(status)
+            injury = (injury or "Not listed").strip().title()
+            if col is None or any(x in injury.lower() for x in NOT_INJURIES):
                 continue
-            v1, v2 = float(row.get("value_1qb") or 0), float(row.get("value_2qb") or 0)
-            if v1 <= 0 and v2 <= 0:
+            pid = by_name.get(norm(name) + "|" + ("RB" if pos == "FB" else pos))
+            if not pid:
+                unmatched.add(name)
                 continue
-            # keep every filled player below the lowest FantasyPros player
-            players[key] = {"name": row.get("player"), "pos": pos, "team": row.get("team") or "",
-                            "value_1qb": round(min(v1, floor_1 * 0.99)), "value_2qb": round(min(v2, floor_2 * 0.99)),
-                            "source": "dynastyprocess"}
-            added += 1
-        filled = added > 0
-        print(f"Added {added} deeper players from DynastyProcess.")
-    except Exception as e:
-        print(f"Couldn't fill from DynastyProcess: {e}")
+            s = spells.setdefault((pid, injury), [y, injury, w, w, 0, 0, 0, 0, set()])
+            if w in s[8]:
+                continue
+            s[8].add(w)
+            s[2], s[3] = min(s[2], w), max(s[3], w)
+            s[col] += 1
+    for (pid, _), s in spells.items():
+        players[pid]["i"].append(s[:8])     # [season, injury, first wk, last wk, out, doubtful, questionable, IR/PUP]
+if unmatched:
+    print(f"[FP injuries] {len(unmatched)} names didn't match a Sleeper player, e.g. {sorted(unmatched)[:5]}")
 
 # ---------- 4) Save ----------
+# Keep players who are on a team or played/were hurt in the last five seasons (their whole career is kept)
+recent = CURRENT - 4
+players = {pid: p for pid, p in players.items()
+           if skill.get(pid, {}).get("team") or any(r[0] >= recent for r in p["s"]) or any(r[0] >= recent for r in p["i"])}
+for p in players.values():
+    p["s"].sort(key=lambda r: r[0])
+    p["i"].sort(key=lambda r: (-r[0], r[2]))
 out = {
-    "updated": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-    "source": "FantasyPros dynasty consensus rankings (personal, non-commercial use)",
-    "superflex_source": sf_source,
-    "filled_from_dynastyprocess": filled,
-    "experts_1qb": EXPERTS.get("1QB", 0),
-    "experts_sf": EXPERTS.get("Superflex", 0),
-    "players": sorted(players.values(), key=lambda p: -p["value_1qb"]),
+    "updated": now.isoformat(timespec="seconds"),
+    "source": "Sleeper (season stats) and FantasyPros (injury reports)",
+    "season": CURRENT,
+    "fp_injury_seasons": sorted(y for y, w in fp_seasons.items() if w),
+    "players": players,
 }
 os.makedirs(os.path.dirname(OUTPUT), exist_ok=True)
 with open(OUTPUT, "w", encoding="utf-8") as f:
-    json.dump(out, f, indent=1)
-print(f"Saved {len(out['players'])} players to data/values.json")
+    json.dump(out, f, separators=(",", ":"))
+print(f"Saved {len(players)} players to data/players.json ({os.path.getsize(OUTPUT) // 1024} KB)")
