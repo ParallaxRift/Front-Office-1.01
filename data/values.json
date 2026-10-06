@@ -1,5 +1,5 @@
 {
- "updated": "2026-10-05T19:30:00+00:00",
+ "updated": "2026-10-06T03:17:42+00:00",
  "source": "FantasyPros dynasty consensus rankings (personal, non-commercial use)",
  "superflex_source": "FantasyPros Superflex rankings",
  "filled_from_dynastyprocess": true,
@@ -3663,7 +3663,7 @@
   {
    "name": "Robert Henry Jr.",
    "pos": "RB",
-   "team": "WAS",
+   "team": "SEA",
    "rank_1qb": 455.0,
    "value_1qb": 34,
    "rank_sf": 392.0,
@@ -3922,7 +3922,7 @@
   {
    "name": "Joe Mixon",
    "pos": "RB",
-   "team": "FA",
+   "team": "SEA",
    "value_1qb": 33,
    "rank_sf": 431.0,
    "value_2qb": 46
