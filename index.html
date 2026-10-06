@@ -2271,6 +2271,8 @@ function renderSettings(){
 // picks to the rest of the league, then suggests moves.
 // ============================================================
 const CLIFF = {QB:34, RB:27, WR:30, TE:31};
+const REBUILD_MAX_AGE = 27;   // rebuilding teams are never pointed at players older than 27
+const tooOldForRebuild = a => a.kind === "player" && a.age && Math.floor(a.age) > REBUILD_MAX_AGE;
 function slotNeeds(){
   const rp = S.cfg.rp, n = x => rp.filter(y=>y===x).length;
   const flex = n("FLEX"), wrrb = n("WRRB_FLEX"), rec = n("REC_FLEX"), sf = n("SUPER_FLEX");
@@ -3730,7 +3732,7 @@ function renderRecs(me){
         score = add / 800 + (add / Math.max(1, a.value)) * 1.5 + (isWeak ? 1 : 0) + (young ? 0.3 : 0) - (old ? 0.8 : 0);
         why = add > 0 ? (isWeak ? `Cheap fix for your thin ${a.pos} room` : `Would start for you at ${a.pos}`) : `Depth at your weak ${a.pos} spot`;
       } else {
-        if (old) continue;
+        if (old || tooOldForRebuild(a)) continue;
         score = C.futureVal(a) / 2500 + (young ? 0.9 : 0) + (isWeak ? 0.3 : 0) + (C.futureVal(a) / Math.max(1, a.value) - 1);
         why = young ? `Young (${ageText(a.age)}) with upside for your rebuild` : `Long-term value at ${a.pos}`;
       }
@@ -3858,7 +3860,7 @@ function findTrades(me, sending, V){
     const roster = teamAssets(rid);
     const theirPlayers = roster.filter(a => a.kind === "player");
     const theirBefore = {}; POS.forEach(p => theirBefore[p] = starterSum(theirPlayers, p));
-    const pool = roster.filter(a => a.value >= V * 0.08 && a.value <= V * FAIR_HIGH);
+    const pool = roster.filter(a => a.value >= V * 0.08 && a.value <= V * FAIR_HIGH && !(dir === "build" && tooOldForRebuild(a)));
     for (let k = 1; k <= maxPieces; k++){
      for (const pack of combos(pool.slice(0, POOL[k]), k)){
       const raw = pack.reduce((t, a) => t + a.value, 0);
