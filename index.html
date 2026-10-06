@@ -436,6 +436,9 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 @media (prefers-color-scheme:dark){.bplayers{background:#18222A;color:#E8EDE9}.bplayers .bitem{background:#10171D;color:#E8EDE9}}
 
 /* Trade calculator roster lists: larger names and details */
+/* Trade Calculator rosters: show the whole roster, scroll the page instead of the list */
+#listA,#listB{max-height:none;overflow:visible}
+#listA.browse,#listB.browse{max-height:640px;overflow-y:auto}
 #listA .asset .nm b,#listB .asset .nm b{font-size:17.5px}
 #listA .asset .nm small,#listB .asset .nm small{font-size:14px}
 /* Scoreboard rows: tap the player to see their value, tap X to remove */
@@ -864,6 +867,8 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
   #listA .asset .nm small,#listB .asset .nm small{font-size:12.5px}
   .asset .pos{width:30px}
   .list{max-height:380px}
+  #listA,#listB{max-height:none}
+  #listA.browse,#listB.browse{max-height:480px}
   .board .num{font-size:30px}
   /* Trade Finder */
   .tf-main .tf-list{max-height:340px}
@@ -930,6 +935,8 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
   .sim-table .teamcell b{display:inline-block;max-width:92px;overflow:hidden;text-overflow:ellipsis;vertical-align:middle}
   .sim-table .teamcell .av{display:none}.sim-table .rk,.sim-table .rec{font-size:14px}
   .sim-bracket{grid-auto-flow:row;grid-auto-columns:auto}}
+.rk-b{font-weight:800;color:var(--ink)}
+.bitem .rk-b{color:inherit}
 /* ---------- Player card ---------- */
 .av.pl[data-pid]{cursor:zoom-in}
 .pc-backdrop{position:fixed;inset:0;z-index:60;background:rgba(10,16,20,.55);display:flex;align-items:flex-start;justify-content:center;padding:32px 16px;overflow-y:auto}
@@ -1359,6 +1366,8 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
         <tr><td>Standard (no PPR)</td><td>RB ×1.10, WR ×0.85, TE ×0.85</td><td>Pass catchers and running backs</td></tr>
         <tr><td>6-point passing TDs</td><td>×1.10</td><td>Quarterbacks</td></tr>
         <tr><td>Each flex spot beyond one</td><td>×1.05</td><td>RBs, WRs and TEs outside the top 24</td></tr>
+        <tr><td>Starting QB on his NFL team</td><td>+3% (top-12 QB), +8% (QB 13–24), +15% (all other QBs)</td><td>Depth chart QB1s</td></tr>
+        <tr><td>Starting RB / handcuff RB</td><td>+6% for a starter ranked outside the top 20 RBs, +3% for the RB2</td><td>Depth chart RB1s and RB2s</td></tr>
         <tr><td>Player is 29 or older</td><td>At 29: RB −9%, WR −4.8%, TE −5%, QB −2%. At 30: RB −17%, WR −9.3%, TE −10%, QB −3.5%. At 31: RB −24%, WR −13.4%, TE −15%, QB −4.2%. At 32: RB −32%, WR −15%, TE −21%, QB −5.5%. Anyone 33 or older gets the age-33 discount: RB −34%, WR −18.6%, TE −23%, QB −8%</td><td>Older players at every position</td></tr>
         <tr><td>3 or more starting WRs</td><td>×1.05</td><td>Wide receivers</td></tr>
         <tr><td>Your league's trade habits (15+ trades)</td><td>Up to ×0.925 to ×1.075, learned from your trades</td><td>QBs, RBs, WRs, TEs and picks, each separately</td></tr>
@@ -1836,6 +1845,26 @@ function ageDiscount(pos, age){
   }
   return 1 - d;
 }
+// ---------- Depth chart role (from Sleeper's NFL depth charts, updated as teams change starters) ----------
+// A starting QB gets a boost, most for lower-ranked QBs whose value depends on the job (a top QB's
+// starting role is already in his market value). Starting RBs outside the top 20 get a boost, and the RB2 on his team
+// (the handcuff, next in line for the work) gets a smaller one.
+const ROLE_QB1 = [[12, 0.03], [24, 0.08], [Infinity, 0.15]];   // [market QB rank up to, boost]
+const ROLE_RB1 = 0.06, ROLE_RB2 = 0.03;
+const ROLE_RB1_FROM = 21;            // starting-RB boost only for RBs outside the top 20 (top RBs already price in the job)
+function roleBuff(a){
+  if (a.pos === "QB" && a.depthPos === "QB" && a.depthOrder === 1) return 1 + ROLE_QB1.find(([r]) => (a.posRank || 99) <= r)[1];
+  if (a.pos === "RB" && a.depthPos === "RB" && a.depthOrder === 1) return (a.posRank || 99) >= ROLE_RB1_FROM ? 1 + ROLE_RB1 : 1;
+  if (a.pos === "RB" && a.depthPos === "RB" && a.depthOrder === 2) return 1 + ROLE_RB2;
+  return 1;
+}
+function roleText(a){
+  if (a.depthPos !== a.pos || !a.depthOrder) return "";
+  if (a.pos === "QB" && a.depthOrder === 1) return "Starting QB";
+  if (a.pos === "RB" && a.depthOrder === 1) return "Starting RB";
+  if (a.pos === "RB" && a.depthOrder === 2) return "Handcuff RB";
+  return "";
+}
 function buildValues(){
   const cfg = S.cfg, P = S.sleeperPlayers, assets = new Map();
   const owner = new Map();
@@ -1858,7 +1887,7 @@ function buildValues(){
       if (rk && rk < 2000) base = 10000 * Math.exp(-0.011*(rk-1)) * ageFactor(pos, p.age);
     }
     if (!base && !rostered) continue;
-    list.push({ id:"p:"+pid, pid, kind:"player", name, pos, nfl:p.team||"FA", age:exactAge(p), base, owner: owner.get(pid) });
+    list.push({ id:"p:"+pid, pid, kind:"player", name, pos, nfl:p.team||"FA", age:exactAge(p), base, owner: owner.get(pid), depthPos: p.team ? p.depth_chart_position : null, depthOrder: p.team ? Number(p.depth_chart_order) || null : null });
   }
 
   // rank by base, overall and per position
@@ -1890,11 +1919,13 @@ function buildValues(){
     rules.push({ m: "League", t: `Your league's trade habits (${S.nudge.n} trades)`,
       d: parts.length ? parts.join(", ") + ". A light adjustment based on how your league has actually traded." : "Your league trades close to market value, so no adjustment was needed." });
   }
+  rules.push({ m: "Role", t: "Starters and handcuffs", d: "From NFL depth charts. Starting QBs: +3% for top-12 QBs, +8% for QBs 13–24, +15% for everyone else. Starting RBs outside the top 20 RBs +6%. Each team's RB2 (the handcuff) +3%." });
   rules.push({ m: "Age", t: "Players 29 and older", d: "Value drops each year from 29 to 33, then holds. At 29: RB −9%, WR −4.8%, TE −5%, QB −2%. At 30: RB −17%, WR −9.3%, TE −10%, QB −3.5%. At 32: RB −32%, WR −15%, TE −21%, QB −5.5%. At 33 and older: RB −34%, WR −18.6%, TE −23%, QB −8%. An older player is worth less than a similar younger one." });
   S.rules = rules;
   for (const a of list){
     let m = S.nudge ? (S.nudge[a.pos] || 1) : 1;
     m *= ageDiscount(a.pos, a.age);
+    m *= roleBuff(a);
     if (S.market.kind === "sleeper" && cfg.superflex && a.pos==="QB") m *= a.posRank<=12 ? 1.7 : a.posRank<=24 ? 2.2 : 1.3;
     if (a.pos==="TE") m *= tepMult;
     if (a.rank > 36) m *= sizeMult;
@@ -2076,19 +2107,23 @@ function assetPhoto(a, size){
   const orig = Number(String(a.id).split("-").pop());
   return S.teams.has(orig) ? teamPhoto(orig, size) : avatar(null, a.name, size);
 }
+// "WR5, #11 overall" in bold, from this league's values
+const rankHTML = a => [a.lgPosRank ? a.pos + a.lgPosRank : "", a.lgRank ? "#" + a.lgRank + " overall" : ""].filter(Boolean).map(x => `<strong class="rk-b">${x}</strong>`).join(", ");
 function assetRow(a, sel, showOwner){
-  const sub = a.kind === "pick" ? [a.nfl, showOwner ? S.teams.get(a.owner)?.name : ""].filter(Boolean).join(", ")
-    : [a.nfl, a.age ? "age " + ageText(a.age) : "", a.lgPosRank ? a.pos + a.lgPosRank : "", a.lgRank ? "#" + a.lgRank + " overall" : "", showOwner ? S.teams.get(a.owner)?.name : ""].filter(Boolean).join(", ");
+  // second line; the player's position rank and overall rank are in bold
+  const sub = a.kind === "pick" ? esc([a.nfl, showOwner ? S.teams.get(a.owner)?.name : ""].filter(Boolean).join(", "))
+    : [esc(a.nfl), a.age ? "age " + ageText(a.age) : "", rankHTML(a), showOwner ? esc(S.teams.get(a.owner)?.name || "") : ""].filter(Boolean).join(", ");
   return `<button class="asset${sel?" sel":""}" data-id="${esc(a.id)}" aria-pressed="${sel}">
     <span class="pos">${esc(a.pos)}</span>
     ${assetPhoto(a, "row")}
-    <span class="nm"><b>${esc(a.name)}${injTag(a.pid)}</b><small>${esc(sub)}</small></span>
+    <span class="nm"><b>${esc(a.name)}${injTag(a.pid)}</b><small>${sub}</small></span>
     <span class="val">${fmt(a.value)}</span></button>`;
 }
 function renderSide(rid, listEl, badgeEl, set){
   const t = S.teams.get(rid);
   badgeEl.textContent = statusText[t.status]; badgeEl.className = "badge " + badgeClass[t.status];
   const side = listEl.id === "listA" ? "A" : "B";
+  listEl.classList.toggle("browse", !!browseAll[side]);   // "All Players" keeps its own scroll; a team roster shows in full
   const f = $("pos" + side).value;
   const q = browseAll[side] ? normName($("browse" + side).value) : "";
   const pool = browseAll[side] ? [...S.assets.values()].filter(a => a.owner != null && a.value > 0 && (!q || normName(a.name).includes(q))).sort((a, b) => b.value - a.value).slice(0, 300)
@@ -2183,10 +2218,10 @@ function renderCalc(){
   $("getTeam").innerHTML = tB ? `${teamPhoto(rb, true)}<span class="nm">${esc(tB.name)}</span>` : "";
   const itemsHTML = (ids, side) => [...ids].map(id => S.assets.get(id)).filter(Boolean).sort((a, b) => b.value - a.value)
     .map(a => {
-      const sub = a.kind === "player" ? [a.pos, a.nfl, a.age ? "age " + ageText(a.age) : ""].filter(Boolean).join(", ") : a.nfl;
+      const sub = a.kind === "player" ? [esc(a.nfl), a.age ? "age " + ageText(a.age) : "", rankHTML(a)].filter(Boolean).join(", ") : esc(a.nfl);
       return `<div class="bitem">
         <button type="button" class="bi-link" data-show="${esc(a.id)}" title="${a.kind === "player" ? "Open " + esc(a.name) + "'s player card" : "See " + esc(a.name) + " in Player Values"}">
-          ${assetPhoto(a, "trade")}<span class="bi-text"><b>${esc(a.name)}${injTag(a.pid)}</b><small>${esc(sub)}</small></span></button>
+          ${assetPhoto(a, "trade")}<span class="bi-text"><b>${esc(a.name)}${injTag(a.pid)}</b><small>${sub}</small></span></button>
         <span class="bi-val">${fmt(a.value)}</span>
         <button type="button" class="bi-x" data-side="${side}" data-id="${esc(a.id)}" aria-label="Remove ${esc(a.name)} from the trade">✕</button></div>`;
     }).join("");
@@ -2562,7 +2597,7 @@ async function openPlayerCard(pid){
   const owner = a?.owner != null ? S.teams.get(a.owner)?.name : "Free agent";
   const facts = [
     ["Age", a?.age ? ageText(a.age) : sp.age], ["Height", heightText(sp.height)], ["Weight", sp.weight ? sp.weight + " lb" : ""],
-    ["College", sp.college], ["Experience", expText(sp.years_exp)], ["Fantasy team", owner]
+    ["College", sp.college], ["Experience", expText(sp.years_exp)], ["Role", a ? roleText(a) : ""], ["Fantasy team", owner]
   ].filter(f => f[1] !== undefined && f[1] !== null && f[1] !== "");
   $("pcard").innerHTML = `<div class="pc" role="dialog" aria-modal="true" aria-labelledby="pcName">
     <button type="button" class="pc-close" aria-label="Close player card">×</button>
