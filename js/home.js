@@ -32,7 +32,7 @@ function renderHome(){
   }
   S.replacement = keep;
   const { two, raw2, adj, gap } = best, e1 = v1 + adj, call = tradeCall(gap, Math.max(e1, raw2));
-  const verdict = call === "fair" ? "Fair trade" : call === "lopsided" ? (gap > 0 ? "Lopsided: the two-player side wins big" : "Lopsided: the star side wins big") : gap > 0 ? `The two-player side wins by ${fmt(gap)}` : `The star side wins by ${fmt(-gap)}`;
+  const verdict = call === "fair" ? "Fair trade" : call === "lopsided" ? (gap > 0 ? "One-sided: the two-player side wins big" : "One-sided: the star side wins big") : gap > 0 ? `The two-player side wins by ${fmt(gap)}` : `The star side wins by ${fmt(-gap)}`;
   const row = a => `<div class="ht-row"><span><b>${esc(a.name)}</b><small>${esc(a.pos)} · ${esc(a.team)}</small></span><span>${fmt(scale(a.value))}</span></div>`;
   $("homeTrade").innerHTML = `<div class="ht-sides">
       <div class="ht-side"><div class="ht-lbl">Team A sends</div>${row(one)}${adj ? `<div class="ht-row ht-adj"><span><b>Value adjustment</b><small>one star beats two good players</small></span><span>+${fmt(adj)}</span></div>` : ""}<div class="ht-total">${fmt(e1)}</div></div>

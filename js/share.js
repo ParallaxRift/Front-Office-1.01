@@ -92,7 +92,7 @@ function drawTradeImage(){
   x.fillStyle = "#fff"; x.textAlign = "center"; x.font = `700 26px ${D}`;
   // the image is shown to both teams, so name the winning side instead of "you"
   const nameA = S.teams.get(Number($("teamA").value))?.name, nameB = S.teams.get(Number($("teamB").value))?.name;
-  const neutral = v.replace("favors you", `favors ${nameA}`).replace("Lopsided: you overpay", `Lopsided: ${nameA} overpays`)
+  const neutral = v.replace("favors you", `favors ${nameA}`).replace("One-sided: you overpay", `One-sided: ${nameA} overpays`)
     .replace(/^You win/, `${nameA} wins`).replace(/^You overpay/, `${nameA} overpays`)
     .replace("you're ahead", `${nameA} is ahead`).replace("they're ahead", `${nameB} is ahead`);
   x.fillText(neutral, W / 2, vy + 33);

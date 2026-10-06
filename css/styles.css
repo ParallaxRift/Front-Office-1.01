@@ -1123,17 +1123,19 @@ body:not(.has-league) .side-switch,body:not(.has-league) #miniBar{display:none!i
 /* ===== Calculator board, top to bottom: team names, players added, the math, the bar, the verdict ===== */
 .board .totals{flex-direction:row!important;align-items:center!important;gap:16px}
 .board .bside{flex:1 1 0!important;padding-top:0!important;border-top:0!important}
-.board .num,.board .raw{display:none!important}          /* totals now live in the math below */
+.board .raw{display:none!important}
+.board .num{display:block!important;font-family:var(--display);font-weight:800;font-size:clamp(40px,6vw,60px)!important;line-height:1;margin-top:6px}
+.board .right .num{text-align:right}
 .board .bteam{font-size:20px;font-weight:700;margin:4px 0 0}
 .board .right .bteam{justify-content:flex-end!important}
 .board .right .side-label{text-align:right}
-.board .bplayers{margin-top:12px}
+.board .bplayers{margin-top:16px}
 .board .tmath{margin:16px auto 4px}
-.board .track{height:20px!important;border-radius:10px;margin:16px 0 12px!important}
+.board .track{height:40px!important;border-radius:12px;margin:16px 0 12px!important}
 .board .mid{width:3px}
 .board .vrow{margin-top:4px}
 /* "You could add" chips with the player's face */
-.board .suggest button{display:inline-flex;align-items:center;gap:8px;font-size:15.5px!important;padding:5px 14px 5px 5px!important}
+.board .suggest button{display:inline-flex;align-items:center;gap:6px;font-size:13px!important;padding:3px 10px!important}
 .board .suggest button b{font-weight:700;opacity:.85}
 .av.av-chip{width:30px;height:30px;font-size:13px}
 @media (max-width:600px){.board .bteam{font-size:16px}.board .bteam .av{width:32px;height:32px}}
@@ -1141,3 +1143,4 @@ body:not(.has-league) .side-switch,body:not(.has-league) #miniBar{display:none!i
 .bitem .bi-link{flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:9px;background:none;border:0;color:inherit;font:inherit;padding:0;text-align:inherit;cursor:pointer}
 .bitem .bi-val,.bitem .bi-x{flex:none}
 .bitem .bi-text > b,.bitem .bi-text > small{max-width:100%}
+@media (max-width:600px){.board .num{font-size:38px!important}.board .track{height:32px!important}}

@@ -246,11 +246,13 @@ function renderAnalysis(notes){
 }
 $("analysisBtn").addEventListener("click", () => { analysisOpen = !analysisOpen; $("hint").hidden = !analysisOpen; $("analysisBtn").setAttribute("aria-expanded", String(analysisOpen)); });
 // ---------- FAAB in trades ----------
-// A league's full FAAB budget counts like a late 2nd-round pick in that league (12-team 2.12),
+// FAAB is usually a throw-in, so a league's full FAAB budget counts as half of a late 2nd-round
+// pick in that league (12-team 2.12),
 // and any amount is that times its share of the budget. FAAB takes no roster spot, so it adds
 // straight on top without the depth discount.
 const faabBudget = () => Number(S.cfg?.st?.waiver_budget) || 0;
-function faabValue(amt){ const B = faabBudget(); return amt > 0 && B > 0 ? Math.round(amt / B * pickValue(24, 0)) : 0; }
+const FAAB_SHARE = 0.5;   // a full budget = half a late 2nd
+function faabValue(amt){ const B = faabBudget(); return amt > 0 && B > 0 ? Math.round(amt / B * pickValue(24, 0) * FAAB_SHARE) : 0; }
 function renderCalc(){
   const ra = Number($("teamA").value), rb = Number($("teamB").value);
   syncPicker("teamA"); syncPicker("teamB");
@@ -341,7 +343,7 @@ function renderCalc(){
   const tooClose = call === "edge" && Math.abs(gap) <= unsure;
   $("fill").classList.add(call === "fair" || tooClose ? "even" : call === "lopsided" && gap > 0 ? "lopsided" : gap > 0 ? "win" : "lose");
   if (call === "fair") $("verdict").textContent = "Fair trade";
-  else if (call === "lopsided") $("verdict").textContent = gap > 0 ? `Lopsided: favors you by ${fmt(gap)}` : `Lopsided: you overpay by ${fmt(-gap)}`;
+  else if (call === "lopsided") $("verdict").textContent = gap > 0 ? `One-sided: favors you by ${fmt(gap)}` : `One-sided: you overpay by ${fmt(-gap)}`;
   else if (Math.abs(gap) <= unsure) $("verdict").textContent = `Too close to call: ${gap > 0 ? "you're" : "they're"} ahead by ${fmt(Math.abs(gap))}`;
   else if (gap > 0) $("verdict").textContent = `You win by ${fmt(gap)}`;
   else $("verdict").textContent = `You overpay by ${fmt(-gap)}`;
@@ -356,11 +358,11 @@ function renderCalc(){
     : `You give up too much here: ${themName} gets about ${extraPct}% more than you. Ask for more back before sending it.`]);
   else if (call === "fair") notes.push(["Why it's fair", `The two sides are ${fmt(Math.abs(gap))} apart, inside the 1,500 fair range.`]);
   else if (tooClose) notes.push(["Too close to call", `Experts disagree enough on these players (values could move about ${fmt(Math.round(unsure / 50) * 50)} either way) that neither side clearly wins.`]);
-  else notes.push(["The edge", `${gap > 0 ? "You get" : themName + " gets"} about ${extraPct}% more. That's a normal negotiating gap, not lopsided.`]);
+  else notes.push(["The edge", `${gap > 0 ? "You get" : themName + " gets"} about ${extraPct}% more. That's a normal negotiating gap, not one-sided.`]);
   if (call === "lopsided" && Math.abs(gap) <= unsure) notes.push(["Expert split", "Experts are split on some of these players, so the gap could be smaller than it looks."]);
   if (me.status === "rebuild" && (getPicks || getYoung)) notes.push(["Team fit", "Picks and young players fit your rebuild."]);
   else if (me.status === "contend" && (getPicks || getYoung) && !(gap > 0)) notes.push(["Team fit", "You're contending, so trading proven players for futures could hurt this season."]);
-  if (fS || fG) notes.push(["FAAB", `A full $${fmt(faabBudget())} budget counts like a late 2nd-round pick (${fmt(faabValue(faabBudget()))}), so ${[S.faab.send ? `your $${fmt(S.faab.send)} is worth ${fmt(fS)}` : "", S.faab.get ? `their $${fmt(S.faab.get)} is worth ${fmt(fG)}` : ""].filter(Boolean).join(" and ")}.`]);
+  if (fS || fG) notes.push(["FAAB", `A full $${fmt(faabBudget())} budget counts as about half a late 2nd-round pick (${fmt(faabValue(faabBudget()))}), since FAAB is usually a throw-in, so ${[S.faab.send ? `your $${fmt(S.faab.send)} is worth ${fmt(fS)}` : "", S.faab.get ? `their $${fmt(S.faab.get)} is worth ${fmt(fG)}` : ""].filter(Boolean).join(" and ")}.`]);
   // Explain the value adjustment when it changes the picture noticeably
   const bonus = Math.max(bonusS, bonusG);
   if (bonus > 0.05 * Math.max(rawS, rawG))
@@ -384,7 +386,7 @@ function renderCalc(){
       sug.appendChild(lbl);
       for (const a of picks){
         const b = document.createElement("button");
-        b.innerHTML = `${assetPhoto(a, "chip")}<span>${esc(a.name)}</span><b>${fmt(a.value)}</b>`;
+        b.innerHTML = `<span>${esc(a.name)}</span><b>${fmt(a.value)}</b>`;
         b.addEventListener("click", () => { (needFromThem ? S.getIds : S.sendIds).add(a.id); renderCalc(); });
         sug.appendChild(b);
       }

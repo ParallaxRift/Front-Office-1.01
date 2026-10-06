@@ -99,7 +99,7 @@ async function openLeague(browser, viewport, opts){
     await page.click('#groups [data-group=trade]'); await page.click('[data-tab=calc]');
     await page.click('#listA .asset .nm >> nth=0'); await page.click('#listB .asset .nm >> nth=1'); await page.click('#listB .asset .nm >> nth=3'); await page.waitForTimeout(300);
     const verdict = (await page.textContent('#verdict')).trim();
-    check('calculator grades a trade', /win|fair|overpay|lopsided/i.test(verdict), verdict);
+    check('calculator grades a trade', /win|fair|overpay|one-sided/i.test(verdict), verdict);
     // fairness rules: a gap of 1,500 or less is fair; one side getting 15%+ more is lopsided
     const rules = await page.evaluate(() => [tradeCall(1500, 6000), tradeCall(-1400, 9000), tradeCall(1600, 9000), tradeCall(2000, 20000), tradeCall(-1600, 40000)].join(','));
     check('fair buffer of 1,500 and lopsided call-out', rules === 'fair,fair,lopsided,edge,fair', rules);
