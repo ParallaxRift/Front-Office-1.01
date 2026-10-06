@@ -444,6 +444,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 .bitem .bi-link:hover .bi-text b{text-decoration:underline;text-underline-offset:3px}
 .bitem .bi-x{background:none;border:0;cursor:pointer;padding:4px 6px;border-radius:6px;color:inherit}
 .bitem .bi-x:hover{background:var(--loss-soft);color:var(--loss)}
+#valuesBody tr[data-id^="p:"]{cursor:pointer}
 #valuesBody tr.hl{background:var(--field-soft);outline:2px solid var(--field);outline-offset:-2px}
 
 /* Roster filter dropdown under each team picker */
@@ -591,7 +592,9 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 .tf-results{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
 @media (max-width:400px){.tf-results{grid-template-columns:1fr}}
 .tf-card{background:var(--card);border:1.5px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
-.tf-card.best{border-color:var(--field);border-width:2px}
+.tf-card.best{border-color:var(--field);border-width:2px;grid-column:1/-1}
+.tf-rank{flex:none;display:inline-grid;place-items:center;min-width:28px;height:28px;padding:0 8px;border-radius:999px;background:var(--field-soft);color:var(--field);font-family:var(--display);font-weight:800;font-size:14px}
+.tf-card.best .tf-rank{background:var(--field);color:#fff}
 .tf-card-head{display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--paper)}
 .tf-card-head .nm{flex:1;min-width:0}
 .tf-card-head .nm b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -871,9 +874,59 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
   .lu .av{display:none}
   .lineups{gap:0 10px;padding:0 10px 10px}
 }
+/* ---------- Player card ---------- */
+.av.pl[data-pid]{cursor:zoom-in}
+.pc-backdrop{position:fixed;inset:0;z-index:60;background:rgba(10,16,20,.55);display:flex;align-items:flex-start;justify-content:center;padding:32px 16px;overflow-y:auto}
+.pc-backdrop[hidden]{display:none}
+.pc{position:relative;width:100%;max-width:900px;background:var(--card);color:var(--ink);border-radius:18px;box-shadow:0 20px 60px rgba(0,0,0,.35);overflow:hidden}
+.pc-close{position:absolute;top:10px;right:10px;width:38px;height:38px;border-radius:50%;border:0;background:rgba(255,255,255,.18);color:#fff;font-size:22px;line-height:1;cursor:pointer;z-index:2}
+.pc-close:hover{background:rgba(255,255,255,.3)}
+.pc-head{display:flex;gap:18px;align-items:flex-end;padding:22px 22px 18px;background:linear-gradient(135deg,#16212B,#1E6B47);color:#fff}
+.pc-photo{flex:none;width:118px;height:118px;border-radius:16px;background:rgba(255,255,255,.12);overflow:hidden;display:grid;place-items:center}
+.pc-photo img{width:100%;height:100%;object-fit:cover}
+.pc-id{flex:1;min-width:0}
+.pc-id h2{margin:0 0 4px;font-family:var(--display);font-size:30px;line-height:1.05;letter-spacing:-.01em}
+.pc-sub{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:15px;opacity:.92}
+.pc-sub img{width:22px;height:22px;object-fit:contain;vertical-align:middle}
+.pc-tag{display:inline-block;padding:3px 10px;border-radius:999px;font-size:13px;font-weight:700;background:rgba(255,255,255,.16);color:#fff}
+.pc-tag.q{background:#F0B848;color:#2B1E00}.pc-tag.d{background:#F08A3E;color:#2B1200}.pc-tag.o{background:#E5484D;color:#fff}.pc-tag.h{background:#22A55A;color:#fff}
+.pc-val{flex:none;text-align:right}
+.pc-val b{display:block;font-family:var(--display);font-size:32px;line-height:1}
+.pc-val small{font-size:13px;opacity:.85}
+.pc-body{padding:18px 22px 22px}
+.pc-facts{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin:0 0 18px}
+.pc-facts div{background:var(--paper);border-radius:10px;padding:9px 12px}
+.pc-facts dt{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.pc-facts dd{margin:2px 0 0;font-weight:700;font-size:15px}
+.pc h3{font-family:var(--display);font-size:19px;margin:20px 0 8px}
+.pc-status{border-radius:12px;padding:12px 14px;border:1.5px solid var(--line)}
+.pc-status.hurt{border-color:#E5484D;background:var(--loss-soft)}
+.pc-status.warn{border-color:#F0B848;background:var(--gold-soft)}
+.pc-status p{margin:4px 0 0;font-size:14px;color:var(--muted)}
+.pc-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);border-radius:12px}
+.pc table{width:100%;border-collapse:collapse;font-size:14px;white-space:nowrap}
+.pc th{font-size:12px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);text-align:right;padding:8px 10px;border-bottom:1px solid var(--line);background:var(--paper)}
+.pc td{text-align:right;padding:7px 9px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+.pc th:first-child,.pc td:first-child,.pc th.l,.pc td.l{text-align:left}
+.pc tr:last-child td{border-bottom:0}
+.pc tr.tot td{font-weight:800;background:var(--paper)}
+.pc .empty{color:var(--muted);font-size:14px;margin:4px 0}
+.pc-note{margin:16px 0 0;font-size:12.5px;color:var(--muted)}
+.pc-loading{padding:14px;color:var(--muted);font-size:14px}
+@media (max-width:600px){
+  .pc-backdrop{padding:0}
+  .pc{border-radius:0;min-height:100%}
+  .pc-head{flex-wrap:wrap;padding:18px 16px 14px;gap:12px}
+  .pc-photo{width:84px;height:84px}
+  .pc-id h2{font-size:24px}
+  .pc-val{text-align:left;width:100%;display:flex;align-items:baseline;gap:8px}
+  .pc-val b{font-size:24px}
+  .pc-body{padding:14px 16px 24px}
+}
 </style>
 </head>
 <body>
+<div id="pcard" class="pc-backdrop" hidden></div>
 <div class="wrap">
 <div id="appView">
   <header class="appbar" id="appbar" hidden>
@@ -1151,6 +1204,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
       <div class="vsearch"><input type="search" id="valueSearch" placeholder="Search players" aria-label="Search players"><button type="button" class="clear-f" id="valueClear" title="Clear the search and show everyone" aria-label="Clear search" hidden>✕</button></div>
       <label style="font-size:14px;display:flex;gap:6px;align-items:center"><input type="checkbox" id="rosteredOnly" checked> Only rostered in this league</label>
     </div>
+    <p style="margin:0 0 10px;font-size:14px;color:var(--muted)">Tap any player to open his player card. On other tabs, tap a player's photo.</p>
     <div class="tablewrap">
       <table>
         <thead><tr><th class="n">#</th><th>Player</th><th>Pos</th><th class="n">Age</th><th class="hide-sm">League team</th><th class="n">This league</th><th class="n hide-sm">Market</th><th class="n hide-sm">Change</th></tr></thead>
@@ -1910,7 +1964,7 @@ function teamAssets(rid){
 // Picks show the logo of the team the pick originally belonged to. Missing images fall back to the football icon.
 const PLAYER_IMG = pid => `https://sleepercdn.com/content/nfl/players/thumb/${encodeURIComponent(pid)}.jpg`;
 function assetPhoto(a, size){
-  if (a.kind === "player") return avatar(PLAYER_IMG(a.pid), a.name, size).replace('class="av', 'class="av pl');
+  if (a.kind === "player") return avatar(PLAYER_IMG(a.pid), a.name, size).replace('class="av', `data-pid="${esc(a.pid)}" class="av pl`).replace(/title="[^"]*"/, `title="${esc(a.name)}: tap for player card"`);
   const orig = Number(String(a.id).split("-").pop());
   return S.teams.has(orig) ? teamPhoto(orig, size) : avatar(null, a.name, size);
 }
@@ -2201,6 +2255,155 @@ $("posFilter").addEventListener("click", e => {
   S.posFilter = b.dataset.pos;
   for (const x of $("posFilter").children) x.setAttribute("aria-pressed", x === b);
   renderValues();
+});
+
+// ============================================================
+// PLAYER CARDS
+// Click a player's photo anywhere (or a player row on Player Values) to open his card:
+// photo, bio and current injury come from Sleeper; career stats and past injury reports
+// come from data/players.json, written daily by the GitHub Action from nflverse open data.
+// ============================================================
+const NFL_TEAMS = {ARI:"Arizona Cardinals",ATL:"Atlanta Falcons",BAL:"Baltimore Ravens",BUF:"Buffalo Bills",CAR:"Carolina Panthers",CHI:"Chicago Bears",CIN:"Cincinnati Bengals",CLE:"Cleveland Browns",DAL:"Dallas Cowboys",DEN:"Denver Broncos",DET:"Detroit Lions",GB:"Green Bay Packers",HOU:"Houston Texans",IND:"Indianapolis Colts",JAX:"Jacksonville Jaguars",KC:"Kansas City Chiefs",LV:"Las Vegas Raiders",LAC:"Los Angeles Chargers",LAR:"Los Angeles Rams",LA:"Los Angeles Rams",MIA:"Miami Dolphins",MIN:"Minnesota Vikings",NE:"New England Patriots",NO:"New Orleans Saints",NYG:"New York Giants",NYJ:"New York Jets",PHI:"Philadelphia Eagles",PIT:"Pittsburgh Steelers",SF:"San Francisco 49ers",SEA:"Seattle Seahawks",TB:"Tampa Bay Buccaneers",TEN:"Tennessee Titans",WAS:"Washington Commanders"};
+const CARD_DATA = "data/players.json";
+let cardData = null, cardDataLoad = null;
+function loadCardData(){
+  if (!cardDataLoad) cardDataLoad = fetch(CARD_DATA + "?v=" + new Date().toISOString().slice(0, 10))
+    .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(d => {
+      const byName = new Map();
+      for (const [id, p] of Object.entries(d.players || {})) byName.set(normName(p.n) + "|" + (p.p === "FB" ? "RB" : p.p), id);
+      cardData = { ...d, byName };
+      return cardData;
+    })
+    .catch(() => { cardDataLoad = null; return null; });
+  return cardDataLoad;
+}
+// Current season straight from Sleeper's stats feed (updates during games), so the card
+// doesn't wait for the overnight nflverse file. Falls back quietly if Sleeper doesn't answer.
+async function liveSeasonRow(pid, sp){
+  const season = Number(S.nflState?.season) || (cardData && cardData.season) || new Date().getFullYear();
+  try {
+    const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 5000);
+    const r = await fetch(`https://api.sleeper.com/stats/nfl/player/${encodeURIComponent(pid)}?season_type=regular&season=${season}&grouping=season`, { signal: ctl.signal });
+    clearTimeout(t);
+    if (!r.ok) return null;
+    const d = await r.json(), x = d && d.stats;
+    if (!x || !x.gp) return { season, row: null };
+    const v = k => Number(x[k]) || 0;
+    return { season, row: [season, sp?.team || "", v("gp"), v("pass_cmp"), v("pass_att"), v("pass_yd"), v("pass_td"), v("pass_int"),
+      v("rush_att"), v("rush_yd"), v("rush_td"), v("rec_tgt"), v("rec"), v("rec_yd"), v("rec_td"), v("fum_lost"), v("pts_ppr")] };
+  } catch(e){ return null; }
+}
+function cardRecord(pid, sp, a){
+  if (!cardData) return null;
+  const g = String(sp?.gsis_id || "").trim();
+  if (g && cardData.players[g]) return cardData.players[g];
+  const id = cardData.byName.get(normName(a?.name || sp?.full_name || "") + "|" + (a?.pos || sp?.position));
+  return id ? cardData.players[id] : null;
+}
+const INJ_LABEL = { Questionable: ["Questionable", "q"], Doubtful: ["Doubtful", "d"], Out: ["Out", "o"], IR: ["Injured Reserve", "o"], PUP: ["PUP list", "o"], NFI: ["Non-football injury list", "o"], Sus: ["Suspended", "o"], COV: ["COVID list", "o"], NA: ["Not active", "d"], DNR: ["Did not report", "d"] };
+function heightText(h){
+  if (!h) return "";
+  if (/['"]/.test(h)) return h;
+  const n = Number(h); return n ? `${Math.floor(n / 12)}'${n % 12}"` : String(h);
+}
+function expText(y){ y = Number(y); if (isNaN(y)) return ""; if (y === 0) return "Rookie"; const n = y + 1; return n + (n % 100 >= 11 && n % 100 <= 13 ? "th" : ["th","st","nd","rd"][n % 10] || "th") + " season"; }
+function dateText(d){ if (/^\d{4}-\d{2}-\d{2}$/.test(d || "")) d += "T12:00:00"; const t = Date.parse(d); return isNaN(t) ? "" : new Date(t).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" }); }
+const n0 = v => (v || 0).toLocaleString();
+
+function statsTable(rec, pos, season){
+  const rows = rec?.s || [];
+  if (!rows.length) return `<p class="empty">No NFL regular-season stats yet.</p>`;
+  // column: [header, value from a season row]
+  const C = {
+    g: ["G", r => r[2]], ca: ["Cmp/Att", r => `${n0(r[3])}/${n0(r[4])}`], py: ["Pass Yds", r => n0(r[5])], ptd: ["Pass TD", r => r[6]], int: ["INT", r => r[7]],
+    car: ["Carries", r => n0(r[8])], ry: ["Rush Yds", r => n0(r[9])], rtd: ["Rush TD", r => r[10]],
+    tgt: ["Targets", r => n0(r[11])], rec: ["Rec", r => n0(r[12])], recy: ["Rec Yds", r => n0(r[13])], rectd: ["Rec TD", r => r[14]],
+    pts: ["PPR Pts", r => (Math.round(r[16] * 10) / 10).toLocaleString()], ppg: ["Pts/G", r => r[2] ? (r[16] / r[2]).toFixed(1) : "–"]
+  };
+  const cols = pos === "QB" ? ["g","ca","py","ptd","int","ry","rtd","pts","ppg"]
+             : pos === "RB" ? ["g","car","ry","rtd","rec","recy","rectd","pts","ppg"]
+             : ["g","tgt","rec","recy","rectd","ry","pts","ppg"];
+  const tot = [0, "", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+  rows.forEach(r => { for (let i = 2; i < tot.length; i++) tot[i] += Number(r[i]) || 0; });
+  const body = [...rows].reverse().map(r => `<tr><td>${r[0]}${r[0] >= season ? ` <small>(${r.live ? "live" : "so far"})</small>` : ""}</td><td class="l">${esc(r[1])}</td>${cols.map(k => `<td>${C[k][1](r)}</td>`).join("")}</tr>`).join("");
+  const yrs = new Set(rows.map(r => r[0])).size;
+  return `<div class="pc-scroll"><table><thead><tr><th>Season</th><th class="l">Team</th>${cols.map(k => `<th>${C[k][0]}</th>`).join("")}</tr></thead>
+    <tbody>${body}<tr class="tot"><td>Career</td><td class="l">${yrs} season${yrs > 1 ? "s" : ""}</td>${cols.map(k => `<td>${C[k][1](tot)}</td>`).join("")}</tr></tbody></table></div>`;
+}
+function injuryTable(rec){
+  const rows = rec?.i || [];
+  if (!rows.length) return `<p class="empty">Not listed on an NFL injury report since 2012.</p>`;
+  const body = rows.map(r => {
+    const wk = r[2] === r[3] ? `Week ${r[2]}` : `Weeks ${r[2]}–${r[3]}`;
+    const listed = [r[4] ? `Out ${r[4]}` : "", r[5] ? `Doubtful ${r[5]}` : "", r[6] ? `Questionable ${r[6]}` : ""].filter(Boolean).join(", ");
+    return `<tr><td>${r[0]}</td><td class="l">${esc(r[1])}</td><td class="l">${wk}</td><td class="l">${listed}</td></tr>`;
+  }).join("");
+  const outWeeks = rows.reduce((t, r) => t + r[4], 0);
+  return `<div class="pc-scroll"><table><thead><tr><th>Season</th><th class="l">Injury</th><th class="l">When</th><th class="l">Weeks listed</th></tr></thead><tbody>${body}</tbody></table></div>
+    <p class="pc-note">${rows.length} injury listing${rows.length > 1 ? "s" : ""}, ${outWeeks} week${outWeeks === 1 ? "" : "s"} ruled out. Regular season only.</p>`;
+}
+function currentStatus(sp){
+  const st = sp?.injury_status, lab = INJ_LABEL[st];
+  if (!st && (!sp?.status || sp.status === "Active")) return `<div class="pc-status"><b>No current injury designation</b><p>Active${sp?.team ? " for the " + esc(NFL_TEAMS[sp.team] || sp.team) : ""}.</p></div>`;
+  const label = lab ? lab[0] : (st || sp.status);
+  const detail = [sp.injury_body_part, sp.injury_notes].filter(Boolean).map(esc).join(": ");
+  const since = sp.injury_start_date ? `Since ${dateText(sp.injury_start_date)}.` : "";
+  const cls = lab && lab[1] === "q" ? "warn" : "hurt";
+  return `<div class="pc-status ${cls}"><b>${esc(label)}</b>${detail || since ? `<p>${detail}${detail && since ? ". " : ""}${since}</p>` : ""}</div>`;
+}
+async function openPlayerCard(pid){
+  const sp = S.sleeperPlayers?.[pid] || {}, a = S.assets?.get("p:" + pid);
+  const name = a?.name || sp.full_name || `${sp.first_name || ""} ${sp.last_name || ""}`.trim() || "Player";
+  const pos = a?.pos || sp.position || "", team = sp.team || "";
+  const lab = INJ_LABEL[sp.injury_status];
+  const owner = a?.owner != null ? S.teams.get(a.owner)?.name : "Free agent";
+  const facts = [
+    ["Age", a?.age ? ageText(a.age) : sp.age], ["Height", heightText(sp.height)], ["Weight", sp.weight ? sp.weight + " lb" : ""],
+    ["College", sp.college], ["Experience", expText(sp.years_exp)], ["Fantasy team", owner]
+  ].filter(f => f[1] !== undefined && f[1] !== null && f[1] !== "");
+  $("pcard").innerHTML = `<div class="pc" role="dialog" aria-modal="true" aria-labelledby="pcName">
+    <button type="button" class="pc-close" aria-label="Close player card">×</button>
+    <header class="pc-head">
+      <div class="pc-photo">${FOOTBALL}<img src="https://sleepercdn.com/content/nfl/players/${encodeURIComponent(pid)}.jpg" alt="" onerror="this.remove()"></div>
+      <div class="pc-id"><h2 id="pcName">${esc(name)}</h2>
+        <div class="pc-sub"><span>${esc(pos)}${sp.number ? " · #" + esc(sp.number) : ""}</span>
+          ${team ? `<span><img src="https://sleepercdn.com/images/team_logos/nfl/${esc(team.toLowerCase())}.png" alt="" onerror="this.remove()"> ${esc(NFL_TEAMS[team] || team)}</span>` : `<span>Free agent</span>`}
+          <span class="pc-tag ${lab ? lab[1] : sp.injury_status ? "o" : "h"}">${esc(lab ? lab[0] : sp.injury_status || "Healthy")}</span></div></div>
+      ${a ? `<div class="pc-val"><b>${fmt(a.value)}</b><small>${[a.lgPosRank ? pos + a.lgPosRank : "", a.lgRank ? "#" + a.lgRank + " overall" : ""].filter(Boolean).join(" · ")} in your league</small></div>` : ""}
+    </header>
+    <div class="pc-body">
+      <dl class="pc-facts">${facts.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl>
+      <h3>Current Status</h3>${currentStatus(sp)}
+      <h3>Career Stats</h3><div id="pcStats"><p class="pc-loading">Loading stats…</p></div>
+      <h3>Injury History</h3><div id="pcInj"><p class="pc-loading">Loading injury history…</p></div>
+      <p class="pc-note">Current status and this season&#8217;s stats come live from Sleeper. Earlier seasons and injury reports come from nflverse open data, updated daily. Regular season only. Fantasy points use standard full-PPR scoring.</p>
+    </div></div>`;
+  $("pcard").hidden = false; document.body.style.overflow = "hidden";
+  $("pcard").querySelector(".pc-close").focus();
+  const [data, live] = await Promise.all([loadCardData(), liveSeasonRow(pid, sp)]);
+  if ($("pcard").hidden) return;
+  const rec0 = data ? cardRecord(pid, sp, a) : null;
+  // past seasons from nflverse, this season from Sleeper when it answered
+  const rec = { s: (rec0?.s || []).slice(), i: rec0?.i || [] };
+  if (live){
+    rec.s = rec.s.filter(r => r[0] !== live.season);
+    if (live.row){ live.row.live = true; if (!live.row[1]) live.row[1] = (rec0?.s || []).find(r => r[0] === live.season)?.[1] || ""; rec.s.push(live.row); }
+  }
+  const season = live?.season || data?.season || new Date().getFullYear();
+  $("pcStats").innerHTML = data || live ? statsTable(rec, pos, season) : `<p class="empty">Stats aren't available right now. Try again in a minute.</p>`;
+  $("pcInj").innerHTML = data ? injuryTable(rec) : `<p class="empty">Injury history isn't available right now. Try again in a minute.</p>`;
+}
+function closePlayerCard(){ $("pcard").hidden = true; $("pcard").innerHTML = ""; document.body.style.overflow = ""; }
+// Capture phase, so tapping a photo inside a roster row opens the card instead of adding him to a trade
+document.addEventListener("click", e => {
+  const ph = e.target.closest(".av.pl[data-pid]");
+  if (ph && !e.target.closest("#pcard")){ e.preventDefault(); e.stopPropagation(); openPlayerCard(ph.dataset.pid); }
+}, true);
+$("pcard").addEventListener("click", e => { if (e.target === $("pcard") || e.target.closest(".pc-close")) closePlayerCard(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("pcard").hidden) closePlayerCard(); });
+$("valuesBody").addEventListener("click", e => {
+  const tr = e.target.closest("tr[data-id^='p:']"); if (tr) openPlayerCard(tr.dataset.id.slice(2));
 });
 
 // ============================================================
@@ -3810,7 +4013,7 @@ function findForTarget(me, target){
     if (r.theirNeed) why.push(`${th.team.name} needs ${andList([...new Set(r.pack.filter(a => a.kind === "player" && th.pos[a.pos].rank > C.N / 2).map(a => a.pos))])}, so this should appeal to them.`);
     else if (th.team.status === "rebuild" && r.pack.some(a => a.kind === "pick" || (a.age && a.age <= 24))) why.push(`${th.team.name} is rebuilding, so youth and picks appeal to them.`);
     return `<article class="tf-card${i === 0 ? " best" : ""}">
-      <div class="tf-card-head">${teamPhoto(rid, "md")}<span class="nm"><b>${esc(th.team.name)}</b><small>${statusText[th.team.status]}${i === 0 ? ", best fit" : ""}</small></span></div>
+      <div class="tf-card-head"><span class="tf-rank" title="Rank ${i + 1} of ${top.length}">${i === 0 ? "#1 Best trade" : "#" + (i + 1)}</span>${teamPhoto(rid, "md")}<span class="nm"><b>${esc(th.team.name)}</b><small>${statusText[th.team.status]}</small></span></div>
       <div class="tf-get"><div class="lbl">You send</div>
         ${r.pack.map(a => `<div class="tf-row">${assetPhoto(a, "md")}<span class="tn"><b>${esc(a.name)}</b><small>${esc(a.kind === "player" ? [a.pos + (a.lgPosRank || ""), a.nfl, a.age ? "age " + ageText(a.age) : ""].filter(Boolean).join(", ") : a.nfl)}</small></span><span class="v">${fmt(a.value)}</span></div>`).join("")}
       </div>
@@ -3921,7 +4124,7 @@ function findTrades(me, sending, V){
     else if (r.theirDir === "win") why.push(`${th.name} is contending, so they're looking to win now.`);
     if (!why.length) why.push("Close in value and keeps your lineup balanced.");
     return `<article class="tf-card${i === 0 ? " best" : ""}">
-      <div class="tf-card-head">${teamPhoto(r.rid, "md")}<span class="nm"><b>${esc(th.name)}</b><small>${statusText[th.status]}${i === 0 ? ", best fit" : ""}</small></span></div>
+      <div class="tf-card-head"><span class="tf-rank" title="Rank ${i + 1} of ${picks.length}">${i === 0 ? "#1 Best trade" : "#" + (i + 1)}</span>${teamPhoto(r.rid, "md")}<span class="nm"><b>${esc(th.name)}</b><small>${statusText[th.status]}</small></span></div>
       <div class="tf-get"><div class="lbl">You get</div>
         ${r.pack.map(a => `<div class="tf-row">${assetPhoto(a, "md")}<span class="tn"><b>${esc(a.name)}</b><small>${esc(a.kind === "player" ? [a.pos + (a.lgPosRank || ""), a.nfl, a.age ? "age " + ageText(a.age) : ""].filter(Boolean).join(", ") : a.nfl)}</small></span><span class="v">${fmt(a.value)}</span></div>`).join("")}
       </div>
