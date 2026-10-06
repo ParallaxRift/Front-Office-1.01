@@ -2,17 +2,18 @@
 // Part of the site; loaded in order by index.html. All files share one global scope.
 // ============================================================
 // SECTIONS
-// The tabs are grouped into four sections: Trade, Player Values, My Team and League.
+// The tabs are grouped into four sections: Trade Tools, Player Values, My Team and League Locker.
+// Trade Tools always opens on the Trade Calculator; League Locker reopens the tab you last used there.
 // The section bar picks a section; the row under it (only when a section has more
 // than one tab) picks the tab inside it. The tab buttons themselves are unchanged,
 // so every other part of the site still opens a tab the same way.
 // Feedback & Build Notes moved to the footer.
 // ============================================================
 const NAV_GROUPS = [
-  { id: "trade",  label: "Trade",         tabs: ["calc", "finder", "history"] },
+  { id: "trade",  label: "Trade Tools",   tabs: ["calc", "finder", "history"], always: "calc" },
   { id: "values", label: "Player Values", tabs: ["values"] },
   { id: "team",   label: "My Team",       tabs: ["strategy"] },
-  { id: "league", label: "League",        tabs: ["standings", "trophy", "scores"] },
+  { id: "league", label: "League Locker", tabs: ["standings", "trophy", "scores"] },
   { id: "more",   label: "Feedback",      tabs: ["feedback"], footer: true }
 ];
 const navGroupOf = tab => NAV_GROUPS.find(g => g.tabs.includes(tab));
@@ -30,7 +31,7 @@ function syncNav(){
     const g = NAV_GROUPS.find(x => x.id === b.dataset.group), vis = visibleIn(g);
     b.hidden = !vis.length;
     b.setAttribute("aria-pressed", active === g);
-    // a section with a single tab is named after that tab (in The Basics, "Trade" is just the calculator)
+    // a section with a single visible tab is named after that tab (in The Basics, Trade Tools is just the calculator)
     b.textContent = g.tabs.length > 1 && vis.length === 1 ? vis[0].dataset.full : g.label;
   }
   for (const t of $("tabs").children) t.classList.toggle("off-group", !active || t.dataset.group !== active.id);
@@ -41,7 +42,7 @@ function syncNav(){
 $("groups").addEventListener("click", e => {
   const b = e.target.closest(".group"); if (!b) return;
   const g = NAV_GROUPS.find(x => x.id === b.dataset.group);
-  const pick = [navLast[g.id], ...g.tabs].map(x => x && navTab(x)).find(t => t && !t.hidden);
+  const pick = [g.always || navLast[g.id], ...g.tabs].map(x => x && navTab(x)).find(t => t && !t.hidden);
   if (pick) pick.click(); else syncNav();
 });
 $("footFeedback").addEventListener("click", e => {
