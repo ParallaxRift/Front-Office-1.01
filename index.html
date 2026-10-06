@@ -2840,6 +2840,14 @@ async function loadGameStatus(week){
     return Object.keys(status).length ? status : null;
   } catch(e){ return null; }
 }
+// The latest regular-season week whose games are all final (ESPN). If ESPN can't be reached,
+// fall back to the week before Sleeper's current week.
+async function lastFinishedWeek(){
+  const wk = currentWeek();
+  const st = await loadGameStatus(wk);
+  if (st && Object.values(st).every(x => x === "post")) return wk;
+  return wk - 1;
+}
 const notStarted = pid => {
   if (!S.gameStatus) return false;
   const team = /^[A-Z]{2,3}$/.test(pid) ? pid : S.sleeperPlayers?.[pid]?.team;
@@ -3863,7 +3871,9 @@ async function loadTrophyRoom(){
       const final = (bracket || []).find(m => m.p === 1), third = (bracket || []).find(m => m.p === 3);
       let weeks = [];
       if (idx < HS_SEASONS){
-        const last = isCur && S.nflState?.season_type === "regular" ? currentWeek() - 1 : 18;   // skip the week still being played
+        // This season: count every finished week. Sleeper keeps calling a week "current" until midweek,
+        // even after Monday night's game is over, so ask ESPN whether that week's games are all final.
+        const last = isCur && S.nflState?.season_type === "regular" ? await lastFinishedWeek() : 18;
         const all = await Promise.all(Array.from({ length: Math.max(0, last) }, (_, w) => getJSON(`/league/${L.league_id}/matchups/${w + 1}`).catch(() => [])));
         weeks = all.map((ms, w) => {
           const scored = (ms || []).map(m => ({ rid: m.roster_id, pts: Number(m.custom_points ?? m.points ?? 0) })).filter(m => m.pts > 0);
