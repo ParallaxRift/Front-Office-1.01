@@ -363,7 +363,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 .mode-toggle{display:inline-flex;background:var(--card);border:1.5px solid var(--line);border-radius:999px;padding:3px}
 .mode-toggle button{border:0;background:none;border-radius:999px;padding:7px 16px;font-family:var(--display);font-weight:700;font-size:17px;color:var(--muted);cursor:pointer;transition:background .2s,color .2s}
 .mode-toggle button[aria-checked=true]{background:var(--field);color:#fff}
-.mode-toggle button[data-mode=freak][aria-checked=true]{background:var(--ink);color:var(--gold)}
+.mode-toggle button[data-mode=freak][aria-checked=true]{background:var(--ink);color:#6FB2FF}
 .mode-note{font-size:14px;color:var(--muted)}
 .tabs + .panel{margin-top:10px}
 @media (prefers-reduced-motion:reduce){.mode-toggle button{transition:none}}
@@ -669,6 +669,34 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 .brand-home{text-decoration:none;color:inherit;cursor:pointer;border-radius:8px}
 .brand-home:hover span{color:var(--field)}
 .brand-home:focus-visible{outline:3px solid var(--field);outline-offset:3px}
+
+/* Freakshow: fire, smoke, and tab reveal */
+.fx-layer{position:fixed;pointer-events:none;z-index:70;overflow:visible}
+.fx-flame{position:absolute;bottom:0;margin-left:-14px;border-radius:50% 50% 50% 50%/65% 65% 35% 35%;
+  background:radial-gradient(ellipse at 50% 75%,#FFF8C8 0%,#FFD24A 22%,#FF8A1E 48%,#E8380E 66%,rgba(200,30,10,0) 78%);
+  filter:blur(.4px);opacity:0;animation:fx-flame 900ms ease-out forwards;transform-origin:50% 100%}
+@keyframes fx-flame{0%{opacity:0;transform:translate(0,0) scale(.4)}15%{opacity:1}70%{opacity:.9}
+  100%{opacity:0;transform:translate(var(--dx),calc(var(--rise) * -1)) scale(.15)}}
+.fx-spark{position:absolute;bottom:30%;width:4px;height:4px;border-radius:50%;background:#FFE08A;box-shadow:0 0 6px 2px #FF9A2E;opacity:0;animation:fx-spark 800ms ease-out forwards}
+@keyframes fx-spark{0%{opacity:0;transform:translate(0,0)}10%{opacity:1}100%{opacity:0;transform:translate(var(--dx),calc(var(--rise) * -1))}}
+.fx-smoke{position:absolute;bottom:40%;margin-left:-14px;border-radius:50%;background:radial-gradient(circle,rgba(90,94,100,.6) 0%,rgba(110,114,120,.3) 45%,rgba(120,124,130,0) 70%);
+  filter:blur(2px);opacity:0;animation:fx-smoke 1600ms ease-out forwards}
+@keyframes fx-smoke{0%{opacity:0;transform:translate(0,0) scale(.5)}20%{opacity:.85}100%{opacity:0;transform:translate(var(--dx),calc(var(--rise) * -1)) scale(2.2)}}
+.mode-toggle button.on-fire{animation:fx-glow 1.6s ease-out}
+@keyframes fx-glow{0%{box-shadow:0 0 0 0 rgba(255,120,30,0);color:#FFF}
+  15%{box-shadow:0 0 14px 6px rgba(255,140,40,.85),0 0 30px 10px rgba(255,80,20,.45);background:#3A1A0C;color:#FFE08A}
+  60%{box-shadow:0 0 10px 4px rgba(255,120,30,.55);background:#2A1A12}
+  100%{box-shadow:0 0 0 0 rgba(255,120,30,0)}}
+.tab.tab-reveal{animation:tab-in 1.4s ease-out both}
+@keyframes tab-in{0%{opacity:0;transform:translateY(8px) scale(.96);background:var(--gold-soft);color:var(--gold);box-shadow:0 0 0 2px var(--gold)}
+  20%{opacity:1;transform:none;background:var(--gold-soft);color:var(--gold);box-shadow:0 0 0 2px var(--gold)}
+  70%{background:var(--gold-soft);box-shadow:0 0 0 2px var(--gold)}
+  100%{background:transparent;box-shadow:0 0 0 0 transparent}}
+@media (max-width:600px){@keyframes tab-in{0%{opacity:0;transform:translateY(8px) scale(.96);background:var(--gold-soft);color:var(--gold);border-color:var(--gold)}
+  20%{opacity:1;transform:none;background:var(--gold-soft);color:var(--gold);border-color:var(--gold)}
+  70%{background:var(--gold-soft);border-color:var(--gold)}100%{}}}
+@media (prefers-reduced-motion:reduce){.tab.tab-reveal{animation:none;background:var(--gold-soft)}}
+.tab{border-radius:8px 8px 0 0}
 
 /* Build notes */
 .notes{margin-top:18px}
@@ -1071,7 +1099,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 
   <section class="panel" id="panel-finder">
     <div class="box tf-opts tf-findbox">
-      <div class="tf-head"><h3 id="tfOptsTitle">1.) Find a Player</h3><button type="button" class="ghost tf-reset" id="tfReset">Reset</button></div>
+      <div class="tf-head"><h3 id="tfOptsTitle">Find a Player</h3><button type="button" class="ghost tf-reset" id="tfReset">Reset</button></div>
       <div class="tf-find-grid">
         <div class="tf-find-main">
           <div id="tfSending" class="tf-sending"></div>
@@ -1079,7 +1107,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
           <div class="field"><label for="tfWant">Looking for</label>
             <select id="tfWant">
               <option value="fit">Best fit</option><option value="QB">A quarterback</option><option value="RB">A running back</option>
-              <option value="WR">A wide receiver</option><option value="TE">A tight end</option><option value="PICK">Draft picks</option>
+              <option value="WR">A wide receiver</option><option value="TE">A tight end</option>
             </select></div>
           <div class="field"><label for="tfPartner">Trade partner</label><select id="tfPartner"></select></div>
           <div class="field"><label for="tfMax">Pieces back</label>
@@ -1096,7 +1124,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
     </div>
     <div class="box tf-main">
       <div class="tf-pick">
-        <h3>2.) Player to Trade Away</h3>
+        <h3>Player to Trade Away</h3>
         <div class="teamline"><select id="tfTeam" aria-label="Team you're trading for"></select><span class="badge" id="tfBadge"></span></div>
         <input type="search" id="tfSearch" placeholder="Search your players and picks" aria-label="Search your roster">
         <div class="list tf-list" id="tfList"></div>
@@ -2872,9 +2900,17 @@ document.addEventListener("click", e => {
 const BASIC_TABS = ["calc", "values"];
 const currentMode = () => store.get("fo_mode") === "basics" ? "basics" : "freak";
 function applyMode(mode, quiet){
+  const was = $("modeToggle").querySelector('[aria-checked="true"]')?.dataset.mode;
   store.set("fo_mode", mode);
   for (const b of $("modeToggle").children) b.setAttribute("aria-checked", b.dataset.mode === mode);
-  for (const t of $("tabs").children) t.hidden = mode === "basics" && !BASIC_TABS.includes(t.dataset.tab);
+  const revealed = [];
+  for (const t of $("tabs").children){
+    const hide = mode === "basics" && !BASIC_TABS.includes(t.dataset.tab);
+    if (t.hidden && !hide) revealed.push(t);
+    t.hidden = hide;
+  }
+  // The big moment: flipping from The Basics to Freakshow
+  if (!quiet && was === "basics" && mode === "freak"){ igniteFreakshow(); revealTabs(revealed); }
   // If the open tab just got hidden, go back to the calculator
   const open = $("tabs").querySelector('.tab[aria-selected="true"]');
   if (open && open.hidden) $("tabs").querySelector('[data-tab="calc"]').click();
@@ -2889,6 +2925,50 @@ $("modeToggle").addEventListener("keydown", e => {
   const next = currentMode() === "basics" ? "freak" : "basics";
   applyMode(next); $("modeToggle").querySelector(`[data-mode="${next}"]`).focus();
 });
+
+// ---------- Freakshow fire, smoke, and tab reveal ----------
+const calmMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+function igniteFreakshow(){
+  const btn = $("modeToggle").querySelector('[data-mode="freak"]');
+  if (!btn || calmMotion()) return;
+  btn.classList.remove("on-fire"); void btn.offsetWidth; btn.classList.add("on-fire");
+  setTimeout(() => btn.classList.remove("on-fire"), 1700);
+  const r = btn.getBoundingClientRect();
+  const layer = document.createElement("div"); layer.className = "fx-layer";
+  const z = parseFloat(getComputedStyle(document.documentElement).zoom) || 1;   // the page is zoomed on computers
+  layer.style.left = r.left / z + "px"; layer.style.top = r.top / z + "px"; layer.style.width = r.width / z + "px"; layer.style.height = r.height / z + "px";
+  document.body.appendChild(layer);
+  const rand = (a, b) => a + Math.random() * (b - a);
+  // flames: licking up from the button for about a second
+  for (let i = 0; i < 40; i++){
+    const f = document.createElement("span"); f.className = "fx-flame";
+    const size = rand(22, 42);
+    f.style.cssText = `left:${rand(2, 98)}%;width:${size}px;height:${size * 1.7}px;animation-delay:${rand(0, 800)}ms;animation-duration:${rand(700, 1100)}ms;--dx:${rand(-12, 12)}px;--rise:${rand(30, 70)}px`;
+    layer.appendChild(f);
+  }
+  // sparks
+  for (let i = 0; i < 14; i++){
+    const k = document.createElement("span"); k.className = "fx-spark";
+    k.style.cssText = `left:${rand(10, 90)}%;animation-delay:${rand(100, 900)}ms;--dx:${rand(-40, 40)}px;--rise:${rand(50, 95)}px`;
+    layer.appendChild(k);
+  }
+  // smoke: drifts up after the flames die down
+  for (let i = 0; i < 12; i++){
+    const m = document.createElement("span"); m.className = "fx-smoke";
+    const size = rand(26, 48);
+    m.style.cssText = `left:${rand(10, 90)}%;width:${size}px;height:${size}px;animation-delay:${900 + rand(0, 700)}ms;--dx:${rand(-30, 30)}px;--rise:${rand(60, 110)}px`;
+    layer.appendChild(m);
+  }
+  setTimeout(() => layer.remove(), 3400);
+}
+function revealTabs(tabs){
+  tabs.forEach((t, i) => {
+    t.classList.remove("tab-reveal"); void t.offsetWidth;
+    t.style.animationDelay = calmMotion() ? "0ms" : (250 + i * 110) + "ms";
+    t.classList.add("tab-reveal");
+    setTimeout(() => { t.classList.remove("tab-reveal"); t.style.animationDelay = ""; }, 250 + i * 110 + 1500);
+  });
+}
 
 // ============================================================
 // AUTO REFRESH
@@ -3536,13 +3616,13 @@ function renderFinder(){
   renderRecs(me);
   if (tfTarget){
     const a = S.assets.get(tfTarget), owner = S.teams.get(a.owner);
-    $("tfOptsTitle").textContent = "1.) Find a Player";
+    $("tfOptsTitle").textContent = "Find a Player";
     $("tfSending").innerHTML = `<button type="button" class="tf-target" id="tfClearTarget" aria-label="Stop looking for ${esc(a.name)}">
       ${assetPhoto(a, "sm")}<span class="bi-text"><b>${esc(a.name)}</b><small>${esc([a.pos + (a.lgPosRank || ""), a.nfl, a.age ? "age " + ageText(a.age) : "", "from " + (owner?.name || "")].filter(Boolean).join(", "))}</small></span><span class="v">${fmt(a.value)}</span><span class="tf-x" aria-hidden="true">✕</span></button>`;
     findForTarget(me, a);
     return;
   }
-  $("tfOptsTitle").textContent = "1.) Find a Player";
+  $("tfOptsTitle").textContent = "Find a Player";
   $("tfSending").innerHTML = sending.length ? sending.map(a => `<button type="button" class="tf-chip" data-id="${esc(a.id)}" aria-label="Remove ${esc(a.name)}">
       ${assetPhoto(a, "sm")}<span class="bi-text"><b>${esc(a.name)}</b><small>${esc(a.kind === "player" ? [a.pos + (a.lgPosRank || ""), a.nfl, a.age ? "age " + ageText(a.age) : ""].filter(Boolean).join(", ") : a.nfl)}</small></span><span class="v">${fmt(a.value)}</span><span class="tf-x" aria-hidden="true">✕</span></button>`).join("")
       + (sending.length > 1 ? `<div class="tf-total"><span>Package value</span><span>${fmt(V)}</span></div>` : "")
