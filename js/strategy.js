@@ -148,6 +148,6 @@ $("strategy").addEventListener("click", e => {
   S.sendIds.clear(); S.getIds.clear(); S.getIds.add(a.id);
   renderCalc();
   $("tabs").querySelector('[data-tab="calc"]').click();
-  window.scrollTo({ top: $("tabs").offsetTop, behavior: "smooth" });
+  window.scrollTo({ top: $("groups").offsetTop, behavior: "smooth" });
 });
 

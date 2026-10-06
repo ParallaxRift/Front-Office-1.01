@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=20261006a">
+<link rel="stylesheet" href="css/styles.css?v=20261006b">
 </head>
 <body>
 <div id="pcard" class="pc-backdrop" hidden></div>
@@ -82,16 +82,17 @@
     <p class="source" id="source" hidden></p>
   </section>
 
+  <nav class="groups" id="groups" aria-label="Sections"></nav>
   <div class="tabs" id="tabs" role="tablist">
-    <button class="tab" role="tab" aria-selected="true" data-tab="calc">Trade Calculator</button>
-    <button class="tab" role="tab" aria-selected="false" data-tab="finder">Trade Finder</button>
-    <button class="tab" role="tab" aria-selected="false" data-tab="values">Player Values</button>
-    <button class="tab" role="tab" aria-selected="false" data-tab="strategy">My Team Strategy</button>
-    <button class="tab" role="tab" aria-selected="false" data-tab="history">Trade History</button>
-    <button class="tab" role="tab" aria-selected="false" data-tab="standings">League Analysis</button>
-    <button class="tab" role="tab" aria-selected="false" data-tab="trophy">Trophy Room</button>
-    <button class="tab" role="tab" aria-selected="false" data-tab="scores">Live Scores</button>
-    <button class="tab" role="tab" aria-selected="false" data-tab="feedback"><em>Feedback &amp; Build Notes</em></button>
+    <button class="tab" role="tab" aria-selected="true" data-tab="calc" data-full="Trade Calculator">Calculator</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="finder" data-full="Trade Finder">Trade Finder</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="values" data-full="Player Values">Player Values</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="strategy" data-full="My Team Strategy">Team Strategy</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="history" data-full="Trade History">Trade History</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="standings" data-full="League Analysis">Standings &amp; Simulator</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="trophy" data-full="Trophy Room">Trophy Room</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="scores" data-full="Live Scores">Live Scores</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="feedback" data-full="Feedback &amp; Build Notes">Feedback &amp; Build Notes</button>
   </div>
 
   <section class="panel on" id="panel-calc">
@@ -111,6 +112,7 @@
         <button type="button" class="reset-btn" id="resetTrade">Reset</button>
       </div>
     </div>
+    <button type="button" class="minibar" id="miniBar" hidden aria-label="Back to the trade summary"><span class="mb-sides"><span>Send <b id="mbSend">0</b></span><span>Get <b id="mbGet">0</b></span></span><span class="mb-verdict" id="mbVerdict"></span></button>
     <div class="side-switch" id="sideSwitch" role="tablist" aria-label="Which side are you adding players to?">
       <button type="button" role="tab" data-side="A" aria-selected="true"><small>Add to</small><span>You Send <em id="swCountA"></em></span><i id="swTeamA"></i></button>
       <button type="button" role="tab" data-side="B" aria-selected="false"><small>Add to</small><span>You Get <em id="swCountB"></em></span><i id="swTeamB"></i></button>
@@ -297,12 +299,13 @@
       <label style="font-size:14px;display:flex;gap:6px;align-items:center"><input type="checkbox" id="rosteredOnly" checked> Only rostered in this league</label>
     </div>
     <p style="margin:0 0 10px;font-size:14px;color:var(--muted)">Tap any player to open his player card. On other tabs, tap a player's photo. <span id="valuesUpdated"></span></p>
-    <div class="tablewrap">
-      <table>
-        <thead><tr><th class="n">#</th><th>Player</th><th>Pos</th><th class="n">Age</th><th class="hide-sm">League team</th><th class="n" title="This League: The player's value in your league after all of Front Office's adjustments: scoring, lineup, trade habits, age and starter role. This is the number the calculator uses.">This league<button type="button" class="info-btn" data-info="col-league" aria-label="What does This league mean?">?</button></th><th class="n hide-sm" title="Market: The same player's value from the plain rankings, before any league adjustments. It shows what he'd be worth in a generic league.">Market<button type="button" class="info-btn" data-info="col-market" aria-label="What does Market mean?">?</button></th><th class="n hide-sm" title="Change: How far your league's value is from the market value. It stays blank when the difference is under 1%, so small moves don't clutter the table.">Change<button type="button" class="info-btn" data-info="col-change" aria-label="What does Change mean?">?</button></th></tr></thead>
+    <div class="tablewrap" id="valuesWrap">
+      <table id="valuesTable">
+        <thead><tr><th class="n sortable" data-sort="rank" aria-sort="none">#</th><th class="sortable" data-sort="name" aria-sort="none">Player</th><th class="sortable" data-sort="pos" aria-sort="none">Pos</th><th class="n sortable" data-sort="age" aria-sort="none">Age</th><th class="hide-sm">League team</th><th class="n sortable" data-sort="value" aria-sort="descending" title="This League: The player's value in your league after all of Front Office's adjustments: scoring, lineup, trade habits, age and starter role. This is the number the calculator uses.">This league<button type="button" class="info-btn" data-info="col-league" aria-label="What does This league mean?">?</button></th><th class="n hide-sm sortable" data-sort="market" aria-sort="none" title="Market: The same player's value from the plain rankings, before any league adjustments. It shows what he'd be worth in a generic league.">Market<button type="button" class="info-btn" data-info="col-market" aria-label="What does Market mean?">?</button></th><th class="n sortable" data-sort="change" aria-sort="none" title="Change: How far your league's value is from the market value. It stays blank when the difference is under 1%, so small moves don't clutter the table.">Change<button type="button" class="info-btn" data-info="col-change" aria-label="What does Change mean?">?</button></th></tr></thead>
         <tbody id="valuesBody"></tbody>
       </table>
     </div>
+    <div class="vmore"><span id="valuesCount"></span><button type="button" class="ghost" id="valuesMore" hidden>Show 50 more</button></div>
     <p class="note">"Market" is the starting value before your league's settings are applied, rescaled so both columns share the same 0–10,000 range. "Change" shows how much your league's settings move each player.</p>
   </section>
 
@@ -449,13 +452,13 @@
       <p class="mc-who">For managers who want every edge. This is the default.</p>
       <h3>Everything in The Basics, Plus</h3>
       <ul>
-        <li><b>Trade Finder:</b> pick a player and get fair trades that fit your team's direction, or find realistic targets and what it would cost to land them.</li>
-        <li><b>My Team Strategy:</b> a game plan, position report card, trade targets, sell list, and best trade partners.</li>
-        <li><b>Trade History:</b> every league trade graded with today's values, team trade records, and the full trade log.</li>
-        <li><b>League Analysis:</b> standings, power rankings, and what the team statuses mean.</li>
-        <li><b>Trophy Room:</b> past champions and weekly high points.</li>
-        <li><b>Live Scores:</b> every matchup, refreshing every minute on game days.</li>
-        <li><b>Feedback &amp; Build Notes:</b> share feedback and see what's new.</li>
+        <li><b>Trade Finder</b> (in Trade): pick a player and get fair trades that fit your team's direction, or find realistic targets and what it would cost to land them.</li>
+        <li><b>My Team:</b> a game plan, position report card, trade targets, sell list, and best trade partners.</li>
+        <li><b>Trade History</b> (in Trade): every league trade graded with today's values, team trade records, and the full trade log.</li>
+        <li><b>League:</b> standings, power rankings, the season simulator, and what the team statuses mean.</li>
+        <li><b>Trophy Room</b> (in League): past champions and weekly high points.</li>
+        <li><b>Live Scores</b> (in League): every matchup, refreshing every minute on game days.</li>
+        <li><b>Feedback &amp; Build Notes</b> (link at the bottom of every page): share feedback and see what's new.</li>
       </ul>
     </section>
   </div>
@@ -507,30 +510,32 @@
   <path d="M44 25v14" stroke="#D99A1E" stroke-width="2.3" stroke-linecap="round"/>
   <path d="M40.8 28h6.4M40.8 32h6.4M40.8 36h6.4" stroke="#D99A1E" stroke-width="2" stroke-linecap="round"/>
 </svg><span>Front Office</span></a>
-  <nav><a href="#">Home</a><a href="#about">About</a><a href="#modes">The Basics vs. Freakshow</a><a href="#beta">Sleeper Leagues in Beta</a></nav>
+  <nav><a href="#">Home</a><a href="#about">About</a><a href="#modes">The Basics vs. Freakshow</a><a href="#beta">Sleeper Leagues in Beta</a><a href="#" id="footFeedback" hidden>Feedback &amp; Build Notes</a></nav>
   <span class="ver" id="footVersion"></span><span class="ver" id="footUpdated"></span>
   <p>Expert consensus rankings provided by FantasyPros. Not affiliated with Sleeper or FantasyPros.</p>
 </footer>
 </div>
 
-<script src="js/core.js?v=20261006a"></script>
-<script src="js/league-load.js?v=20261006a"></script>
-<script src="js/values-engine.js?v=20261006a"></script>
-<script src="js/render.js?v=20261006a"></script>
-<script src="js/player-cards.js?v=20261006a"></script>
-<script src="js/settings-tab.js?v=20261006a"></script>
-<script src="js/strategy.js?v=20261006a"></script>
-<script src="js/live-scores.js?v=20261006a"></script>
-<script src="js/trade-history.js?v=20261006a"></script>
-<script src="js/modes.js?v=20261006a"></script>
-<script src="js/build-notes.js?v=20261006a"></script>
-<script src="js/feedback.js?v=20261006a"></script>
-<script src="js/standings-sim.js?v=20261006a"></script>
-<script src="js/calc-browse.js?v=20261006a"></script>
-<script src="js/trophy.js?v=20261006a"></script>
-<script src="js/popovers.js?v=20261006a"></script>
-<script src="js/trade-finder.js?v=20261006a"></script>
-<script src="js/pickers.js?v=20261006a"></script>
-<script src="js/about.js?v=20261006a"></script>
+<script src="js/core.js?v=20261006b"></script>
+<script src="js/league-load.js?v=20261006b"></script>
+<script src="js/values-engine.js?v=20261006b"></script>
+<script src="js/render.js?v=20261006b"></script>
+<script src="js/player-cards.js?v=20261006b"></script>
+<script src="js/settings-tab.js?v=20261006b"></script>
+<script src="js/strategy.js?v=20261006b"></script>
+<script src="js/live-scores.js?v=20261006b"></script>
+<script src="js/trade-history.js?v=20261006b"></script>
+<script src="js/modes.js?v=20261006b"></script>
+<script src="js/build-notes.js?v=20261006b"></script>
+<script src="js/feedback.js?v=20261006b"></script>
+<script src="js/standings-sim.js?v=20261006b"></script>
+<script src="js/calc-browse.js?v=20261006b"></script>
+<script src="js/calc-minibar.js?v=20261006b"></script>
+<script src="js/trophy.js?v=20261006b"></script>
+<script src="js/popovers.js?v=20261006b"></script>
+<script src="js/trade-finder.js?v=20261006b"></script>
+<script src="js/pickers.js?v=20261006b"></script>
+<script src="js/nav.js?v=20261006b"></script>
+<script src="js/about.js?v=20261006b"></script>
 </body>
 </html>

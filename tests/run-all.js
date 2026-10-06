@@ -42,16 +42,30 @@ async function openLeague(browser, viewport, opts){
       check(`${vp.name}: values loaded`, info.players > 100 && info.picks > 0, `${info.src}, ${info.players} players, ${info.picks} picks`);
       for (const mode of ['basics', 'freakshow']){
         await page.evaluate(m => applyMode(m, true), mode); await page.waitForTimeout(150);
-        const tabs = await page.$$eval('[data-tab]', x => [...new Set(x.filter(e => e.offsetParent !== null).map(e => e.dataset.tab))]);
+        // every tab this mode offers, opened the way a visitor would: section first, then the tab (Feedback is in the footer)
+        const tabs = await page.$$eval('#tabs [data-tab]', x => x.filter(e => !e.hidden).map(e => e.dataset.tab));
         const bad = [];
         for (const t of tabs){
           const before = page.errors.length;
-          await page.click(`[data-tab="${t}"]`).catch(() => {}); await page.waitForTimeout(250);
+          const group = await page.evaluate(t => navGroupOf(t).id, t);
+          if (group === 'more') await page.click('#footFeedback').catch(() => bad.push(`${t} footer link missing`));
+          else {
+            await page.click(`#groups [data-group="${group}"]`).catch(() => bad.push(`${t} section button missing`));
+            if (await page.$eval(`[data-tab="${t}"]`, e => e.offsetParent !== null)) await page.click(`[data-tab="${t}"]`);
+          }
+          await page.waitForTimeout(250);
           const shown = await page.$eval(`#panel-${t}`, e => e.offsetParent !== null).catch(() => false);
           const sideways = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1);
           if (!shown || page.errors.length > before || sideways) bad.push(`${t}${!shown ? ' not shown' : ''}${page.errors.length > before ? ' error' : ''}${sideways ? ' sideways scroll' : ''}`);
         }
         check(`${vp.name} ${mode}: all ${tabs.length} tabs open cleanly`, !bad.length, bad.join(', '));
+      }
+      if (vp.width < 500){
+        await page.click('#groups [data-group=trade]'); await page.click('[data-tab=calc]');
+        await page.tap('#listA .asset .nm >> nth=0'); await page.tap('#sideSwitch [data-side=B]'); await page.tap('#listB .asset .nm >> nth=2');
+        await page.evaluate(() => window.scrollTo(0, 1600)); await page.waitForTimeout(400);
+        const bar = await page.$eval('#miniBar', e => e.hidden ? '' : e.textContent);
+        check('phone: trade summary bar stays pinned while scrolling', /Send.*Get/.test(bar), bar);
       }
       check(`${vp.name}: no script errors`, !page.errors.length, page.errors.slice(0, 3).join(' | '));
       check(`${vp.name}: no missing site files`, !page.missing.length, page.missing.slice(0, 3).join(', '));
@@ -76,22 +90,36 @@ async function openLeague(browser, viewport, opts){
     check('next year\'s picks use simulated draft odds', picks);
 
     // 3) Calculator builds a trade and grades it
-    await page.click('[data-tab=calc]');
+    await page.click('#groups [data-group=trade]'); await page.click('[data-tab=calc]');
     await page.click('#listA .asset .nm >> nth=0'); await page.click('#listB .asset .nm >> nth=1'); await page.click('#listB .asset .nm >> nth=3'); await page.waitForTimeout(300);
     const verdict = (await page.textContent('#verdict')).trim();
     check('calculator grades a trade', /win|fair|lose|even/i.test(verdict), verdict);
 
     // 4) Season simulator: title odds add to ~100%, playoff odds to ~(playoff teams x 100%)
-    await page.click('[data-tab=standings]'); await page.click('#simBtn'); await page.waitForSelector('.sim-champ', { timeout: 30000 });
+    await page.click('#groups [data-group=league]'); await page.click('[data-tab=standings]'); await page.click('#simBtn'); await page.waitForSelector('.sim-champ', { timeout: 30000 });
     const sums = await page.$$eval('.sim-table tbody tr', rows => { const v = t => t.includes('>99') ? 100 : t.includes('<1') ? 0.3 : parseFloat(t) || 0;
       return rows.reduce((s, r) => ({ title: s.title + v(r.cells[7].textContent), po: s.po + v(r.cells[4].textContent) }), { title: 0, po: 0 }); });
     check('simulator title odds add to about 100%', Math.abs(sums.title - 100) <= 4, Math.round(sums.title) + '%');
     check('simulator playoff odds add to about 600%', Math.abs(sums.po - 600) <= 8, Math.round(sums.po) + '%');
 
     // 5) Explainer popups open
-    await page.click('[data-tab=values]');
+    await page.click('#groups [data-group=values]');
     let pops = 0; for (const k of ['col-league', 'col-market', 'col-change']){ await page.click(`.info-btn[data-info=${k}]`); await page.waitForTimeout(100); if (await page.$('.pop')) pops++; }
     check('column explainer popups open', pops === 3, `${pops} of 3`);
+    // Player Values: 50 rows at a time, sortable
+    const firstPage = await page.$$eval('#valuesBody tr', x => x.length);
+    await page.click('#valuesMore'); const secondPage = await page.$$eval('#valuesBody tr', x => x.length);
+    check('Player Values shows 50 rows, then 50 more', firstPage === 50 && secondPage === 100, `${firstPage} then ${secondPage}`);
+    await page.click('th[data-sort=age]');
+    const ages = await page.$$eval('#valuesBody tr', x => x.slice(0, 20).map(r => parseFloat(r.cells[3].textContent) || 0));
+    check('sorting by a column works', ages.every((v, i) => !i || v <= ages[i - 1]), ages.slice(0, 3).join(', '));
+    // Trade Finder starts with suggestions
+    await page.click('#groups [data-group=trade]'); await page.click('[data-tab=finder]'); await page.waitForTimeout(400);
+    const sugg = await page.$$eval('#tfResults .tf-card', x => x.length), recs = await page.$$eval('#tfRecs .tf-rec', x => x.length);
+    check('Trade Finder suggests trades before anything is picked', sugg > 0, `${sugg} suggestions, ${recs} recommendations`);
+    // Pick names follow one pattern
+    const names = await page.evaluate(() => [...S.assets.values()].filter(a => a.kind === 'pick').map(a => a.name));
+    check('pick names use one pattern (2027 1.08, 2028 Late 1st, 2029 1st)', names.every(n => /^\d{4} (\d\.\d{2}|(Early|Mid|Late) \d+(st|nd|rd|th)|\d+(st|nd|rd|th))$/.test(n)), names.find(n => !/^\d{4} (\d\.\d{2}|(Early|Mid|Late) \d+(st|nd|rd|th)|\d+(st|nd|rd|th))$/.test(n)) || '');
     check('desktop: no script errors during checks', !page.errors.length, page.errors.slice(0, 3).join(' | '));
     await page.close();
   } catch (e){ check('test run finished', false, e.message.split('\n')[0]); }

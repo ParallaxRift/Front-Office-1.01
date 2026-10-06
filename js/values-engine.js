@@ -428,7 +428,7 @@ function buildValues(){
       range = lo === hi ? "" : `simulated: likely ${rd}.${String(lo).padStart(2, "0")}–${rd}.${String(hi).padStart(2, "0")}`;
     } else value = pickValue(p12of(slot), yi);
     let label;
-    if (yi===0) label = `${s} Pick ${rd}.${String(Math.round(slot)).padStart(2,"0")}`;
+    if (yi===0) label = `${s} ${rd}.${String(Math.round(slot)).padStart(2,"0")}`;   // e.g. "2027 1.08"
     else { const tier = slot <= cfg.teams/3 ? "Early" : slot > cfg.teams*2/3 ? "Late" : "Mid"; label = yi===1 ? `${s} ${tier} ${ord(rd)}` : `${s} ${ord(rd)}`; }
     const via = own !== orig ? `from ${t.name}${range ? ", " + range : ""}` : (yi===0 ? (range || "projected slot") : "own pick");
     assets.set("k:"+key, { id:"k:"+key, kind:"pick", name: label, pos:"PICK", nfl: via, value, market: value, owner: own, round: rd, season: s });

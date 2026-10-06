@@ -93,6 +93,8 @@ function priceFrom(pool, v){
   }
   return best;
 }
+const TF_RECS_SHOWN = 5;
+let tfRecTop = [], tfRecsAll = false;   // the recommended targets, and whether "Show more" is open
 function renderRecs(me){
   const C = finderContext(me), want = $("tfWant").value, partner = $("tfPartner").value;
   const myPlayers = teamAssets(me).filter(a => a.kind === "player");
@@ -133,22 +135,21 @@ function renderRecs(me){
   $("tfRecsNote").textContent = C.dir === "win"
     ? "Realistic targets outside the elite tier who would help your lineup, priced against your bench and picks."
     : "Young, affordable players with upside for your rebuild, priced against your non-core pieces.";
-  $("tfRecs").innerHTML = top.length ? top.map(r => {
+  tfRecTop = top;
+  const shown = tfRecsAll ? top : top.slice(0, TF_RECS_SHOWN);
+  $("tfRecs").innerHTML = top.length ? shown.map(r => {
     const cost = priceFrom(spare, r.a.value);
     const costTxt = cost ? `Could cost: ${cost.map(x => x.name).join(" + ")}` : "";
     return `<div class="tf-rec${tfTarget === r.a.id ? " on" : ""}">
       ${assetPhoto(r.a, "md")}<span class="tn"><b>${esc(r.a.name)}${injTag(r.a.pid)}</b><small>${esc([r.a.pos + (r.a.lgPosRank || ""), r.a.nfl, r.a.age ? "age " + ageText(r.a.age) : "", S.teams.get(r.a.owner)?.name].filter(Boolean).join(", "))}</small><span class="why">${esc(r.why)}</span>${costTxt ? `<span class="cost">${esc(costTxt)}</span>` : ""}</span>
       <span class="v">${fmt(r.a.value)}</span><button type="button" class="ghost go" data-target="${esc(r.a.id)}">Find a deal</button></div>`;
-  }).join("")
+  }).join("") + (top.length > TF_RECS_SHOWN ? `<button type="button" class="ghost tf-more" id="tfRecsMore">${tfRecsAll ? "Show fewer" : `Show ${top.length - TF_RECS_SHOWN} more`}</button>` : "")
     : `<p class="empty">No affordable targets${want !== "fit" && want !== "PICK" ? " at that position" : ""}${partner !== "any" ? " on that team" : ""} right now. Your bench and picks may not stretch that far.</p>`;
 }
 
 // Reverse search: what could you send to land one specific player?
-function findForTarget(me, target){
-  const out = $("tfResults"), note = $("tfNote"), plan = $("tfPlan");
-  const C = finderContext(me), T = target.value, rid = target.owner, th = C.prof.get(rid);
-  plan.textContent = `Looking for ways to get ${target.name} from ${th.team.name}${C.dir === "win" ? " while keeping your starting lineup as strong as possible" : " without giving up your best young pieces"}.`;
-  $("tfHeading").textContent = `Ways to Get ${target.name}`;
+function targetPackages(me, target, C = finderContext(me)){
+  const T = target.value, rid = target.owner, th = C.prof.get(rid);
   const mine = teamAssets(me), myPlayers = mine.filter(a => a.kind === "player");
   const before = {}; C.POS.forEach(p => before[p] = C.starterSum(myPlayers, p));
   const theirPlayers = teamAssets(rid).filter(a => a.kind === "player");
@@ -181,23 +182,35 @@ function findForTarget(me, target){
     results.push({ pack, S2, gain, gainBy, futureGain, theirNeed, score });
   }
   results.sort((a, b) => b.score - a.score);
+  return { results, C, th, T, rid };
+}
+// Why a package works, in plain words (shared by "Ways to Get" and the default suggestions)
+function packageWhy(r, C, th){
+  const why = [];
+  const lost = C.POS.filter(p => r.gainBy[p] < -200);
+  if (C.dir === "win") why.push(r.gain >= 0 ? `Your starting lineup gets about ${fmt(r.gain)} stronger.` : `Costs about ${fmt(-r.gain)} of starting-lineup value${lost.length ? " at " + andList(lost) : ""}.`);
+  else why.push(r.futureGain >= 0 ? "Adds long-term value for your rebuild." : "Costs some long-term value, but lands a player you want.");
+  if (r.pack.some(a => a.kind === "pick") && r.gain > -200) why.push("Uses draft picks instead of your starters.");
+  if (r.theirNeed) why.push(`${th.team.name} needs ${andList([...new Set(r.pack.filter(a => a.kind === "player" && th.pos[a.pos].rank > C.N / 2).map(a => a.pos))])}, so this should appeal to them.`);
+  else if (th.team.status === "rebuild" && r.pack.some(a => a.kind === "pick" || (a.age && a.age <= 24))) why.push(`${th.team.name} is rebuilding, so youth and picks appeal to them.`);
+  return why;
+}
+const tfRowHTML = a => `<div class="tf-row">${assetPhoto(a, "md")}<span class="tn"><b>${esc(a.name)}${injTag(a.pid)}</b><small>${esc(a.kind === "player" ? [a.pos + (a.lgPosRank || ""), a.nfl, a.age ? "age " + ageText(a.age) : ""].filter(Boolean).join(", ") : a.nfl)}</small></span><span class="v">${fmt(a.value)}</span></div>`;
+function tfVerdict(T, S2){ const diff = T - S2, pct = Math.abs(diff) / Math.max(T, S2); return pct <= FAIR_BAND ? ["Fair", "#3B82F6"] : diff > 0 ? ["You win by " + fmt(diff), "#22A55A"] : ["You pay " + fmt(-diff) + " extra", "#E5484D"]; }
+function findForTarget(me, target){
+  const out = $("tfResults"), note = $("tfNote"), plan = $("tfPlan");
+  const { results, C, th, T, rid } = targetPackages(me, target);
+  plan.textContent = `Looking for ways to get ${target.name} from ${th.team.name}${C.dir === "win" ? " while keeping your starting lineup as strong as possible" : " without giving up your best young pieces"}.`;
+  $("tfHeading").textContent = `Ways to Get ${target.name}`;
   const top = results.slice(0, 8);
   note.textContent = top.length ? "Packages from your roster that match their value, easiest on your lineup first." : "";
   if (!top.length){ out.innerHTML = `<p class="empty">No fair packages of up to 3 pieces found for ${esc(target.name)}. They may be worth more than your tradeable pieces.</p>`; return; }
   out.innerHTML = top.map((r, i) => {
-    const diff = T - r.S2, pct = Math.abs(diff) / Math.max(T, r.S2);
-    const verdict = pct <= FAIR_BAND ? ["Fair", "#3B82F6"] : diff > 0 ? ["You win by " + fmt(diff), "#22A55A"] : ["You pay " + fmt(-diff) + " extra", "#E5484D"];
-    const why = [];
-    const lost = C.POS.filter(p => r.gainBy[p] < -200);
-    if (C.dir === "win") why.push(r.gain >= 0 ? `Your starting lineup gets about ${fmt(r.gain)} stronger.` : `Costs about ${fmt(-r.gain)} of starting-lineup value${lost.length ? " at " + andList(lost) : ""}.`);
-    else why.push(r.futureGain >= 0 ? "Adds long-term value for your rebuild." : "Costs some long-term value, but lands a player you want.");
-    if (r.pack.some(a => a.kind === "pick") && r.gain > -200) why.push("Uses draft picks instead of your starters.");
-    if (r.theirNeed) why.push(`${th.team.name} needs ${andList([...new Set(r.pack.filter(a => a.kind === "player" && th.pos[a.pos].rank > C.N / 2).map(a => a.pos))])}, so this should appeal to them.`);
-    else if (th.team.status === "rebuild" && r.pack.some(a => a.kind === "pick" || (a.age && a.age <= 24))) why.push(`${th.team.name} is rebuilding, so youth and picks appeal to them.`);
+    const verdict = tfVerdict(T, r.S2), why = packageWhy(r, C, th);
     return `<article class="tf-card${i === 0 ? " best" : ""}">
       <div class="tf-card-head"><span class="tf-rank" title="Rank ${i + 1} of ${top.length}">${i === 0 ? "#1 Best trade" : "#" + (i + 1)}</span>${teamPhoto(rid, "md")}<span class="nm"><b>${esc(th.team.name)}</b><small>${statusText[th.team.status]}</small></span></div>
       <div class="tf-get"><div class="lbl">You send</div>
-        ${r.pack.map(a => `<div class="tf-row">${assetPhoto(a, "md")}<span class="tn"><b>${esc(a.name)}${injTag(a.pid)}</b><small>${esc(a.kind === "player" ? [a.pos + (a.lgPosRank || ""), a.nfl, a.age ? "age " + ageText(a.age) : ""].filter(Boolean).join(", ") : a.nfl)}</small></span><span class="v">${fmt(a.value)}</span></div>`).join("")}
+        ${r.pack.map(tfRowHTML).join("")}
       </div>
       <ul class="tf-why">${why.slice(0, 3).map(w => `<li>${esc(w)}</li>`).join("")}</ul>
       <div class="tf-foot"><span class="tf-verdict" style="color:${verdict[1]}">${verdict[0]}</span>
@@ -206,6 +219,30 @@ function findForTarget(me, target){
   }).join("");
 }
 
+// Before you pick anyone: the best deal for each of the top recommended players, so the page starts with answers
+function suggestDefault(me){
+  const out = $("tfResults"), note = $("tfNote");
+  $("tfHeading").textContent = "Suggested Trades for Your Team";
+  const C = finderContext(me), cards = [];
+  for (const rec of tfRecTop){
+    if (cards.length >= 3) break;
+    const { results, th, T, rid } = targetPackages(me, rec.a, C);
+    if (results.length) cards.push({ target: rec.a, r: results[0], th, T, rid });
+  }
+  note.textContent = cards.length ? "The best deal for each of your top recommended players. Or pick players from your roster to see what they could bring back." : "";
+  if (!cards.length){ out.innerHTML = `<p class="empty">Choose who you'd trade away and Front Office will find fair deals that fit your team.</p>`; return; }
+  out.innerHTML = cards.map(({ target, r, th, T, rid }, i) => {
+    const verdict = tfVerdict(T, r.S2), why = packageWhy(r, C, th);
+    return `<article class="tf-card${i === 0 ? " best" : ""}">
+      <div class="tf-card-head"><span class="tf-rank">${i === 0 ? "#1 Best trade" : "#" + (i + 1)}</span>${teamPhoto(rid, "md")}<span class="nm"><b>${esc(th.team.name)}</b><small>${statusText[th.team.status]}</small></span></div>
+      <div class="tf-get"><div class="lbl">You get</div>${tfRowHTML(target)}</div>
+      <div class="tf-get"><div class="lbl">You send</div>${r.pack.map(tfRowHTML).join("")}</div>
+      <ul class="tf-why">${why.slice(0, 3).map(w => `<li>${esc(w)}</li>`).join("")}</ul>
+      <div class="tf-foot"><span class="tf-verdict" style="color:${verdict[1]}">${verdict[0]}</span>
+        <button type="button" class="btn tf-open" data-rid="${rid}" data-send="${esc(r.pack.map(a => a.id).join(","))}" data-get="${esc(target.id)}">Open in calculator</button></div>
+    </article>`;
+  }).join("");
+}
 function findTrades(me, sending, V){
   $("tfHeading").textContent = "Trades That Make Sense";
   const out = $("tfResults"), note = $("tfNote"), plan = $("tfPlan");
@@ -215,7 +252,7 @@ function findTrades(me, sending, V){
   const POS = ["QB","RB","WR","TE"];
   const weak = POS.filter(p => my.pos[p].rank > N - third);
   plan.textContent = `${S.teams.get(me).name} is ${statusPhrase[status]}, so results favor ${dir === "win" ? "proven players who help now" : "young players and picks"}${weak.length ? `, especially at ${andList(weak)}` : ""}.`;
-  if (!sending.length){ note.textContent = ""; out.innerHTML = `<p class="empty">Choose who you'd trade away and Front Office will find fair deals that fit your team.</p>`; return; }
+  if (!sending.length){ suggestDefault(me); return; }
 
   // Your starting-lineup value by position, before and after a trade
   const starterSum = (players, p) => {
@@ -317,6 +354,7 @@ function findTrades(me, sending, V){
   }).join("");
 }
 $("tfRecs").addEventListener("click", e => {
+  if (e.target.closest("#tfRecsMore")){ tfRecsAll = !tfRecsAll; renderRecs(Number($("tfTeam").value)); return; }
   const b = e.target.closest("[data-target]"); if (!b) return;
   tfTarget = tfTarget === b.dataset.target ? null : b.dataset.target;
   if (tfTarget) tfSend.clear();
@@ -346,6 +384,6 @@ $("tfResults").addEventListener("click", e => {
   S.sendIds = new Set(b.dataset.send ? b.dataset.send.split(",") : tfSend); S.getIds = new Set(b.dataset.get.split(","));
   renderCalc();
   $("tabs").querySelector('[data-tab="calc"]').click();
-  window.scrollTo({ top: $("tabs").offsetTop, behavior: "smooth" });
+  window.scrollTo({ top: $("groups").offsetTop, behavior: "smooth" });
 });
 

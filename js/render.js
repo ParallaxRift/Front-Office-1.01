@@ -6,7 +6,7 @@
 function renderLeague(){
   const c = S.cfg;
   $("leagueBar").style.display = "block";
-  $("tabs").style.display = "flex";
+  $("tabs").style.display = "flex"; $("groups").style.display = "flex";
   $("modeBar").hidden = false; applyMode(currentMode(), true);
   $("leagueName").textContent = S.league.name;
   $("leagueAv").innerHTML = avatar(S.league.avatar, S.league.name, "lg");
@@ -403,25 +403,48 @@ function renderUpdated(){
   const txt = !ago ? "" : stale ? `Values may be out of date: last updated ${ago}.` : `Values updated ${ago}.`;
   for (const id of ["valuesUpdated", "footUpdated"]){ const el = $(id); if (el){ el.textContent = txt; el.classList.toggle("stale", !!stale); el.title = iso ? new Date(iso).toLocaleString() : ""; } }
 }
+// Player Values shows 50 rows at a time ("Show 50 more"), sorted by any column heading
+const VALUES_PAGE = 50;
+let valuesLimit = VALUES_PAGE, valuesSort = { key: "value", dir: -1 };
+const valueChange = a => a.kind === "pick" || !a.market ? 0 : a.value / a.market - 1;
+const VALUE_SORTS = {
+  rank: a => a.lgRank || 99999, name: a => normName(a.name), pos: a => a.pos + String(a.lgPosRank || 999).padStart(3, "0"),
+  age: a => a.age || 0, value: a => a.value, market: a => a.market || 0, change: valueChange
+};
+const SORT_FIRST_DIR = { rank: 1, name: 1, pos: 1 };   // A to Z and #1 first; numbers biggest first
 function renderValues(){
   renderTuningLight(); renderUpdated();
   $("valueClear").hidden = !$("valueSearch").value;
   const q = normName($("valueSearch").value), pos = S.posFilter, rosteredOnly = $("rosteredOnly").checked;
-  const rows = [...S.assets.values()]
+  const key = VALUE_SORTS[valuesSort.key] || VALUE_SORTS.value, dir = valuesSort.dir;
+  const all = [...S.assets.values()]
     .filter(a => pos === "ALL" ? a.kind === "player" : pos === "PICK" ? a.kind === "pick" : a.pos === pos)
     .filter(a => !rosteredOnly || a.owner != null)
     .filter(a => !q || normName(a.name).includes(q))
-    .sort((a,b) => b.value - a.value).slice(0, 400);
+    .sort((a, b) => { const x = key(a), y = key(b); return (x < y ? -1 : x > y ? 1 : 0) * dir || b.value - a.value; });
+  if (S.valuesHL){ const k = all.findIndex(a => a.id === S.valuesHL); if (k >= valuesLimit) valuesLimit = Math.ceil((k + 1) / VALUES_PAGE) * VALUES_PAGE; }
+  const rows = all.slice(0, valuesLimit);
+  for (const th of $("valuesTable").querySelectorAll("th[data-sort]")) th.setAttribute("aria-sort", th.dataset.sort === valuesSort.key ? (dir > 0 ? "ascending" : "descending") : "none");
+  $("valuesCount").textContent = all.length ? `Showing ${rows.length} of ${all.length}` : "";
+  $("valuesMore").hidden = rows.length >= all.length;
+  $("valuesMore").textContent = `Show ${Math.min(VALUES_PAGE, all.length - rows.length)} more`;
   $("valuesBody").innerHTML = rows.map((a,i) => {
     const team = a.owner != null ? S.teams.get(a.owner)?.name : "Free agent";
     const teamHTML = a.owner != null ? `<span class="teamcell">${teamPhoto(a.owner, true)}${esc(team)}</span>` : "Free agent";
     const ch = a.market ? (a.value/a.market - 1) * 100 : 0;
     const chTxt = a.kind === "pick" || Math.abs(ch) < 1 ? "" : `<span class="${ch>0?"up":"down"}">${ch>0?"+":""}${Math.round(ch)}%</span>`;
     return `<tr data-id="${esc(a.id)}"${a.kind === "player" ? ' tabindex="0"' : ""}${a.id === S.valuesHL ? ' class="hl"' : ""}><td class="n">${a.kind === "player" && a.lgRank ? a.lgRank : i+1}</td><td><span class="teamcell">${assetPhoto(a, true)}${esc(a.name)}${injTag(a.pid)}</span></td><td>${esc(a.pos)}</td><td class="n">${esc(ageText(a.age))}</td>
-      <td class="hide-sm">${teamHTML}</td><td class="n big">${fmt(a.value)}</td><td class="n hide-sm">${a.kind==="pick"?"":fmt(a.market)}</td><td class="n hide-sm">${chTxt}</td></tr>`;
+      <td class="hide-sm">${teamHTML}</td><td class="n big">${fmt(a.value)}</td><td class="n hide-sm">${a.kind==="pick"?"":fmt(a.market)}</td><td class="n">${chTxt}</td></tr>`;
   }).join("") || `<tr><td colspan="8" class="empty">No players match. Try a different search or filter.</td></tr>`;
 }
-$("valueSearch").addEventListener("input", renderValues);
+$("valueSearch").addEventListener("input", () => { valuesLimit = VALUES_PAGE; renderValues(); });
+$("valuesMore").addEventListener("click", () => { valuesLimit += VALUES_PAGE; renderValues(); });
+$("valuesTable").querySelector("thead").addEventListener("click", e => {
+  const th = e.target.closest("th[data-sort]"); if (!th || e.target.closest(".info-btn")) return;
+  const k = th.dataset.sort;
+  valuesSort = valuesSort.key === k ? { key: k, dir: -valuesSort.dir } : { key: k, dir: SORT_FIRST_DIR[k] || -1 };
+  valuesLimit = VALUES_PAGE; renderValues();
+});
 // ✕ inside the search box: clear the search, show everyone, and keep the player you were looking at in view
 $("valueClear").addEventListener("click", () => {
   const keep = S.valuesHL || $("valuesBody").querySelector("tr[data-id]")?.dataset.id;
@@ -433,11 +456,11 @@ $("valueClear").addEventListener("click", () => {
   setTimeout(() => { S.valuesHL = null; $("valuesBody").querySelector("tr.hl")?.classList.remove("hl"); }, 4000);
   $("valueSearch").focus();
 });
-$("rosteredOnly").addEventListener("change", renderValues);
+$("rosteredOnly").addEventListener("change", () => { valuesLimit = VALUES_PAGE; renderValues(); });
 $("posFilter").addEventListener("click", e => {
   const b = e.target.closest("button"); if (!b) return;
   S.posFilter = b.dataset.pos;
   for (const x of $("posFilter").children) x.setAttribute("aria-pressed", x === b);
-  renderValues();
+  valuesLimit = VALUES_PAGE; renderValues();
 });
 

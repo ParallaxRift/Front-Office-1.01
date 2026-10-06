@@ -97,6 +97,8 @@ async function loadHistory(league){
   }
 }
 
+// Pick names follow one pattern everywhere: "2027 1.08", "2028 Late 1st", "2029 1st"
+const pickOrd = n => n === 1 ? "1st" : n === 2 ? "2nd" : n === 3 ? "3rd" : n + "th";
 // Today's value for one traded item
 function valueItem(it){
   if (it.kind === "player"){
@@ -104,7 +106,7 @@ function valueItem(it){
     const name = a?.name || p.full_name || `${p.first_name||""} ${p.last_name||""}`.trim() || "Unknown player";
     return { photoPid: it.pid, name, pos: a?.pos || p.position || "", value: a?.value || 0, sub: a ? `${a.pos}, ${a.nfl}` : (p.position || "No longer rostered") , cat: a?.pos || p.position };
   }
-  const label = `${it.season} Round ${it.round} pick`;
+  const label = `${it.season} ${pickOrd(it.round)}`;   // e.g. "2025 2nd"
   const live = S.assets.get(`k:${it.season}-${it.round}-${it.orig}`);
   if (live) return { name: live.name, pos: "PICK", value: live.value, sub: "Pick still to be made", cat: "PICK" };
   const used = S.history?.pickResult.get(`${it.season}-${it.round}-${it.orig}`);
@@ -112,7 +114,7 @@ function valueItem(it){
     const pid = used.pid || used;   // older format stored just the id
     const a = S.assets.get("p:" + pid), p = S.sleeperPlayers?.[pid] || {};
     const pname = a?.name || p.full_name || `${p.first_name || ""} ${p.last_name || ""}`.trim() || "a player";
-    const slotTxt = used.slot ? `${it.season} Pick ${it.round}.${String(used.slot).padStart(2, "0")}` : label;
+    const slotTxt = used.slot ? `${it.season} ${it.round}.${String(used.slot).padStart(2, "0")}` : label;
     const detail = [a?.pos || p.position, a?.nfl || p.team].filter(Boolean).join(", ");
     return { name: slotTxt, pos: "PICK", value: a?.value || 0, sub: `Used on ${pname}${detail ? " (" + detail + ")" : ""}`, cat: "PICK", photoPid: pid, usedOn: pname };
   }

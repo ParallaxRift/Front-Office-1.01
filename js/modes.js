@@ -70,6 +70,7 @@ function igniteFreakshow(){
   setTimeout(() => layer.remove(), 3400);
 }
 function revealTabs(tabs){
+  if (typeof navRevealTargets === "function") tabs = navRevealTargets(tabs);   // animate the section buttons that just appeared
   tabs.forEach((t, i) => {
     t.classList.remove("tab-reveal"); void t.offsetWidth;
     t.style.animationDelay = calmMotion() ? "0ms" : (250 + i * 110) + "ms";
