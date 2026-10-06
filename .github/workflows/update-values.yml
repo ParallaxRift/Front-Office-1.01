@@ -44,6 +44,7 @@ jobs:
           [ -f data/players.json ] && git add data/players.json
           [ -d data/fp-injuries ] && git add data/fp-injuries
           [ -d data/season-stats ] && git add data/season-stats
+          [ -f data/fp-status.json ] && git add data/fp-status.json
           if git diff --cached --quiet; then
             echo "Data unchanged today."
           else
