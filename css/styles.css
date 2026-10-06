@@ -1245,3 +1245,23 @@ body:not(.has-league) .side-switch,body:not(.has-league) #miniBar{display:none!i
   .vsearch{display:flex;width:100%}
   .vsearch input{flex:1;width:100%;max-width:none}
 }
+/* ===== Desktop calculator tweaks (wider than 600px only; phones unchanged) ===== */
+@media (min-width:601px){
+  .board .tm-lbl{font-family:var(--display);font-weight:700;font-size:25px!important;letter-spacing:.02em}
+  .bplayers .bitem{padding:9px 12px 9px 9px;gap:11px}
+  .bplayers .bitem .bi-link{gap:11px}
+  .bplayers .bitem .av{width:46px;height:46px;font-size:18px}
+  .bplayers .bitem .bi-text b{font-size:20px}
+  .bplayers .bitem .bi-text small{font-size:15.5px}
+  .bplayers .bitem .bi-val{font-size:23px}
+  .bplayers .bitem .bi-x{font-size:15px}
+  .board .num{font-size:clamp(38px,5.4vw,54px)!important}
+}
+/* Calculator bottom buttons as icons, with a plain-English tip on hover */
+.board .share-btns .icon-btn{position:relative;display:inline-grid;place-items:center;width:36px;height:36px;padding:0!important;border-radius:50%!important}
+.board .share-btns .icon-btn svg{display:block}
+.board .share-btns .icon-btn .r-letter{font-family:var(--display);font-weight:800;font-size:19px;line-height:1}
+.board .share-btns .icon-btn[aria-expanded="true"]{background:rgba(255,255,255,.16)}
+.board .share-btns .icon-btn::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 8px);right:0;width:max-content;max-width:240px;background:var(--card);color:var(--ink);font:500 13px/1.35 var(--body);text-align:left;padding:7px 10px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.25);opacity:0;pointer-events:none;transform:translateY(3px);transition:opacity .12s,transform .12s;z-index:20;white-space:normal}
+@media (hover:hover){.board .share-btns .icon-btn:hover::after{opacity:1;transform:none}}
+.board .share-btns .icon-btn:focus-visible::after{opacity:1;transform:none}
