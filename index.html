@@ -899,7 +899,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
   </section>
 
   <section class="leaguebar" id="leagueBar">
-    <div class="leaguehead"><span id="leagueAv"></span><div><div class="lname-row"><h2><button type="button" class="league-link" id="settingsBtn" aria-pressed="false" aria-controls="panel-settings" title="See this league's settings"><span id="leagueName"></span><span class="ll-hint" id="settingsIcon"></span></button></h2><span class="champ-col"><span id="champSlot"></span></span></div><small id="myTeamLine"></small></div>
+    <div class="leaguehead"><span id="leagueAv"></span><div><div class="lname-row"><h2><button type="button" class="league-link" id="settingsBtn" aria-pressed="false" aria-controls="panel-settings" title="See this league's settings"><span id="leagueName"></span></button></h2><span class="champ-col"><span id="champSlot"></span></span></div><small id="myTeamLine"></small></div>
       <div class="modebar" id="modeBar" hidden>
         <div class="mode-toggle" id="modeToggle" role="radiogroup" aria-label="How much to show">
           <button type="button" role="radio" data-mode="basics" aria-checked="false">The Basics</button>
@@ -2838,7 +2838,6 @@ function historyInsightsHTML(rid){
 }
 
 // League settings opens from the football button beside the league name (not a tab)
-$("settingsIcon").innerHTML = FOOTBALL + "<span>League settings</span>";
 function openSettingsPanel(){
   for (const t of $("tabs").children) t.setAttribute("aria-selected", "false");
   for (const name of ["calc","finder","standings","trophy","history","feedback","scores","values","settings","strategy"]) $("panel-"+name).classList.toggle("on", name === "settings");
