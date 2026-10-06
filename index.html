@@ -2386,7 +2386,7 @@ function statsTable(rec, pos, season){
              : ["g","tgt","rec","recy","rectd","ry","pts","ppg"];
   const tot = [0, "", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
   rows.forEach(r => { for (let i = 2; i < tot.length; i++) tot[i] += Number(r[i]) || 0; });
-  const body = [...rows].reverse().map(r => `<tr><td>${r[0]}${r[0] >= season ? ` <small>(${r.live ? "live" : "so far"})</small>` : ""}</td><td class="l">${esc(r[1] || "–")}</td>${cols.map(k => `<td>${C[k][1](r)}</td>`).join("")}</tr>`).join("");
+  const body = [...rows].reverse().map(r => `<tr><td>${r[0]}</td><td class="l">${esc(r[1] || "–")}</td>${cols.map(k => `<td>${C[k][1](r)}</td>`).join("")}</tr>`).join("");
   const yrs = new Set(rows.map(r => r[0])).size;
   return `<div class="pc-scroll"><table><thead><tr><th>Season</th><th class="l">Team</th>${cols.map(k => `<th>${C[k][0]}</th>`).join("")}</tr></thead>
     <tbody>${body}<tr class="tot"><td>Career</td><td class="l">${yrs} season${yrs > 1 ? "s" : ""}</td>${cols.map(k => `<td>${C[k][1](tot)}</td>`).join("")}</tr></tbody></table></div>`;
