@@ -1,5 +1,5 @@
 {
- "checked": "2026-10-06T16:58:29+00:00",
+ "checked": "2026-10-06T19:05:04+00:00",
  "key_present": true,
  "calls": 3,
  "rate_limited": 0,
@@ -15,8 +15,8 @@
   {
    "url": "https://api.fantasypros.com/public/v2/json/nfl/news?category=injury&limit=500",
    "status": 200,
-   "records": 5,
-   "sample": "{\"id\": 612465, \"created\": \"2026-10-06 16:36:30\", \"created_formated\": \"Tue, Oct 6th 4:36pm UTC\", \"author\": \"Ari Koslow\", \"player_id\": 26106, \"team_id\": \"PHI\", \"title\": \"Quinyon Mitchell (knee) hopeful to play this week\", \"sport_id\": \"NFL\", \"categories\": [\"Commentary\", \"News\", \"Injury\"], \"link\": \"http"
+   "records": 8,
+   "sample": "{\"id\": 612477, \"created\": \"2026-10-06 18:04:47\", \"created_formated\": \"Tue, Oct 6th 6:04pm UTC\", \"author\": \"Ari Koslow\", \"player_id\": 17508, \"team_id\": \"BAL\", \"title\": \"Durham Smythe out for season with torn Achilles \", \"sport_id\": \"NFL\", \"categories\": [\"Commentary\", \"News\", \"Injury\"], \"link\": \"https"
   }
  ],
  "seasons": {
@@ -27,5 +27,5 @@
   2026
  ],
  "players_with_this_week": 178,
- "news_matched": 1
+ "news_matched": 2
 }
