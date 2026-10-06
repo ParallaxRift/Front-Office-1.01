@@ -665,6 +665,11 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 .league-link[aria-pressed=true] .ll-hint .fb{color:var(--gold)}
 @media (max-width:600px){.ll-hint{font-size:12px;padding:2px 8px 2px 5px}}
 
+/* Front Office logo links home */
+.brand-home{text-decoration:none;color:inherit;cursor:pointer;border-radius:8px}
+.brand-home:hover span{color:var(--field)}
+.brand-home:focus-visible{outline:3px solid var(--field);outline-offset:3px}
+
 /* Build notes */
 .notes{margin-top:18px}
 .notes-head{display:flex;align-items:center;gap:10px;margin-bottom:4px}
@@ -844,14 +849,14 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 <div class="wrap">
 <div id="appView">
   <header class="appbar" id="appbar" hidden>
-    <span class="brand" style="margin:0"><svg class="logo" viewBox="0 0 64 64" aria-hidden="true">
+    <a href="#" class="brand brand-home" id="homeLink" style="margin:0" title="Back to the Trade Calculator" aria-label="Front Office home"><svg class="logo" viewBox="0 0 64 64" aria-hidden="true">
   <rect width="64" height="64" rx="15" fill="#1E6B47"/>
   <path d="M11 14h20.5v7.5H19.5v6.5H29v7h-9.5V50H11z" fill="#F4F6F2"/>
   <path d="M44 12c11.6 6 11.6 34 0 40-11.6-6-11.6-34 0-40z" fill="#F4F6F2"/>
   <path d="M38.6 18.8h10.8M38.6 45.2h10.8" stroke="#1E6B47" stroke-width="1.9" stroke-linecap="round"/>
   <path d="M44 25v14" stroke="#D99A1E" stroke-width="2.3" stroke-linecap="round"/>
   <path d="M40.8 28h6.4M40.8 32h6.4M40.8 36h6.4" stroke="#D99A1E" stroke-width="2" stroke-linecap="round"/>
-</svg><span>Front Office</span></span>
+</svg><span>Front Office</span></a>
     <div class="appbar-r">
       <span class="who" id="whoMini"></span>
       <button class="ghost" id="switchLeague">Switch league</button>
@@ -1318,14 +1323,14 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 </article>
 
 <footer class="foot">
-  <span class="brand" style="margin:0"><svg class="logo" viewBox="0 0 64 64" aria-hidden="true">
+  <a href="#" class="brand brand-home" style="margin:0" title="Back to the Trade Calculator"><svg class="logo" viewBox="0 0 64 64" aria-hidden="true">
   <rect width="64" height="64" rx="15" fill="#1E6B47"/>
   <path d="M11 14h20.5v7.5H19.5v6.5H29v7h-9.5V50H11z" fill="#F4F6F2"/>
   <path d="M44 12c11.6 6 11.6 34 0 40-11.6-6-11.6-34 0-40z" fill="#F4F6F2"/>
   <path d="M38.6 18.8h10.8M38.6 45.2h10.8" stroke="#1E6B47" stroke-width="1.9" stroke-linecap="round"/>
   <path d="M44 25v14" stroke="#D99A1E" stroke-width="2.3" stroke-linecap="round"/>
   <path d="M40.8 28h6.4M40.8 32h6.4M40.8 36h6.4" stroke="#D99A1E" stroke-width="2" stroke-linecap="round"/>
-</svg><span>Front Office</span></span>
+</svg><span>Front Office</span></a>
   <nav><a href="#">Home</a><a href="#about">About</a><a href="#modes">The Basics vs. Freakshow</a><a href="#beta">Sleeper Leagues in Beta</a></nav>
   <span class="ver" id="footVersion"></span>
   <p>Expert consensus rankings provided by FantasyPros. Not affiliated with Sleeper or FantasyPros.</p>
@@ -2848,6 +2853,15 @@ $("settingsBtn").addEventListener("click", () => {
   if ($("settingsBtn").getAttribute("aria-pressed") === "true"){ $("tabs").querySelector('[data-tab="calc"]').click(); return; }   // tap again to close
   openSettingsPanel();
   $("panel-settings").scrollIntoView({ behavior: "smooth", block: "start" });
+});
+
+// Front Office logo: back to the Trade Calculator from anywhere
+document.addEventListener("click", e => {
+  const h = e.target.closest(".brand-home"); if (!h) return;
+  e.preventDefault();
+  if (location.hash && location.hash !== "#") location.hash = "";
+  if (S.league){ $("tabs").querySelector('[data-tab="calc"]').click(); }
+  window.scrollTo({ top: 0, behavior: "smooth" });
 });
 
 // ============================================================
