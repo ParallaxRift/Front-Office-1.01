@@ -1,0 +1,40 @@
+# ============================================================
+# Front Office: automatic checks
+#
+# Runs every time site files are uploaded (and can be run by hand from the
+# Actions tab). It opens a fake Sleeper league in a real browser, clicks
+# through every tab on desktop and phone sizes, and checks the core math.
+#
+# Green check = all good. Red X = something broke; open the run to see which
+# check failed. The daily data updates don't trigger it.
+# ============================================================
+name: Site checks
+
+on:
+  push:
+    paths-ignore:
+      - "data/**"
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Get the repository files
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install the test browser
+        working-directory: tests
+        run: |
+          npm install --no-audit --no-fund
+          npx playwright install --with-deps chromium
+
+      - name: Run the checks
+        working-directory: tests
+        run: npm test
