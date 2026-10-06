@@ -15,7 +15,7 @@ function updateMiniBar(){
   if (!show) return;
   $("mbSend").textContent = $("sendNum").textContent; $("mbGet").textContent = $("getNum").textContent;
   $("mbVerdict").textContent = $("verdict").textContent;
-  const f = $("fill").classList; bar.dataset.result = f.contains("win") ? "win" : f.contains("lose") ? "lose" : f.contains("even") ? "even" : "";
+  const f = $("fill").classList; bar.dataset.result = f.contains("lopsided") ? "lopsided" : f.contains("win") ? "win" : f.contains("lose") ? "lose" : f.contains("even") ? "even" : "";
 }
 new IntersectionObserver(es => { boardInView = es[0].isIntersecting; updateMiniBar(); }).observe($("board"));
 new MutationObserver(updateMiniBar).observe($("verdict"), { childList: true, characterData: true, subtree: true });

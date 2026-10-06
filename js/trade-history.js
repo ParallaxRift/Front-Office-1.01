@@ -134,7 +134,7 @@ function gradeTrade(tr){
     x.total = tradeValue(got, gave);
     x.sentTotal = tradeValue(gave, got);
     x.margin = x.total - x.sentTotal;
-    x.result = Math.abs(x.margin) <= FAIR_BAND * Math.max(x.total, x.sentTotal, 1) ? "even" : x.margin > 0 ? "won" : "lost";
+    x.result = tradeCall(x.margin, Math.max(x.total, x.sentTotal, 1)) === "fair" ? "even" : x.margin > 0 ? "won" : "lost";
   }
   return { ...tr, sides };
 }

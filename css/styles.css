@@ -181,6 +181,7 @@ input[type=text],input[type=search],select{background:var(--card);border:1.5px s
 .fill.even{background:#3B82F6}
 .fill.win{background:#22A55A}
 .fill.lose{background:#E5484D}
+.fill.lopsided{background:#E8890C}
 .mid{position:absolute;left:50%;top:-3px;bottom:-3px;width:2px;background:var(--paper)}
 .verdict{font-family:var(--display);font-weight:700;font-size:24px;margin:0}
 .hint{font-size:14px;opacity:.8;margin:2px 0 0}
@@ -1049,3 +1050,4 @@ th.sortable[aria-sort=ascending],th.sortable[aria-sort=descending]{color:var(--i
   #valuesTable td:nth-child(2){white-space:normal;line-height:1.25}
   #valuesTable th .info-btn{margin-left:2px}
 }
+.minibar[data-result=lopsided] .mb-verdict{background:#E8890C}

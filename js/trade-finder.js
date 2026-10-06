@@ -196,7 +196,7 @@ function packageWhy(r, C, th){
   return why;
 }
 const tfRowHTML = a => `<div class="tf-row">${assetPhoto(a, "md")}<span class="tn"><b>${esc(a.name)}${injTag(a.pid)}</b><small>${esc(a.kind === "player" ? [a.pos + (a.lgPosRank || ""), a.nfl, a.age ? "age " + ageText(a.age) : ""].filter(Boolean).join(", ") : a.nfl)}</small></span><span class="v">${fmt(a.value)}</span></div>`;
-function tfVerdict(T, S2){ const diff = T - S2, pct = Math.abs(diff) / Math.max(T, S2); return pct <= FAIR_BAND ? ["Fair", "#3B82F6"] : diff > 0 ? ["You win by " + fmt(diff), "#22A55A"] : ["You pay " + fmt(-diff) + " extra", "#E5484D"]; }
+function tfVerdict(T, S2){ const diff = T - S2; return tradeCall(diff, Math.max(T, S2)) === "fair" ? ["Fair", "#3B82F6"] : diff > 0 ? ["You win by " + fmt(diff), "#22A55A"] : ["You pay " + fmt(-diff) + " extra", "#E5484D"]; }
 function findForTarget(me, target){
   const out = $("tfResults"), note = $("tfNote"), plan = $("tfPlan");
   const { results, C, th, T, rid } = targetPackages(me, target);
@@ -329,7 +329,7 @@ function findTrades(me, sending, V){
 
   out.innerHTML = picks.map((r, i) => {
     const th = S.teams.get(r.rid), diff = r.R - V, pct = Math.abs(diff) / Math.max(r.R, V);
-    const verdict = pct <= FAIR_BAND ? ["Fair", "#3B82F6"] : diff > 0 ? ["You win by " + fmt(diff), "#22A55A"] : ["You pay " + fmt(-diff) + " extra", "#E5484D"];
+    const verdict = tradeCall(diff, Math.max(r.R, V)) === "fair" ? ["Fair", "#3B82F6"] : diff > 0 ? ["You win by " + fmt(diff), "#22A55A"] : ["You pay " + fmt(-diff) + " extra", "#E5484D"];
     const why = [];
     for (const a of r.pack.filter(a => a.kind === "player")){
       const g = r.gainBy[a.pos];

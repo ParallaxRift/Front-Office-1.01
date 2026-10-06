@@ -270,20 +270,26 @@ function renderCalc(){
   const sug = $("suggest"); sug.innerHTML = "";
   if (!send.length && !get.length){ $("verdict").textContent = "Tap players and picks to build a trade."; $("hint").textContent = ""; return; }
   if (!send.length || !get.length){ $("verdict").textContent = "Add something to both sides."; $("hint").textContent = ""; return; }
-  const gap = eG - eS, pct = Math.abs(gap) / Math.max(eS, eG);
-  // Bar color: blue = even, green = you win, red = you overpay
-  $("fill").classList.add(pct <= FAIR_BAND ? "even" : gap > 0 ? "win" : "lose");
-  if (pct <= FAIR_BAND){ $("verdict").textContent = "Fair trade"; }
-  else if (gap > 0){ $("verdict").textContent = `You win by ${fmt(gap)}`; }
-  else { $("verdict").textContent = `You overpay by ${fmt(-gap)}`; }
+  const gap = eG - eS, pct = Math.abs(gap) / Math.max(eS, eG), call = tradeCall(gap, Math.max(eS, eG));
+  const extraPct = Math.round(Math.abs(gap) / Math.max(1, Math.min(eS, eG)) * 100);   // how much more one side gets
+  const themName = S.teams.get(rb)?.name || "They";
+  // Bar color: blue = fair, green = you win, red = you overpay, orange = lopsided in your favor
+  $("fill").classList.add(call === "fair" ? "even" : call === "lopsided" && gap > 0 ? "lopsided" : gap > 0 ? "win" : "lose");
+  if (call === "fair") $("verdict").textContent = "Fair trade";
+  else if (call === "lopsided") $("verdict").textContent = gap > 0 ? `Lopsided: favors you by ${fmt(gap)}` : `Lopsided: you overpay by ${fmt(-gap)}`;
+  else if (gap > 0) $("verdict").textContent = `You win by ${fmt(gap)}`;
+  else $("verdict").textContent = `You overpay by ${fmt(-gap)}`;
 
   // context hint
   const me = S.teams.get(ra);
   const getPicks = [...S.getIds].filter(id => S.assets.get(id).kind === "pick").length;
   const getYoung = [...S.getIds].filter(id => { const a=S.assets.get(id); return a.kind==="player" && a.age && a.age <= 24; }).length;
   let hint = "";
-  if (me.status === "rebuild" && (getPicks || getYoung)) hint = "Picks and young players fit your rebuild.";
-  else if (me.status === "contend" && (getPicks || getYoung) && !(gap > 0)) hint = "You're contending, so trading proven players for futures could hurt this season.";
+  if (call === "lopsided") hint = gap > 0
+    ? `${themName} gives up too much here: you get about ${extraPct}% more than you send. They're unlikely to accept, and a league with trade review might veto it.`
+    : `You give up too much here: ${themName} gets about ${extraPct}% more than you. Ask for more back before sending it.`;
+  if (me.status === "rebuild" && (getPicks || getYoung)) hint = (hint ? hint + " " : "") + "Picks and young players fit your rebuild.";
+  else if (me.status === "contend" && (getPicks || getYoung) && !(gap > 0)) hint = (hint ? hint + " " : "") + "You're contending, so trading proven players for futures could hurt this season.";
   // Explain the value adjustment when it changes the picture noticeably
   const bonus = Math.max(bonusS, bonusG);
   if (bonus > 0.05 * Math.max(rawS, rawG))
@@ -296,7 +302,7 @@ function renderCalc(){
   $("hint").textContent = hint;
 
   // suggest assets to even it out
-  if (pct > FAIR_BAND){
+  if (call !== "fair"){
     const needFromThem = gap < 0; // you overpay: ask them to add
     const pool = teamAssets(needFromThem ? rb : ra).filter(a => !(needFromThem ? S.getIds : S.sendIds).has(a.id));
     const target = Math.abs(gap);
