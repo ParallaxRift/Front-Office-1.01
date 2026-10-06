@@ -502,7 +502,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 
 /* Power Rankings and status key */
 .sec-h{font-family:var(--display);font-size:26px;margin:0 0 10px}
-.note.sec-sub{max-width:none;font-size:14px;line-height:1.45;margin:-4px 0 12px}
+.note.sec-sub{max-width:none;font-size:14px;line-height:1.45;margin:-4px 0 12px;text-wrap:balance}
 .status-key{margin-top:22px;max-width:900px}
 .status-key h3{font-family:var(--display);font-size:22px;margin:0 0 4px}
 .status-key dl{display:grid;grid-template-columns:auto 1fr;gap:10px 14px;margin:0;align-items:start}
@@ -902,7 +902,8 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 /* season simulator */
 .sim-box{margin-top:22px}
 .sim-top{display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap}
-.sim-top h3{margin:0 0 4px}
+.sim-top h3{margin:0}
+.note.sim-desc{flex-basis:100%;order:3;margin:-2px 0 0;text-wrap:balance}
 .sim-btns{display:flex;gap:8px;align-items:center}
 .sim-champ{display:flex;align-items:center;gap:14px;margin-top:16px;padding:14px 16px;border-radius:14px;background:var(--gold-soft);border:1.5px solid var(--gold)}
 .sim-champ small{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
@@ -921,7 +922,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 .sim-game > div.w{color:var(--ink);font-weight:700}
 .sim-game .av{width:22px;height:22px;flex:none}
 .sim-game em{display:block;font-style:normal;font-size:12px;color:var(--field);margin-top:4px}
-@media (max-width:600px){.sim-btns{width:100%}.sim-btns .btn{flex:1}.sim-top .btn{width:100%}.sim-champ b{font-size:20px}
+@media (max-width:600px){.sim-btns{width:100%;order:4}.note.sim-desc{order:2;margin:0}.sim-btns .btn{flex:1}.sim-top .btn{width:100%}.sim-champ b{font-size:20px}
   .sim-table{min-width:0;font-size:13px}.sim-table td,.sim-table th{padding:5px 4px}.sim-table th{font-size:11.5px}
   .sim-table .teamcell b{display:inline-block;max-width:92px;overflow:hidden;text-overflow:ellipsis;vertical-align:middle}
   .sim-table .teamcell .av{display:none}.sim-table .rk,.sim-table .rec{font-size:14px}
@@ -1135,12 +1136,12 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
   <section class="panel" id="panel-standings">
     <h3 class="sec-h">Standings</h3>
     <div class="tablewrap"><table id="standTable" class="stand"></table></div>
-    <p class="note" id="standNote"></p>
+    <p class="note sec-sub" id="standNote" style="margin:10px 0 0"></p>
 
     <div class="box sim-box">
-      <div class="sim-top"><div><h3>Season Simulator</h3>
-        <p class="note" style="margin:0">Plays out the rest of the season and the playoffs 10,000 times, using current records, how every player has been scoring, player values, and injuries.</p></div>
-        <div class="sim-btns"><button type="button" class="ghost" id="simReset" hidden>Reset</button><button type="button" class="btn" id="simBtn">Simulate Season</button></div></div>
+      <div class="sim-top"><h3>Season Simulator</h3>
+        <div class="sim-btns"><button type="button" class="ghost" id="simReset" hidden>Reset</button><button type="button" class="btn" id="simBtn">Simulate Season</button></div>
+        <p class="note sec-sub sim-desc">Simulates the rest of the regular season and playoffs 10,000 times, factoring in current records, recent player scoring, player values, and injuries to estimate each team’s playoff and championship odds.</p></div>
       <div id="simOut"></div>
     </div>
 
@@ -1150,7 +1151,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 
     <div class="box status-key">
       <h3>What the Team Statuses Mean</h3>
-      <p class="note" style="margin:0 0 10px">Every team is sorted by roster strength, the same number behind the Power Rankings, and split into thirds.</p>
+      <p class="note sec-sub">Every team is ranked by roster strength using the same value score behind the Power Rankings, then the league is divided into three tiers: top, middle, and bottom third.</p>
       <dl>
         <dt><span class="badge b-contend">Contender</span></dt><dd><b>The strongest third of the league.</b> Built to win now. Team Strategy and Trade Finder steer contenders toward proven starters and away from trading them for futures.</dd>
         <dt><span class="badge b-middle">Middle</span></dt><dd><b>The middle third.</b> Close enough to push for a title or start a retool. Strategy picks a direction from the roster's age and draft picks: young or pick-rich teams lean toward building, older ones toward pushing in.</dd>
@@ -1164,7 +1165,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
     <div class="histstats" id="histStats"></div>
     <div class="box hrec">
       <h3>Team Trade Records</h3>
-      <p class="note" style="margin:0 0 10px">Tap a column to sort. Tap a team to see only its trades.</p>
+      <p class="note sec-sub">Tap a column heading to sort. Tap a team to see only its trades.</p>
       <div class="tablewrap"><table id="histTable"></table></div>
     </div>
     <h3 class="sec-h" style="margin-top:6px">Trade Log</h3>
@@ -1182,7 +1183,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
       <button class="ghost" id="histClear" type="button">Clear filters</button>
     </div>
     <p class="note" id="histCount" style="margin:0 0 4px"></p>
-    <p class="note" id="histNote" style="margin:0 0 12px"></p>
+    <p class="note sec-sub" id="histNote"></p>
     <div class="trades" id="tradeList"><p class="empty">Open a league to see its trade history.</p></div>
   </section>
 
@@ -3174,7 +3175,7 @@ function renderHistory(){
     ${sharp && sharp[1] > 0 ? `<div class="hs"><small>Best trader (today's values)</small><b>+${fmt(sharp[1])}</b>${teamLine(sharp[0])}</div>` : ""}
     ${biggest ? `<div class="hs"><small>Biggest win</small><b>+${fmt(biggest.x.margin)}</b><span class="teamcell">${avatar(biggest.x.photo, biggest.x.name, true)}${esc(biggest.x.name)}</span></div>` : ""}`;
   $("histNote").textContent = S.nudge
-    ? `Trades are graded with today's values. All ${S.nudge.n} of your league's trades, including 3- and 4-team deals, are also used to lightly tune player values (see League Settings).`
+    ? `Trades are graded using today’s player values. All ${S.nudge.n} league trades, including 3- and 4-team deals, also help fine-tune player valuations based on your league’s actual trade activity. These adjustments are intentionally small and can be reviewed in League Settings.`
     : `Trades are graded with today's values, so they show how each deal has aged.${graded.length < NUDGE_MIN_TRADES ? ` Once your league has ${NUDGE_MIN_TRADES} trades, they'll also tune player values.` : ""}`;
 
   // ---- Team trade records table (respects the season and size filters) ----
@@ -3844,7 +3845,8 @@ function renderStandings(){
         <td class="hide-sm">${luck}</td>
         <td><span class="badge ${badgeClass[t.status]}">${statusText[t.status]}</span></td></tr>`;
     }).join("")}</tbody>`;
-  $("standNote").textContent = `${playoff ? `The green line marks the playoff cut (top ${playoff}). ` : ""}Ties go by points for. Power is Front Office's ranking of each roster's strength by player values, not wins.`;
+  const WORDS = ["zero","one","two","three","four","five","six","seven","eight","nine","ten","eleven","twelve","thirteen","fourteen","fifteen","sixteen"];
+  $("standNote").textContent = `${playoff ? `The green line marks the playoff cutoff at the top ${WORDS[playoff] || playoff} teams, with ties broken by Points For. ` : "Ties are broken by Points For. "}Power is Front Office’s measure of pure roster strength based on player values — it does not factor in wins or record.`;
 }
 
 // ============================================================
@@ -4171,7 +4173,7 @@ function renderTrophyRoom(){
       <td class="n rec">${w.top.pts.toFixed(2)}</td>
       <td class="n hide-sm">${w.second ? "+" + (w.top.pts - w.second.pts).toFixed(2) : "–"}</td>
       <td class="n hide-sm">${w.avg.toFixed(2)}</td></tr>`).join("")}</tbody>`;
-  $("trophyNote").textContent = `Weekly high points cover this season and the two before it${cur.season === Number(S.league.season) && S.nflState?.season_type === "regular" ? "; the week in progress is added once it's final" : ""}. Champions go back as far as Sleeper has your league's history.`;
+  $("trophyNote").textContent = "";
 }
 $("hsSeasons").addEventListener("click", e => {
   const b = e.target.closest("button"); if (!b) return;
