@@ -1,0 +1,49 @@
+{
+ "checked": "2026-10-06T03:22:39+00:00",
+ "key_present": true,
+ "injuries": [
+  {
+   "url": "https://api.fantasypros.com/public/v2/json/nfl/2026/injuries?week=1",
+   "status": 403,
+   "reply": "{\"message\":\"Missing Authentication Token\"}"
+  },
+  {
+   "url": "https://api.fantasypros.com/public/v2/json/nfl/injuries?season=2026&week=1",
+   "status": 200,
+   "fields": [
+    "sport",
+    "count",
+    "injuries",
+    "covids",
+    "public_api",
+    "tier"
+   ],
+   "records": 379,
+   "sample": "{\"player_id\": 25403, \"yahoo_id\": \"42625\", \"name\": \"Jeremiyah Love\", \"status\": \"Questionable\", \"injury_type\": \"Ankle\", \"comment\": \"\", \"injury_update_date\": \"2026-09-13 11:11:38\", \"team_id\": \"ARI\", \"position_id\": \"RB\", \"rank\": 21, \"status_short\": \"Q\", \"filename\": \"jeremiyah-love.php\", \"ir_weeks\": [], \"probability_of_playing\": \"0.85\", \"practice_1\": \"Limit\", \"practice_2\": \"Limit\", \"practice_3\": \"Limit\", \"practice_report_injury_type\": \"ankle\", \"team_practice_1_submitted\": true, \"team_practice_2_submi"
+  }
+ ],
+ "news": [
+  {
+   "url": "https://api.fantasypros.com/public/v2/json/nfl/news?category=injury&limit=500",
+   "status": 429,
+   "reply": "{\"message\":\"Too Many Requests\"}"
+  },
+  {
+   "url": "https://api.fantasypros.com/public/v2/json/nfl/news?category=injury",
+   "status": 429,
+   "reply": "{\"message\":\"Too Many Requests\"}"
+  },
+  {
+   "url": "https://api.fantasypros.com/v2/json/nfl/news?category=injury&limit=500",
+   "status": 403,
+   "reply": "{\"message\":\"Forbidden\"}\n"
+  },
+  {
+   "url": "https://api.fantasypros.com/public/v2/json/nfl/news",
+   "status": 429,
+   "reply": "{\"message\":\"Too Many Requests\"}"
+  }
+ ],
+ "injury_seasons_saved": [],
+ "news_matched": 0
+}
