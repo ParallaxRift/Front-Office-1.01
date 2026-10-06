@@ -214,6 +214,8 @@ async function updatePickOdds(){
     if (S.league?.league_id !== league || D.done >= D.lastReg) return;
     const M = buildSim(D), R = runSim(M, PICK_SIM_RUNS, true);
     S.pickOdds = new Map([...R.out].map(([rid, o]) => [rid, o.slots.map(c => c / PICK_SIM_RUNS)]));
+    S.playoffOdds = new Map([...R.out].map(([rid, o]) => [rid, o.playoffs / PICK_SIM_RUNS]));   // also used for team status
+    S.weeksPlayed = D.done;
     buildValues();
     rerenderKeepingPlace();
   } catch(e){ console.warn("Pick odds unavailable", e); }

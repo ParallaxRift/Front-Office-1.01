@@ -123,6 +123,17 @@ async function openLeague(browser, viewport, opts){
     // Pick names follow one pattern
     const names = await page.evaluate(() => [...S.assets.values()].filter(a => a.kind === 'pick').map(a => a.name));
     check('pick names use one pattern (2027 1.08, 2028 Late 1st, 2029 1st)', names.every(n => /^\d{4} (\d\.\d{2}|(Early|Mid|Late) \d+(st|nd|rd|th)|\d+(st|nd|rd|th))$/.test(n)), names.find(n => !/^\d{4} (\d\.\d{2}|(Early|Mid|Late) \d+(st|nd|rd|th)|\d+(st|nd|rd|th))$/.test(n)) || '');
+    // Team status counts playoff odds in season (4 weeks played in the test league)
+    const st = await page.evaluate(() => ({ w: statusRecordWeight(), n: [...S.teams.values()].filter(t => t.status === 'contend').length, odds: !!S.playoffOdds }));
+    check('team status blends in playoff odds after Week 3', st.odds && st.w > 0 && st.w <= 0.6 && st.n === 4, `record weight ${Math.round(st.w * 100)}%, ${st.n} contenders`);
+    // Value ranges from expert disagreement
+    const rng = await page.evaluate(() => { const ps = [...S.assets.values()].filter(a => a.kind === 'player' && a.lo != null); return { n: ps.length, ok: ps.every(a => a.lo <= a.value + 1e-6 && a.hi >= a.value - 1e-6) }; });
+    check('players have value ranges around their value', rng.n > 50 && rng.ok, `${rng.n} players with ranges`);
+    // Calculator shows the math under each total when there's a value adjustment
+    await page.click('#groups [data-group=trade]'); await page.click('[data-tab=calc]');
+    await page.evaluate(() => { const A = teamAssets(Number($("teamA").value)).filter(a => a.kind === 'player'), B = teamAssets(Number($("teamB").value)).filter(a => a.kind === 'player'); S.sendIds = new Set([A[0].id]); S.getIds = new Set([B[2].id, B[3].id, B[4].id]); renderCalc(); });
+    const raw = await page.textContent('#sendRaw');
+    check('calculator shows players & picks plus the adjustment', /players & picks.*value adjustment/.test(raw), raw);
     check('desktop: no script errors during checks', !page.errors.length, page.errors.slice(0, 3).join(' | '));
     await page.close();
   } catch (e){ check('test run finished', false, e.message.split('\n')[0]); }

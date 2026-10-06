@@ -38,7 +38,7 @@ async function loadFantasyPros(){
   const map = new Map();
   for (const p of data.players || []){
     const key = normName(p.name) + "|" + String(p.pos||"").toUpperCase();
-    if (!map.has(key)) map.set(key, { v1: +p.value_1qb || 0, v2: +p.value_2qb || 0, r1: p.r1 != null ? +p.r1 : null, r2: p.r2 != null ? +p.r2 : null, pj: Array.isArray(p.pj) ? p.pj : null });
+    if (!map.has(key)) map.set(key, { v1: +p.value_1qb || 0, v2: +p.value_2qb || 0, r1: p.r1 != null ? +p.r1 : null, r2: p.r2 != null ? +p.r2 : null, sd1: p.sd1 != null ? +p.sd1 : null, sd2: p.sd2 != null ? +p.sd2 : null, pj: Array.isArray(p.pj) ? p.pj : null });
   }
   if (map.size < 100) throw new Error("too few players");
   return { kind: "fp", map, updated: data.updated, mixed: !!data.filled_from_dynastyprocess,
@@ -204,6 +204,13 @@ function scoringFactors(list, cfg){
   raw.forEach((f, id) => out.set(id, Math.min(PROJ_MAX, Math.max(PROJ_MIN, Math.pow(f / mean, PROJ_WEIGHT)))));
   return out;
 }
+// ---------- How much record counts toward team status ----------
+// 0 until 3 weeks are played, then +10% a week, up to 60%. Needs the simulator's playoff odds.
+const STATUS_RECORD_START = 3, STATUS_RECORD_MAX = 0.6;
+function statusRecordWeight(){
+  if (!S.playoffOdds || S.nflState?.season_type !== "regular") return 0;
+  return Math.min(STATUS_RECORD_MAX, Math.max(0, ((S.weeksPlayed || 0) - STATUS_RECORD_START) * 0.1));   // Week 4: 10%, Week 9 on: 60%
+}
 // ---------- Strength of the age and role adjustments ----------
 // FantasyPros' experts already rank older players lower and update ranks when starters change,
 // so these apply at reduced strength to avoid counting the same thing twice. Role: half strength.
@@ -271,20 +278,21 @@ function buildValues(){
     const rostered = owner.has(pid);
     if (!rostered && !p.team) continue;
     const name = p.full_name || `${p.first_name||""} ${p.last_name||""}`.trim();
-    let base = 0, rank = null, pj = null;
+    let base = 0, rank = null, pj = null, sd = null;
     if (S.market.kind !== "sleeper"){
       const m = S.market.map.get(normName(name) + "|" + pos);
       if (m){
         rank = cfg.superflex ? m.r2 : m.r1;
         base = rank != null ? marketCurve(rank) : (cfg.superflex ? m.v2 : m.v1);   // average expert rank -> value
         pj = m.pj;
+        sd = cfg.superflex ? m.sd2 : m.sd1;          // how much the experts disagree (spread of their ranks)
       }
     } else {
       const rk = p.search_rank;
       if (rk && rk < 2000) base = 10000 * Math.exp(-0.011*(rk-1)) * ageFactor(pos, p.age);
     }
     if (!base && !rostered) continue;
-    list.push({ id:"p:"+pid, pid, kind:"player", name, pos, nfl:p.team||"FA", age:exactAge(p), base, mRank: rank, pj, owner: owner.get(pid), depthPos: p.team ? p.depth_chart_position : null, depthOrder: p.team ? Number(p.depth_chart_order) || null : null });
+    list.push({ id:"p:"+pid, pid, kind:"player", name, pos, nfl:p.team||"FA", age:exactAge(p), base, mRank: rank, sd, pj, owner: owner.get(pid), depthPos: p.team ? p.depth_chart_position : null, depthOrder: p.team ? Number(p.depth_chart_order) || null : null });
   }
 
   // rank by base, overall and per position
@@ -364,6 +372,12 @@ function buildValues(){
   const topRaw = Math.max(1, top5(list.map(a => a.raw)) * 1.025, Math.max(...list.map(a => a.raw)) * 0.97);
   const topBase = Math.max(1, top5(list.map(a => a.base)) * 1.025, Math.max(...list.map(a => a.base)) * 0.97);
   for (const a of list){ a.value = a.raw/topRaw*10000; a.market = a.base/topBase*10000; assets.set(a.id, a); }
+  // Value range: where most experts would put him. One spread of expert ranks up and down the curve,
+  // with all of this league's adjustments applied the same way. Players experts agree on get a narrow range.
+  for (const a of list){
+    a.lo = a.hi = null;
+    if (a.mRank != null && a.sd > 0){ const c = marketCurve(a.mRank); a.lo = a.value * marketCurve(a.mRank + a.sd) / c; a.hi = a.value * marketCurve(Math.max(1, a.mRank - a.sd)) / c; }
+  }
   // Waiver-level value: roughly the player every team could pick up for free
   const byValue = list.map(a => a.value).sort((a, b) => b - a);
   S.playerCurve = byValue;                     // draft picks are valued from this league's player values
@@ -393,10 +407,16 @@ function buildValues(){
     teams.set(ro.roster_id, { rid: ro.roster_id, name: nm, manager: u?.display_name || "", photo, owner: ro.owner_id, co: ro.co_owners||[], strength });
   }
   const ranked = [...teams.values()].sort((a,b) => a.strength - b.strength); // weakest first
-  ranked.forEach((t,i) => {
-    t.slot = i+1;
-    const third = ranked.length/3;
-    t.status = i >= ranked.length - third ? "contend" : i < third ? "rebuild" : "middle";
+  ranked.forEach((t,i) => { t.slot = i+1; t.strengthPct = ranked.length > 1 ? i / (ranked.length - 1) : 0.5; });
+  // Team status: roster strength, and during the season the Season Simulator's playoff odds too.
+  // Record starts to count after Week 3 and grows to 60% of the score late in the season, so a
+  // 4-0 team with a thin roster isn't told to rebuild, and an 0-6 "contender" is told the truth.
+  const recW = statusRecordWeight();
+  const byStatus = [...teams.values()].map(t => ({ t, score: (1 - recW) * t.strengthPct + recW * (S.playoffOdds?.get(t.rid) ?? t.strengthPct) }))
+    .sort((a, b) => a.score - b.score);
+  byStatus.forEach(({ t }, i) => {
+    const third = byStatus.length / 3;
+    t.status = i >= byStatus.length - third ? "contend" : i < third ? "rebuild" : "middle";
   });
 
   // draft picks

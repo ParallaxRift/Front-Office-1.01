@@ -207,6 +207,14 @@ function lineupImpact(rid, outIds, inAssets){
   return lineupValue(after) - lineupValue(before);
 }
 
+// "Range 7,400–8,100": where most experts would put him (shown when they disagree enough to matter)
+function valueRangeText(a){
+  if (!a || a.lo == null || a.hi == null || a.hi - a.lo < 150) return "";
+  const r = x => fmt(Math.round(x / 50) * 50);
+  return `Range ${r(a.lo)}–${r(a.hi)}`;
+}
+// How much the two sides' values could move if experts are split on the players in them
+function tradeUncertainty(assets){ return Math.sqrt(assets.reduce((t, a) => t + (a.lo != null && a.hi != null ? ((a.hi - a.lo) / 2) ** 2 : 0), 0)); }
 function renderCalc(){
   const ra = Number($("teamA").value), rb = Number($("teamB").value);
   syncPicker("teamA"); syncPicker("teamB");
@@ -261,8 +269,10 @@ function renderCalc(){
   $("swCountA").textContent = S.sendIds.size ? `(${S.sendIds.size})` : ""; $("swCountB").textContent = S.getIds.size ? `(${S.getIds.size})` : "";
   $("swTeamA").textContent = browseAll.A ? "All Players" : (tA?.name || ""); $("swTeamB").textContent = browseAll.B ? "All Players" : (tB?.name || "");
   $("resetTrade").disabled = !S.sendIds.size && !S.getIds.size;
-  $("sendRaw").textContent = bonusS ? `+${fmt(bonusS)} value adjustment` : "";
-  $("getRaw").textContent = bonusG ? `+${fmt(bonusG)} value adjustment` : "";
+  // Show the math under each total: players and picks, plus the value adjustment when there is one
+  const breakdown = (raw, bonus) => bonus ? `<span class="rawsum">${fmt(raw)} players &amp; picks</span><b>+${fmt(bonus)} value adjustment</b>` : "";
+  $("sendRaw").innerHTML = breakdown(rawS, bonusS);
+  $("getRaw").innerHTML = breakdown(rawG, bonusG);
   const total = eS + eG;
   $("fill").style.width = (total ? (eS/total*100) : 50) + "%";
   $("fill").className = "fill";   // gold until both sides have something
@@ -271,12 +281,16 @@ function renderCalc(){
   if (!send.length && !get.length){ $("verdict").textContent = "Tap players and picks to build a trade."; $("hint").textContent = ""; return; }
   if (!send.length || !get.length){ $("verdict").textContent = "Add something to both sides."; $("hint").textContent = ""; return; }
   const gap = eG - eS, pct = Math.abs(gap) / Math.max(eS, eG), call = tradeCall(gap, Math.max(eS, eG));
+  // experts' disagreement on everyone in the trade: a gap smaller than this is within the noise
+  const unsure = tradeUncertainty(sendA.concat(getA));
   const extraPct = Math.round(Math.abs(gap) / Math.max(1, Math.min(eS, eG)) * 100);   // how much more one side gets
   const themName = S.teams.get(rb)?.name || "They";
   // Bar color: blue = fair, green = you win, red = you overpay, orange = lopsided in your favor
-  $("fill").classList.add(call === "fair" ? "even" : call === "lopsided" && gap > 0 ? "lopsided" : gap > 0 ? "win" : "lose");
+  const tooClose = call === "edge" && Math.abs(gap) <= unsure;
+  $("fill").classList.add(call === "fair" || tooClose ? "even" : call === "lopsided" && gap > 0 ? "lopsided" : gap > 0 ? "win" : "lose");
   if (call === "fair") $("verdict").textContent = "Fair trade";
   else if (call === "lopsided") $("verdict").textContent = gap > 0 ? `Lopsided: favors you by ${fmt(gap)}` : `Lopsided: you overpay by ${fmt(-gap)}`;
+  else if (Math.abs(gap) <= unsure) $("verdict").textContent = `Too close to call: ${gap > 0 ? "you're" : "they're"} ahead by ${fmt(Math.abs(gap))}`;
   else if (gap > 0) $("verdict").textContent = `You win by ${fmt(gap)}`;
   else $("verdict").textContent = `You overpay by ${fmt(-gap)}`;
 
@@ -288,6 +302,8 @@ function renderCalc(){
   if (call === "lopsided") hint = gap > 0
     ? `${themName} gives up too much here: you get about ${extraPct}% more than you send. They're unlikely to accept, and a league with trade review might veto it.`
     : `You give up too much here: ${themName} gets about ${extraPct}% more than you. Ask for more back before sending it.`;
+  if (call === "edge" && Math.abs(gap) <= unsure) hint = `Experts disagree enough on these players (values could move about ${fmt(Math.round(unsure / 50) * 50)} either way) that neither side clearly wins.`;
+  else if (call === "lopsided" && Math.abs(gap) <= unsure) hint += ` Experts are split on some of these players, so the gap could be smaller than it looks.`;
   if (me.status === "rebuild" && (getPicks || getYoung)) hint = (hint ? hint + " " : "") + "Picks and young players fit your rebuild.";
   else if (me.status === "contend" && (getPicks || getYoung) && !(gap > 0)) hint = (hint ? hint + " " : "") + "You're contending, so trading proven players for futures could hurt this season.";
   // Explain the value adjustment when it changes the picture noticeably
@@ -440,7 +456,7 @@ function renderValues(){
     const ch = a.market ? (a.value/a.market - 1) * 100 : 0;
     const chTxt = a.kind === "pick" || Math.abs(ch) < 1 ? "" : `<span class="${ch>0?"up":"down"}">${ch>0?"+":""}${Math.round(ch)}%</span>`;
     return `<tr data-id="${esc(a.id)}"${a.kind === "player" ? ' tabindex="0"' : ""}${a.id === S.valuesHL ? ' class="hl"' : ""}><td class="n">${a.kind === "player" && a.lgRank ? a.lgRank : i+1}</td><td><span class="teamcell">${assetPhoto(a, true)}${esc(a.name)}${injTag(a.pid)}</span></td><td>${esc(a.pos)}</td><td class="n">${esc(ageText(a.age))}</td>
-      <td class="hide-sm">${teamHTML}</td><td class="n big">${fmt(a.value)}</td><td class="n hide-sm">${a.kind==="pick"?"":fmt(a.market)}</td><td class="n">${chTxt}</td></tr>`;
+      <td class="hide-sm">${teamHTML}</td><td class="n big"${valueRangeText(a) ? ` title="${valueRangeText(a)}: where most experts would put him"` : ""}>${fmt(a.value)}</td><td class="n hide-sm">${a.kind==="pick"?"":fmt(a.market)}</td><td class="n">${chTxt}</td></tr>`;
   }).join("") || `<tr><td colspan="8" class="empty">No players match. Try a different search or filter.</td></tr>`;
 }
 $("valueSearch").addEventListener("input", () => { valuesLimit = VALUES_PAGE; renderValues(); });

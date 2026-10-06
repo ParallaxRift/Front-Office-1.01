@@ -13,6 +13,7 @@
 #   5. Saves everything to data/values.json for the website, and what
 #      FantasyPros answered to data/values-status.json (never the key)
 #   6. Keeps a compact daily snapshot in data/history/ (one file per day)
+#   7. During the season, switches to rest-of-season projections if FantasyPros offers them
 #
 # The website turns ranks into values itself (it can fine-tune the curve to
 # each league's trades), so this file stores ranks, not final values.
@@ -261,6 +262,52 @@ for pos in ("QB", "RB", "WR", "TE"):
         if any(pj):
             players[key]["pj"] = [round(x, 1) for x in pj]
             proj_count += 1
+# ---------- 4b) Rest-of-season projections, when FantasyPros offers them ----------
+# During the season, rest-of-season projections describe players better than the preseason
+# full-season ones. FantasyPros' documentation doesn't say how to ask for them, so this tries a
+# few likely ways and only uses an answer that is clearly rest-of-season: passing yards for all
+# QBs must come in below 95% of the full-season total. Otherwise the full-season numbers stay.
+ROS_PATTERNS = [
+    "https://api.fantasypros.com/public/v2/json/nfl/{season}/projections?position={pos}&week=ros",
+    "https://api.fantasypros.com/public/v2/json/nfl/{season}/projections?position={pos}&week=ROS",
+    "https://api.fantasypros.com/public/v2/json/nfl/{season}/projections?position={pos}&type=ros",
+]
+def proj_rows(data, pos):
+    items = (data.get("players") if isinstance(data, dict) else data) or []
+    out = {}
+    for it in items:
+        stats = it.get("stats") if isinstance(it.get("stats"), dict) else it
+        key = norm(it.get("player_name") or it.get("name")) + "|" + pos
+        if key in players:
+            out[key] = [round(first(stats, *PROJ_KEYS[k]) or 0, 1) for k in ("py", "ptd", "pint", "ry", "rtd", "rec", "recy", "rectd", "fl")]
+    return out
+status["projection_basis"] = "full season"
+status["ros_probe"] = []
+season_py = sum(p["pj"][0] for k, p in players.items() if k.endswith("|QB") and p.get("pj"))
+if proj_count and season_py > 0:
+    ros_url = None
+    for pattern in ROS_PATTERNS:
+        data, st = fp_get(pattern.format(season=SEASON, pos="QB"))
+        rows = proj_rows(data, "QB") if data is not None else {}
+        py = sum(v[0] for v in rows.values())
+        status["ros_probe"].append({"url": pattern.format(season=SEASON, pos="QB"), "status": st[0] if data is None else 200,
+                                    "players": len(rows), "qb_pass_yds_vs_season": round(py / season_py, 3) if season_py else None})
+        if rows and 0 < py < 0.95 * season_py:
+            ros_url = pattern
+            break
+    if ros_url:
+        ros_count = 0
+        for pos in ("QB", "RB", "WR", "TE"):
+            data, st = fp_get(ros_url.format(season=SEASON, pos=pos))
+            if data is None:
+                continue
+            for key, pj in proj_rows(data, pos).items():
+                if any(pj):
+                    players[key]["pj"] = pj
+                    ros_count += 1
+        if ros_count:
+            status["projection_basis"] = "rest of season"
+            print(f"Using rest-of-season projections for {ros_count} players")
 status["projected_players"] = proj_count
 print(f"Projections for {proj_count} players" + (f" from {proj_url.split('?')[0]}" if proj_url else " (none found)"))
 
@@ -278,6 +325,7 @@ out = {
     "experts_sf": EXPERTS.get("Superflex", 0),
     "rank_basis": "average expert rank, smoothed over %d days" % len(days),
     "projections": proj_count,
+    "projection_basis": status.get("projection_basis", "full season"),
     "players": sorted(out_players, key=lambda p: p["r1"]),
 }
 with open(OUTPUT, "w", encoding="utf-8") as f:

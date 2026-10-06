@@ -135,8 +135,10 @@ input[type=text],input[type=search],select{background:var(--card);border:1.5px s
 .tabs .tab.off-group{display:none}
 .tabs.single{display:none!important}
 .tabs{border-bottom:0!important;margin-top:8px!important;gap:6px!important}
-.tabs .tab{font-family:var(--body, inherit);font-size:17px;font-weight:600;padding:9px 18px;border:1.5px solid var(--line);border-radius:6px;margin:0;background:var(--card)}
-.tabs .tab[aria-selected=true]{background:var(--field-soft);color:var(--field);border-color:var(--field)}
+/* desktop: the tabs inside a section are text tabs with a green underline, like the original tab bar */
+.tabs .tab{font-family:var(--display);font-size:20px;font-weight:700;padding:6px 16px 8px;border:0;border-bottom:3px solid transparent;border-radius:0;margin:0;background:none;color:var(--muted)}
+.tabs .tab:hover{color:var(--ink)}
+.tabs .tab[aria-selected=true]{background:none;color:var(--ink);border-bottom-color:var(--field)}
 .tab{white-space:nowrap;background:none;border:0;padding:10px 14px;font-family:var(--display);font-weight:700;font-size:20px;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-1.5px}
 .tab[aria-selected=true]{color:var(--ink);border-bottom-color:var(--field)}
 .panel{display:none;padding-top:18px}
@@ -859,7 +861,9 @@ th .info-btn:hover{color:var(--ink)}
   .groups{flex-wrap:wrap;gap:6px;border-bottom:0;overflow:visible;margin-top:14px}
   .group{font-size:19px;padding:8px 15px;border:1.5px solid var(--line);border-radius:999px;margin:0;background:var(--card)}
   .group[aria-pressed=true]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
-  .tabs .tab{font-size:15px;padding:8px 11px;border-radius:6px}
+  /* phone: square boxes; the open one is green */
+  .tabs .tab{font-family:var(--body);font-size:15px;font-weight:600;padding:8px 11px;border:1.5px solid var(--line);border-radius:6px;background:var(--card)}
+  .tabs .tab[aria-selected=true]{background:var(--field-soft);color:var(--field);border-color:var(--field)}
   /* tabs become wrapping pills so every tab is visible */
   .tabs{flex-wrap:wrap;gap:6px;border-bottom:0;overflow:visible;margin-top:14px}
   .tab{font-size:15px;padding:6px 12px;border:1.5px solid var(--line);border-radius:999px;margin:0;background:var(--card)}
@@ -1051,3 +1055,7 @@ th.sortable[aria-sort=ascending],th.sortable[aria-sort=descending]{color:var(--i
   #valuesTable th .info-btn{margin-left:2px}
 }
 .minibar[data-result=lopsided] .mb-verdict{background:#E8890C}
+/* Calculator totals: the players-and-picks total and the value adjustment under the big number */
+.board .raw .rawsum{display:block;font-family:var(--body);font-weight:500;font-size:14px;opacity:.8;margin:3px 0 1px}
+.board .raw b{display:block;font-weight:700}
+.pc-val .pc-range{display:block;margin-top:2px;opacity:.85}

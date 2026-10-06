@@ -4,7 +4,7 @@
 // POPOVERS: status meanings and the value adjustment explainer
 // ============================================================
 const STATUS_INFO = {
-  contend: ["Contender", "The strongest third of the league by roster strength. Built to win now, so Front Office steers contenders toward proven starters."],
+  contend: ["Contender", "The strongest third of the league by roster strength (and, as the season goes on, playoff odds). Built to win now, so Front Office steers contenders toward proven starters."],
   middle:  ["Middle", "The middle third. Close enough to push for a title or start a retool; age and draft picks decide which way Front Office leans."],
   rebuild: ["Rebuilding", "The weakest third. Better served building for the future, so recommendations favor young players and draft picks."]
 };
