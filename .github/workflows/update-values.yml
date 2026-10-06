@@ -41,6 +41,8 @@ jobs:
           git config user.name "front-office-bot"
           git config user.email "front-office-bot@users.noreply.github.com"
           git add data/values.json
+          [ -f data/rank-history.json ] && git add data/rank-history.json
+          [ -f data/values-status.json ] && git add data/values-status.json
           [ -f data/players.json ] && git add data/players.json
           [ -d data/fp-injuries ] && git add data/fp-injuries
           [ -d data/season-stats ] && git add data/season-stats
