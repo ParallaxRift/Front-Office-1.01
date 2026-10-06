@@ -469,6 +469,8 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
 .badj b{font-family:var(--display);font-weight:800;font-size:17px;margin-right:33px}
 .badj > span{display:flex;flex-direction:column;gap:2px}
 .badj > span .info-btn{position:relative;top:-1px}
+th .info-btn{width:16px;height:16px;font-size:10px;margin-left:5px;border-width:1.5px;position:relative;top:-1px;color:var(--muted)}
+th .info-btn:hover{color:var(--ink)}
 .badj-eq{font-weight:500;font-size:13px;color:var(--muted)}   /* lines up with the player values above */
 #getItems .badj{flex-direction:row-reverse}
 #getItems .badj b{margin-right:0;margin-left:33px}
@@ -1298,7 +1300,7 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
     <p style="margin:0 0 10px;font-size:14px;color:var(--muted)">Tap any player to open his player card. On other tabs, tap a player's photo.</p>
     <div class="tablewrap">
       <table>
-        <thead><tr><th class="n">#</th><th>Player</th><th>Pos</th><th class="n">Age</th><th class="hide-sm">League team</th><th class="n">This league</th><th class="n hide-sm">Market</th><th class="n hide-sm">Change</th></tr></thead>
+        <thead><tr><th class="n">#</th><th>Player</th><th>Pos</th><th class="n">Age</th><th class="hide-sm">League team</th><th class="n" title="This League: The player's value in your league after all of Front Office's adjustments: scoring, lineup, trade habits, age and starter role. This is the number the calculator uses.">This league<button type="button" class="info-btn" data-info="col-league" aria-label="What does This league mean?">?</button></th><th class="n hide-sm" title="Market: The same player's value from the plain FantasyPros rankings, before any league adjustments. It shows what he'd be worth in a generic league.">Market<button type="button" class="info-btn" data-info="col-market" aria-label="What does Market mean?">?</button></th><th class="n hide-sm" title="Change: How far your league's value is from the market value. It stays blank when the difference is under 1%, so small moves don't clutter the table.">Change<button type="button" class="info-btn" data-info="col-change" aria-label="What does Change mean?">?</button></th></tr></thead>
         <tbody id="valuesBody"></tbody>
       </table>
     </div>
@@ -4493,6 +4495,7 @@ const STATUS_INFO = {
 };
 let popEl = null;
 function closePop(){ popEl?.remove(); popEl = null; }
+let popScrollY = 0;
 function showPop(anchor, html){
   closePop();
   popEl = document.createElement("div"); popEl.className = "pop"; popEl.setAttribute("role", "dialog");
@@ -4502,7 +4505,8 @@ function showPop(anchor, html){
   let left = Math.min(Math.max(8, r.left), window.innerWidth - w - 8);
   let top = r.bottom + 8; if (top + h > window.innerHeight - 8) top = Math.max(8, r.top - h - 8);
   popEl.style.left = left + "px"; popEl.style.top = top + "px";
-  popEl.querySelector(".pop-x").focus();
+  popEl.querySelector(".pop-x").focus({ preventScroll: true });
+  popScrollY = window.scrollY;
 }
 function openStatusKey(){
   closePop();
@@ -4520,13 +4524,22 @@ document.addEventListener("click", e => {
     showPop(badge, `<h4>${STATUS_INFO[k][0]}</h4><p>${STATUS_INFO[k][1]}</p><button type="button" class="pop-link">See What the Team Statuses Mean</button>`);
     return;
   }
-  const info = e.target.closest(".info-btn[data-info=adjust]");
-  if (info){ e.preventDefault(); e.stopPropagation(); showPop(info, ADJUST_INFO_HTML); return; }
+  const info = e.target.closest(".info-btn[data-info]");
+  if (info && (info.dataset.info === "adjust" || COLUMN_INFO[info.dataset.info])){
+    e.preventDefault(); e.stopPropagation();
+    const c = COLUMN_INFO[info.dataset.info];
+    showPop(info, c ? `<h4>${c[0]}</h4><p>${c[1]}</p>` : ADJUST_INFO_HTML); return; }
   if (popEl && !e.target.closest(".pop")) closePop();
 }, true);
 document.addEventListener("keydown", e => { if (e.key === "Escape") closePop(); });
-window.addEventListener("scroll", closePop, { passive: true });
+// close on a real scroll, not the few pixels the browser may move while opening the popup
+window.addEventListener("scroll", () => { if (popEl && Math.abs(window.scrollY - popScrollY) > 40) closePop(); }, { passive: true });
 
+const COLUMN_INFO = {
+  "col-league": ["This League", "The player's value in your league after all of Front Office's adjustments: scoring, lineup, trade habits, age and starter role. This is the number the calculator uses."],
+  "col-market": ["Market", "The same player's value from the plain FantasyPros rankings, before any league adjustments. It shows what he'd be worth in a generic league."],
+  "col-change": ["Change", "How far your league's value is from the market value. It stays blank when the difference is under 1%, so small moves don't clutter the table."]
+};
 const ADJUST_INFO_HTML = `<h4>What Is the Value Adjustment?</h4>
   <p>A fantasy roster has limited spots and limited starters, so one difference-maker is worth more than the same total value spread across several lesser players. Front Office adds a bonus to the side giving up the best piece, so a pile of depth can't "equal" a star.</p>
   <h4>How Is It Worked Out?</h4>
