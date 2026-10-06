@@ -1144,3 +1144,21 @@ body:not(.has-league) .side-switch,body:not(.has-league) #miniBar{display:none!i
 .bitem .bi-val,.bitem .bi-x{flex:none}
 .bitem .bi-text > b,.bitem .bi-text > small{max-width:100%}
 @media (max-width:600px){.board .num{font-size:38px!important}.board .track{height:32px!important}}
+/* Bottom row buttons: smaller; Trade Analysis Breakdown sits with them and opens its panel below */
+.board .share-btns{gap:6px;align-items:center}
+.board .share-btns .reset-btn{font-size:13px;padding:4px 12px;border-width:1px}
+.board .share-btns .ta-btn{font-size:13px;padding:4px 10px;border-radius:999px;border-color:rgba(255,255,255,.45)}
+.board .ta-panel{margin-top:12px}
+@media (max-width:600px){.board .brow{flex-direction:column;align-items:stretch;gap:10px}.board .share-btns{margin-left:0;justify-content:flex-start}.board .suggest button{white-space:nowrap}}
+.board .suggest button span,.board .suggest button b{white-space:nowrap}
+/* Trade math: columns only as wide as the numbers, larger type, the total line just under the numbers */
+.board .tmath{max-width:none;display:flex;justify-content:center}
+.board .tm-grid{grid-template-columns:auto auto auto;column-gap:28px;row-gap:6px}
+.board .tm-grid > div:not(.tm-lbl):not(.tm-head){font-size:30px!important}
+.board .tm-grid div.tot:not(.tm-lbl){font-size:42px!important}
+.board .tm-lbl{font-size:15px!important}
+.board .tm-grid .tm-lbl.tot{border-top:0;padding-top:10px}
+.board .tm-grid .tm-l,.board .tm-grid .tm-r{min-width:4.5ch}
+.board .vrow{margin:14px 0 4px;justify-content:center}
+.board .vrow .verdict{text-align:center;width:100%}
+@media (max-width:600px){.board .tm-grid{column-gap:12px}.board .tm-grid > div:not(.tm-lbl):not(.tm-head){font-size:22px!important}.board .tm-grid div.tot:not(.tm-lbl){font-size:28px!important}.board .tm-lbl{font-size:11.5px!important}}
