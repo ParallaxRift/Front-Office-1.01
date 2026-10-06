@@ -1344,41 +1344,37 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
   <p class="intro">Most trade value charts give every league the same numbers. Front Office starts from the dynasty market, rebuilds those values around your league's rules, and gives every team its own read on what to do next.</p>
 
   <h2>Where the Values Start</h2>
-  <p>Every player begins with a <b>market value</b> on a 0–10,000 scale, built from <b>expert consensus</b>: the combined dynasty rankings of the country's top fantasy football analysts. Once a day, Front Office downloads the latest consensus and turns each ranking into a value. The top-ranked player is 10,000, and value drops smoothly down the list (rank 50 is about 5,400 and rank 100 about 2,900). There are separate rankings for 1QB and Superflex leagues, and Front Office uses whichever matches your league.</p>
-  <p>Players the experts don't rank, such as deep bench and taxi-squad players, are filled in from DynastyProcess open data, always valued below the lowest expert-ranked player. If neither source can be reached, Front Office falls back to an estimate built from Sleeper's own player rankings, adjusted for age: running backs lose value fastest after 25, wide receivers and tight ends after their late 20s, and quarterbacks hold value into their 30s.</p>
+  <p>Every player begins with a <b>market value</b> on a 0–10,000 scale, built from <b>expert consensus</b>: the combined dynasty rankings of the country's top fantasy football analysts. Front Office uses each player's <b>average expert rank</b> (not just his spot in the list), so a near-tie between two players stays a near-tie and a real drop-off between tiers shows up as a bigger gap in value. That average is smoothed over the last 3 days so one day's shuffle doesn't jolt values. Ranks become values on a smooth curve: rank 1 is about 10,000, rank 50 about 5,400 and rank 100 about 2,900.</p>
+  <p>Players the experts don't rank, such as deep bench and taxi-squad players, are filled in from DynastyProcess open data. They continue the ranking past the last expert-ranked player, in DynastyProcess's order, so there's no cliff where everyone gets the same value. If neither source can be reached, Front Office falls back to an estimate built from Sleeper's own player rankings.</p>
 
   <h2>How Values Are Customized for Your League</h2>
   <ol class="steps">
     <li><b>Read your league from Sleeper.</b> Team count, starting lineup, scoring, bench, IR and taxi spots, rosters, and traded picks all come straight from your league. Nothing is typed in by hand.</li>
-    <li><b>Apply your league's adjustments.</b> Each player's market value is multiplied by every rule below that matches your settings.</li>
-    <li><b>Rescale to 10,000.</b> The best player in your league is set to exactly 10,000 and everyone else scales with him, so numbers stay familiar and comparable.</li>
-    <li><b>Tune to your league's trades.</b> If your league has made at least 15 trades, values are nudged toward how your managers actually trade (explained below).</li>
-    <li><b>Value the draft picks</b> using each team's projected finish (explained below).</li>
+    <li><b>Score every player under your rules.</b> Each player's season projection is scored under your league's scoring and lineup, and compared with a standard league (below).</li>
+    <li><b>Apply age and role.</b> Older players lose a little value; starting QBs, low-ranked starting RBs and handcuff RBs gain a little.</li>
+    <li><b>Tune to your league's trades.</b> With 15 or more trades, the value curve and each position are nudged toward how your managers actually trade (explained below).</li>
+    <li><b>Rescale to 10,000.</b> Values are scaled so a typical #1 player lands at 10,000, using the top five players so one player's swing doesn't move everyone.</li>
+    <li><b>Value the draft picks</b> from your league's own player values (explained below).</li>
   </ol>
   <div class="tablewrap">
     <table>
-      <thead><tr><th>Your setting</th><th>Adjustment</th><th>Who it affects</th></tr></thead>
+      <thead><tr><th>Adjustment</th><th>How it works</th><th>Who it affects</th></tr></thead>
       <tbody>
-        <tr><td>Superflex or 2QB</td><td>Superflex market values (×1.3 to ×2.2 in estimate mode)</td><td>Quarterbacks</td></tr>
-        <tr><td>TE premium +0.5 / +1.0 per catch</td><td>×1.15 / ×1.30</td><td>Tight ends</td></tr>
-        <tr><td>10 / 14 / 16 teams</td><td>×0.85 / ×1.10 / ×1.20</td><td>Players outside the top 36</td></tr>
-        <tr><td>Half PPR</td><td>RB ×1.05, WR ×0.93, TE ×0.90</td><td>Pass catchers and running backs</td></tr>
-        <tr><td>Standard (no PPR)</td><td>RB ×1.10, WR ×0.85, TE ×0.85</td><td>Pass catchers and running backs</td></tr>
-        <tr><td>6-point passing TDs</td><td>×1.10</td><td>Quarterbacks</td></tr>
-        <tr><td>Each flex spot beyond one</td><td>×1.05</td><td>RBs, WRs and TEs outside the top 24</td></tr>
-        <tr><td>Starting QB on his NFL team</td><td>+3% (top-12 QB), +8% (QB 13–24), +15% (all other QBs)</td><td>Depth chart QB1s</td></tr>
-        <tr><td>Starting RB / handcuff RB</td><td>+6% for a starter ranked outside the top 20 RBs, +3% for the RB2</td><td>Depth chart RB1s and RB2s</td></tr>
-        <tr><td>Player is 29 or older</td><td>At 29: RB −9%, WR −4.8%, TE −5%, QB −2%. At 30: RB −17%, WR −9.3%, TE −10%, QB −3.5%. At 31: RB −24%, WR −13.4%, TE −15%, QB −4.2%. At 32: RB −32%, WR −15%, TE −21%, QB −5.5%. Anyone 33 or older gets the age-33 discount: RB −34%, WR −18.6%, TE −23%, QB −8%</td><td>Older players at every position</td></tr>
-        <tr><td>3 or more starting WRs</td><td>×1.05</td><td>Wide receivers</td></tr>
-        <tr><td>Your league's trade habits (15+ trades)</td><td>Up to ×0.925 to ×1.075, learned from your trades</td><td>QBs, RBs, WRs, TEs and picks, each separately</td></tr>
+        <tr><td>Superflex or 2QB</td><td>Superflex market rankings, which already price in the second QB slot</td><td>Quarterbacks</td></tr>
+        <tr><td>Your scoring and lineup</td><td>Season projections scored under your rules vs a standard league, by value over a replacement-level player. Applied at half strength, between ×0.75 and ×1.35</td><td>Everyone, by how they score: TE premium helps high-catch TEs, 6-point passing TDs help QBs who throw for scores, bigger leagues and more flex spots raise depth players</td></tr>
+        <tr><td>Starting QB on his NFL team</td><td>A smooth slope by market rank: +1.5% at QB12 and better, +4% at QB24, +7.5% at QB36 and lower</td><td>Depth chart QB1s</td></tr>
+        <tr><td>Starting RB / handcuff RB</td><td>Starters: 0 at RB16 and better, rising smoothly to +3% at RB24 and lower. The RB2: +1.5%</td><td>Depth chart RB1s and RB2s</td></tr>
+        <tr><td>Player is 29 or older</td><td>At 29: RB −4.5%, WR −2.4%, TE −2.6%, QB −1%. At 31: RB −12%, WR −6.7%, TE −7.4%, QB −2.1%. At 33 and older: RB −16.9%, WR −9.3%, TE −11.4%, QB −4%</td><td>Older players at every position</td></tr>
+        <tr><td>Your league's trade habits (15+ trades)</td><td>The value curve's shape, plus up to ×0.925 to ×1.075 per position, learned from your trades (recent trades count more)</td><td>Every player and pick</td></tr>
+        <tr><td>Limit</td><td>All adjustments together stay within ×0.65 to ×1.5 of market value</td><td>Everyone</td></tr>
       </tbody>
     </table>
   </div>
-  <p class="small">The baseline is a 12-team, 1QB, full-PPR league with one flex. A league that matches it exactly gets pure market values. The League Settings tab lists the adjustments applied to your league.</p>
+  <p class="small">Age and role count at half strength because expert rankings already mark older players down and react to depth chart changes. If projections aren't available, Front Office falls back to simple multipliers for TE premium, PPR, passing TDs, league size, flex spots and starting WRs. The League Settings tab lists the adjustments applied to your league, and an accuracy check showing how closely these values match your league's real trades.</p>
 
   <h2>How Draft Picks Are Valued</h2>
-  <p>Picks aren't in the market data, so Front Office calculates them. Each team's strength is the combined value of its best players. The weakest team is projected to pick first, the strongest last. A projected 1.01 is worth about 7,000, and value drops quickly through the first round before leveling off in later rounds.</p>
-  <p>Next year's picks get a specific slot, like 1.04. Picks two years out are only half-projected and labeled Early, Mid, or Late, and picks three years out are treated as middle-of-the-round, because rosters change. Each year further out also loses 8% for uncertainty. Traded picks show on the team that owns them now.</p>
+  <p>A pick is worth the value of the player it usually turns into. A projected 1.01 is valued like your league's 30th-best player, and each pick after that like a player about five spots lower. Because this uses your league's own player values, picks rise in Superflex and TE-premium leagues along with the players they become.</p>
+  <p>During the season, next year's picks are valued from the <b>Season Simulator</b>: the rest of the season and the playoffs are played out 3,000 times, and each team's pick is valued as the average over every slot it landed in (non-playoff teams pick first, worst record first; then playoff teams by how early they were knocked out; the champion picks last). The pick shows its likely range, like "simulated: likely 1.02–1.06". Outside the season, the weakest roster is projected to pick first. Next year's picks get a specific slot, like 1.04. Picks two years out are only half-projected and labeled Early, Mid, or Late, and picks three years out are treated as middle-of-the-round. Next year's picks gain value as the draft gets close (up to +4% in the weeks before it, down to −10% when it's far off), and each year further out loses 8% for uncertainty. Traded picks show on the team that owns them now.</p>
 
   <h2>What's Different for Each Team</h2>
   <p>Within a league, every manager sees the <b>same player values</b>, so trades are judged on one consistent scale. What changes from team to team is the context around those values:</p>
@@ -1395,12 +1391,14 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
   <h2 id="tuning">How Your League's Trades Tune Values</h2>
   <p>Every league has its own habits. Some overpay for running backs, some hoard rookie picks. Once your league has enough trading history, Front Office learns those habits and adjusts values to match, without letting them override the expert market.</p>
   <ol class="steps">
-    <li><b>Collect the trades.</b> Every completed trade from the last four seasons is included, from simple two-team swaps to 3- and 4-team deals.</li>
+    <li><b>Collect the trades.</b> Every completed trade from the last four seasons is included, from simple two-team swaps to 3- and 4-team deals. Recent trades count more: a trade from a year ago counts half as much as one from this week.</li>
+    <li><b>Fit the value curve.</b> Front Office tries different curve shapes, from one that pays a bigger premium for elite players to one that keeps more value in depth, and leans toward whichever makes your league's trades balance best.</li>
     <li><b>Break each trade down by team and position.</b> For every team in the trade, Front Office adds up the market value it received and the value it gave up at each position: QB, RB, WR, TE, and draft picks. In a 3- or 4-team trade, each team is measured against what it personally sent out, not against one other team.</li>
     <li><b>Find what balances your league's trades.</b> If managers in your league agreed to a trade, they considered it fair. Front Office finds the set of multipliers, one per position, that makes your league's trades come out most even. For example, if your managers keep giving up extra market value to land running backs, running backs get a multiplier above 1.</li>
     <li><b>Keep it in check.</b> Each position's multiplier is capped between 0.75 and 1.25, and the math pulls every position back toward 1 unless the trades clearly point the other way, so a single unusual trade can't swing values.</li>
-    <li><b>Blend it in gently.</b> Your league's habits count for about 1% per two trades, up to a maximum of 30%. Expert consensus always makes up the rest. In practice, no position moves more than about 7.5%.</li>
-    <li><b>Rebuild the values.</b> Every player and pick is recalculated with the adjustment, then rescaled so the best player is still 10,000.</li>
+    <li><b>Blend it in gently.</b> Your league's evidence counts more as it builds up: about 20% at 15 trades, 33% at 30, 56% at 75 and 71% at 150, counting recent and balanced trades fully. Lopsided trades count less (one 35% out of balance counts half), so a few bad deals can't distort values. Each position stays within ±7.5% no matter what. Expert consensus always makes up the rest. In practice, no position moves more than about 7.5%.</li>
+    <li><b>Rebuild the values.</b> Every player and pick is recalculated with the adjustment, then rescaled so a typical #1 player is still 10,000.</li>
+    <li><b>Check the result.</b> League Settings shows how far apart the two sides of your league's real trades come out using Front Office values vs plain market values, so you can see whether the tuning helps.</li>
   </ol>
   <p>The tuning only switches on once your league has at least <b>15 trades</b> of any size. When it's active, the line under your league name says how many trades it's based on, and the League Settings tab shows the exact adjustment for each position. Because there are no records of past market values, trades are measured against today's values, so the tuning reflects your league's long-run tendencies rather than any single moment.</p>
   <p>Team Strategy uses the same history to show each team's trade record by today's values, their most frequent trade partner, managers who have traded away several of their own picks, and managers who tend to come out behind.</p>
@@ -1409,10 +1407,11 @@ td.big{font-family:var(--display);font-weight:700;font-size:18px}
   <p>Several lesser pieces never add up to one difference-maker, so the calculator adds a <b>value adjustment</b>. No player's value is ever reduced. Instead, the side giving up fewer, better pieces gets a bonus added to its total, shown as its own line under that side's players. The bonus is the difference worked out like this:</p>
   <ul>
     <li><b>Each side's best piece counts in full.</b></li>
-    <li><b>Every extra piece is discounted</b> by how far it falls below the best piece in the whole trade. A piece half as valuable counts about 80%, a quarter as valuable about 66%, and a tenth about 55%.</li>
-    <li><b>Stars pull further ahead.</b> When the best piece is one of the top players in your league, depth pieces are discounted a little more, since true difference-makers are the hardest thing to replace.</li>
-    <li><b>Pieces that would start count more.</b> An extra player who would crack the receiving team's starting lineup keeps more of his value than one headed for the bench.</li>
-    <li><b>Extra roster spots cost value.</b> If you receive more pieces than you send, each extra spot subtracts about one waiver-level player, since you'd have to cut someone to make room. If that team already has open roster spots, the cost is much smaller.</li>
+    <li><b>Every extra piece is discounted</b> by how far it falls below the best piece it's being traded <i>for</i> (the other side's best). A piece half as valuable counts about 80%, a quarter as valuable about 66%, and a tenth about 55%.</li>
+    <li><b>Stars pull further ahead.</b> When a side is getting one of the top players in your league, its own depth pieces are discounted a little more, since true difference-makers are the hardest thing to replace.</li>
+    <li><b>Extra roster spots cost value.</b> If a side receives more pieces than it sends, each extra spot costs about one waiver-level player, charged against its smallest pieces. A piece can never cost more than it's worth, so adding a throw-in never makes a side worse.</li>
+    <li><b>Adding never subtracts.</b> Adding a player or pick to one side can never lower that side's adjusted total.</li>
+    <li><b>Market value only.</b> The grade uses league market values, the same for every team. How a trade fits a particular roster is shown separately as <b>lineup impact</b> (how much each team's starting lineup changes), and never changes the grade.</li>
   </ul>
   <p>Under the adjustment, the calculator names a player on the other roster worth about the same as the bonus, so you can see what it would take to even the trade. Tap the <b>?</b> next to "Value adjustment" for a quick explanation.</p>
   <p>For example, an early first-round pick worth about 6,000 traded for three veterans worth 2,000, 1,800, and 1,500 looks even on raw totals (6,000 vs. 5,300), but after the adjustment the three veterans count for well under half of the pick. The raw totals are still shown under each side's number, and a note explains the adjustment whenever it makes a real difference. A trade within 5% either way is called fair. The same adjustment is used in Trade Finder and when grading Trade History.</p>
@@ -1671,7 +1670,7 @@ async function openLeague(leagueId){
 
     progress(3, "active");
     S.cfg = readSettings(league, S.rosters);
-    S.history = null; S.nudge = null; S.historyError = false;
+    S.history = null; S.nudge = null; S.curveB = 1; S.curveT = 1; S.accuracy = null; S.pickOdds = null; S.historyError = false;
     S.leagueSig = leagueSignature(league, S.rosters, S.traded); lastLeagueCheck = Date.now();
     buildValues();
     S.sendIds.clear(); S.getIds.clear(); tfSend.clear(); tfTarget = null; trophy = null;
@@ -1742,7 +1741,7 @@ async function loadFantasyPros(){
   const map = new Map();
   for (const p of data.players || []){
     const key = normName(p.name) + "|" + String(p.pos||"").toUpperCase();
-    if (!map.has(key)) map.set(key, { v1: +p.value_1qb || 0, v2: +p.value_2qb || 0 });
+    if (!map.has(key)) map.set(key, { v1: +p.value_1qb || 0, v2: +p.value_2qb || 0, r1: p.r1 != null ? +p.r1 : null, r2: p.r2 != null ? +p.r2 : null, pj: Array.isArray(p.pj) ? p.pj : null });
   }
   if (map.size < 100) throw new Error("too few players");
   return { kind: "fp", map, updated: data.updated, mixed: !!data.filled_from_dynastyprocess,
@@ -1845,16 +1844,108 @@ function ageDiscount(pos, age){
   }
   return 1 - d;
 }
+// ---------- Market curve: average expert rank -> 0-10,000 value ----------
+// value = 10,000 x e^(-K x (rank - 1)^B). B = 1 is the standard curve (each spot ~1.25% below the
+// one above, rank 100 = 2,901). With 15+ trades, B is fine-tuned to how this league actually trades
+// (B < 1 pays a bigger premium at the very top; B > 1 keeps more value deeper down). Rank 100
+// stays at 2,901 either way, so the scale doesn't drift.
+const CURVE_R100 = 2901;
+function curveVal(rank, B = 1){
+  const K = Math.log(10000 / CURVE_R100) / Math.pow(99, B);
+  return 10000 * Math.exp(-K * Math.pow(Math.max(1, rank) - 1, B));
+}
+// The curve actually used: one shape (B), plus a separate slope past rank 60 (T) only when your
+// league's trades clearly call for it. T = 1 means no separate slope.
+const CURVE_TAIL_FROM = 60;
+function marketCurve(rank, B = S.curveB || 1, T = S.curveT || 1){
+  if (T === 1 || rank <= CURVE_TAIL_FROM) return curveVal(rank, B);
+  const at = curveVal(CURVE_TAIL_FROM, B);
+  return at * Math.pow(curveVal(rank, B) / at, T);
+}
+// ---------- League scoring from projections ----------
+// Each player's FantasyPros season projection is scored twice: under THIS league's rules and lineup,
+// and under a standard 12-team full-PPR league (with Superflex if this league has it, since the
+// market list already prices that in). Comparing his value over a replacement-level player in each
+// gives a scoring factor: a 90-catch TE gains from TE premium, a blocking TE barely moves, a rushing
+// QB gains in 6-point leagues more than a pocket passer, and depth matters more in bigger leagues.
+// The factor is applied at half strength on top of the market (market x factor^0.5), kept between
+// x0.75 and x1.35, and averages out to x1.00 across the league's top players.
+const PROJ_MIN_PLAYERS = 150, PROJ_SMOOTH = 20, PROJ_WEIGHT = 0.5, PROJ_MIN = 0.75, PROJ_MAX = 1.35;
+const SLOT_POS = { QB: ["QB"], RB: ["RB"], WR: ["WR"], TE: ["TE"], FLEX: ["RB", "WR", "TE"], WRRB_FLEX: ["RB", "WR"], REC_FLEX: ["WR", "TE"], SUPER_FLEX: ["QB", "RB", "WR", "TE"] };
+function projPoints(pj, pos, sc){
+  const [py, ptd, pint, ry, rtd, rec, recy, rectd, fl] = pj;
+  const bonus = pos === "TE" ? sc.bonus_rec_te || 0 : pos === "RB" ? sc.bonus_rec_rb || 0 : pos === "WR" ? sc.bonus_rec_wr || 0 : 0;
+  return py * (sc.pass_yd ?? 0.04) + ptd * (sc.pass_td ?? 4) + pint * (sc.pass_int ?? -1) + ry * (sc.rush_yd ?? 0.1) + rtd * (sc.rush_td ?? 6)
+       + rec * ((sc.rec ?? 1) + bonus) + recy * (sc.rec_yd ?? 0.1) + rectd * (sc.rec_td ?? 6) + fl * (sc.fum_lost ?? -2);
+}
+function replacementLevels(players, pts, slots, teams){
+  // Fill every team's starting lineup with the best available players; the best player left over at
+  // each position is "replacement level" (what you could start for free)
+  const pool = players.map(a => ({ a, p: pts(a) })).sort((x, y) => y.p - x.p), used = new Set();
+  const order = slots.filter(s => SLOT_POS[s]).sort((x, y) => SLOT_POS[x].length - SLOT_POS[y].length);
+  for (const s of order) for (let t = 0; t < teams; t++){
+    const i = pool.findIndex((x, k) => !used.has(k) && SLOT_POS[s].includes(x.a.pos)); if (i >= 0) used.add(i);
+  }
+  const rep = {};
+  for (const pos of ["QB", "RB", "WR", "TE"]){ const i = pool.findIndex((x, k) => !used.has(k) && x.a.pos === pos); rep[pos] = i >= 0 ? pool[i].p : 0; }
+  return rep;
+}
+function scoringFactors(list, cfg){
+  const withP = list.filter(a => a.pj);
+  if (withP.length < PROJ_MIN_PLAYERS) return null;
+  const STD = { pass_yd: 0.04, pass_td: 4, pass_int: -1, rush_yd: 0.1, rush_td: 6, rec: 1, rec_yd: 0.1, rec_td: 6, fum_lost: -2 };
+  const lg = a => projPoints(a.pj, a.pos, cfg.sc || {}), st = a => projPoints(a.pj, a.pos, STD);
+  const leagueSlots = (cfg.rp || []).filter(x => SLOT_POS[x]);
+  const stdSlots = ["QB", "RB", "RB", "WR", "WR", "TE", "FLEX"].concat(cfg.superflex ? ["SUPER_FLEX"] : []);
+  const repL = replacementLevels(withP, lg, leagueSlots.length ? leagueSlots : stdSlots, cfg.teams || 12), repS = replacementLevels(withP, st, stdSlots, 12);
+  // smoothing = the position's replacement-level points, so players near the cutoff don't swing wildly
+  const raw = new Map(withP.map(a => { const c = Math.max(PROJ_SMOOTH, repS[a.pos]); return [a.id, (Math.max(0, lg(a) - repL[a.pos]) + c) / (Math.max(0, st(a) - repS[a.pos]) + c)]; }));
+  // average out to 1.00 across the top 150 players (weighted by value), so this reshuffles rather than inflates
+  const top = [...withP].sort((x, y) => y.base - x.base).slice(0, 150);
+  const mean = top.reduce((t, a) => t + raw.get(a.id) * a.base, 0) / Math.max(1, top.reduce((t, a) => t + a.base, 0));
+  const out = new Map();
+  raw.forEach((f, id) => out.set(id, Math.min(PROJ_MAX, Math.max(PROJ_MIN, Math.pow(f / mean, PROJ_WEIGHT)))));
+  return out;
+}
+// ---------- Strength of the age and role adjustments ----------
+// FantasyPros' experts already rank older players lower and update ranks when starters change,
+// so these apply at half strength to avoid counting the same thing twice.
+const AGE_STRENGTH = 0.5, ROLE_STRENGTH = 0.5;
+// All of a player's adjustments together can move him at most this far from his market value
+const ADJ_MIN = 0.65, ADJ_MAX = 1.5;
+// ---------- Draft picks ----------
+// A pick is worth the league value of the player it typically turns into: a projected 1.01 is valued
+// like your league's ~30th-best player, and each pick after that like a player about 5 spots lower.
+// Because it uses this league's own player values, picks rise in Superflex and TE-premium leagues
+// along with the players they become. Picks are worth more as the draft gets close (+4% in the
+// weeks before it, -10% at most 10+ months out), and 8% less for each extra year away.
+const PICK_RANK_1 = 29.5, PICK_RANK_STEP = 4.8;
+function draftTiming(){
+  const now = new Date(), draft = new Date(now.getFullYear(), 4, 1);   // rookie drafts are mostly early May
+  if (now > draft) draft.setFullYear(draft.getFullYear() + 1);
+  const months = (draft - now) / (30.4 * 864e5);
+  return Math.min(1.04, Math.max(0.9, 1.04 - 0.014 * months));
+}
+function pickValue(p12, yearsOut){
+  const vals = S.playerCurve || [];
+  const r = PICK_RANK_1 + PICK_RANK_STEP * (p12 - 1), i = Math.floor(r - 1), f = r - 1 - i;
+  const at = k => vals[Math.min(vals.length - 1, Math.max(0, k))] ?? 0;
+  const v = vals.length ? at(i) + (at(i + 1) - at(i)) * f : 7000 * Math.exp(-0.06 * (p12 - 1));
+  return v * Math.pow(0.92, yearsOut) * (yearsOut === 0 ? (S.pickTiming ?? 1) : 1) * (S.nudge ? S.nudge.PICK : 1);
+}
 // ---------- Depth chart role (from Sleeper's NFL depth charts, updated as teams change starters) ----------
 // A starting QB gets a boost, most for lower-ranked QBs whose value depends on the job (a top QB's
 // starting role is already in his market value). Starting RBs outside the top 20 get a boost, and the RB2 on his team
 // (the handcuff, next in line for the work) gets a smaller one.
-const ROLE_QB1 = [[12, 0.03], [24, 0.08], [Infinity, 0.15]];   // [market QB rank up to, boost]
 const ROLE_RB1 = 0.06, ROLE_RB2 = 0.03;
-const ROLE_RB1_FROM = 21;            // starting-RB boost only for RBs outside the top 20 (top RBs already price in the job)
+// Smooth slopes instead of steps: a starting QB's boost rises steadily from +3% (QB12 and better)
+// to +8% (QB24) and +15% (QB36 and lower); a starting RB's from 0 (RB16 and better) to +6% (RB24
+// and lower). (These are full-strength numbers; ROLE_STRENGTH halves them.)
+const lerpPts = (x, pts) => { if (x <= pts[0][0]) return pts[0][1]; for (let i = 1; i < pts.length; i++) if (x <= pts[i][0]) { const [x0, y0] = pts[i - 1], [x1, y1] = pts[i]; return y0 + (y1 - y0) * (x - x0) / (x1 - x0); } return pts.at(-1)[1]; };
+const ROLE_QB_CURVE = [[12, 0.03], [24, 0.08], [36, 0.15]], ROLE_RB_CURVE = [[16, 0], [24, 0.06]];
 function roleBuff(a){
-  if (a.pos === "QB" && a.depthPos === "QB" && a.depthOrder === 1) return 1 + ROLE_QB1.find(([r]) => (a.posRank || 99) <= r)[1];
-  if (a.pos === "RB" && a.depthPos === "RB" && a.depthOrder === 1) return (a.posRank || 99) >= ROLE_RB1_FROM ? 1 + ROLE_RB1 : 1;
+  if (a.pos === "QB" && a.depthPos === "QB" && a.depthOrder === 1) return 1 + lerpPts(a.posRank || 99, ROLE_QB_CURVE);
+  if (a.pos === "RB" && a.depthPos === "RB" && a.depthOrder === 1) return 1 + lerpPts(a.posRank || 99, ROLE_RB_CURVE);
   if (a.pos === "RB" && a.depthPos === "RB" && a.depthOrder === 2) return 1 + ROLE_RB2;
   return 1;
 }
@@ -1878,16 +1969,20 @@ function buildValues(){
     const rostered = owner.has(pid);
     if (!rostered && !p.team) continue;
     const name = p.full_name || `${p.first_name||""} ${p.last_name||""}`.trim();
-    let base = 0;
+    let base = 0, rank = null, pj = null;
     if (S.market.kind !== "sleeper"){
       const m = S.market.map.get(normName(name) + "|" + pos);
-      if (m) base = cfg.superflex ? m.v2 : m.v1;
+      if (m){
+        rank = cfg.superflex ? m.r2 : m.r1;
+        base = rank != null ? marketCurve(rank) : (cfg.superflex ? m.v2 : m.v1);   // average expert rank -> value
+        pj = m.pj;
+      }
     } else {
       const rk = p.search_rank;
       if (rk && rk < 2000) base = 10000 * Math.exp(-0.011*(rk-1)) * ageFactor(pos, p.age);
     }
     if (!base && !rostered) continue;
-    list.push({ id:"p:"+pid, pid, kind:"player", name, pos, nfl:p.team||"FA", age:exactAge(p), base, owner: owner.get(pid), depthPos: p.team ? p.depth_chart_position : null, depthOrder: p.team ? Number(p.depth_chart_order) || null : null });
+    list.push({ id:"p:"+pid, pid, kind:"player", name, pos, nfl:p.team||"FA", age:exactAge(p), base, mRank: rank, pj, owner: owner.get(pid), depthPos: p.team ? p.depth_chart_position : null, depthOrder: p.team ? Number(p.depth_chart_order) || null : null });
   }
 
   // rank by base, overall and per position
@@ -1905,46 +2000,70 @@ function buildValues(){
 
   const rules = [];
   const r2 = x => Math.round(x*100)/100;
+  // League scoring from projections replaces the flat setting multipliers when projections are available
+  const SF = S.market.kind === "fp" ? scoringFactors(list, cfg) : null;
+  S.scoringFromProjections = !!SF;
   if (S.market.kind === "sleeper" && cfg.superflex) rules.push({m:"×1.3–2.2", t:"Superflex boosts QBs", d:"QBs ranked 13–24 gain the most because they become starters."});
   if (S.market.kind !== "sleeper" && cfg.superflex) rules.push({m:"SF", t:"Superflex market values used", d:"QBs start from Superflex market values, which already price in the second QB slot."});
+  if (SF){
+    const movers = list.filter(a => SF.has(a.id) && a.base > 2500).map(a => ({ a, f: SF.get(a.id) })).sort((x, y) => y.f - x.f);
+    const up = movers.slice(0, 3).filter(x => x.f > 1.01).map(x => `${x.a.name} +${Math.round((x.f - 1) * 100)}%`);
+    const down = movers.slice(-3).reverse().filter(x => x.f < 0.99).map(x => `${x.a.name} ${Math.round((x.f - 1) * 100)}%`);
+    rules.push({ m: "Scoring", t: "Your scoring and lineup, from projections",
+      d: `Every player's season projection is scored under your league's rules${cfg.tep ? ` (including +${cfg.tep} per TE catch)` : ""} and compared with a standard league. Biggest gains: ${up.join(", ") || "none"}. Biggest drops: ${down.join(", ") || "none"}.` });
+  } else {
   if (cfg.tep) rules.push({m:"×"+r2(tepMult), t:`TE premium (+${cfg.tep} per catch)`, d:"Applies to every tight end."});
   if (sizeMult !== 1) rules.push({m:"×"+r2(sizeMult), t:`${cfg.teams}-team league`, d:"Applies to players outside the top 36, since depth is "+(sizeMult>1?"scarcer":"easier to find")+"."});
   if (r < 1) rules.push({m:`RB ×${r2(sRB)}`, t:r>=.5?"Half PPR":"Low or no PPR", d:`WRs ×${r2(sWR)}, TEs ×${r2(sTE)}. Fewer catch points shift value toward running backs.`});
   if (cfg.passTd >= 6) rules.push({m:"×1.1", t:`${cfg.passTd}-point passing TDs`, d:"Applies to every quarterback."});
   if (cfg.flex > 1) rules.push({m:"×"+r2(Math.pow(1.05,cfg.flex-1)), t:`${cfg.flex} flex spots`, d:"RBs, WRs and TEs ranked outside the top 24 overall, since more of them start."});
   if (cfg.wr >= 3) rules.push({m:"×1.05", t:`${cfg.wr} starting WRs`, d:"Applies to every wide receiver."});
+  }
+  if ((S.curveB && Math.abs(S.curveB - 1) >= 0.01) || (S.curveT && Math.abs(S.curveT - 1) >= 0.01)) rules.push({ m: "Curve", t: "Value curve fit to your league's trades",
+    d: [S.curveB && Math.abs(S.curveB - 1) >= 0.01 ? (S.curveB < 1 ? "Your league pays a bigger premium for elite players than the standard curve." : "Your league keeps more value in good starters than the standard curve.") : "",
+        S.curveT && Math.abs(S.curveT - 1) >= 0.01 ? (S.curveT > 1 ? "Players past the top 60 fall off faster in your league." : "Players past the top 60 hold more value in your league.") : ""].filter(Boolean).join(" ") });
   if (S.nudge){
     const parts = ["QB","RB","WR","TE","PICK"].filter(k => Math.abs(S.nudge[k]-1) >= 0.005)
       .map(k => `${k === "PICK" ? "Picks" : k + "s"} ×${r2(S.nudge[k])}`);
     rules.push({ m: "League", t: `Your league's trade habits (${S.nudge.n} trades)`,
       d: parts.length ? parts.join(", ") + ". A light adjustment based on how your league has actually traded." : "Your league trades close to market value, so no adjustment was needed." });
   }
-  rules.push({ m: "Role", t: "Starters and handcuffs", d: "From NFL depth charts. Starting QBs: +3% for top-12 QBs, +8% for QBs 13–24, +15% for everyone else. Starting RBs outside the top 20 RBs +6%. Each team's RB2 (the handcuff) +3%." });
-  rules.push({ m: "Age", t: "Players 29 and older", d: "Value drops each year from 29 to 33, then holds. At 29: RB −9%, WR −4.8%, TE −5%, QB −2%. At 30: RB −17%, WR −9.3%, TE −10%, QB −3.5%. At 32: RB −32%, WR −15%, TE −21%, QB −5.5%. At 33 and older: RB −34%, WR −18.6%, TE −23%, QB −8%. An older player is worth less than a similar younger one." });
+  rules.push({ m: "Role", t: "Starters and handcuffs", d: "From NFL depth charts, on smooth slopes by market rank. Starting QBs: +1.5% (QB12 and better) rising to +4% at QB24 and +7.5% at QB36 and lower. Starting RBs: 0 at RB16 and better, rising to +3% at RB24 and lower. Each team's RB2 (the handcuff) +1.5%. Half-strength, because expert rankings already react to depth chart changes." });
+  rules.push({ m: "Age", t: "Players 29 and older", d: "Value drops each year from 29 to 33, then holds. At 29: RB −4.5%, WR −2.4%, TE −2.6%, QB −1%. At 31: RB −12%, WR −6.7%, TE −7.4%, QB −2.1%. At 33 and older: RB −16.9%, WR −9.3%, TE −11.4%, QB −4%. Half-strength, because expert rankings already mark older players down." });
   S.rules = rules;
   for (const a of list){
     let m = S.nudge ? (S.nudge[a.pos] || 1) : 1;
-    m *= ageDiscount(a.pos, a.age);
-    m *= roleBuff(a);
+    m *= 1 - (1 - ageDiscount(a.pos, a.age)) * AGE_STRENGTH;
+    m *= 1 + (roleBuff(a) - 1) * ROLE_STRENGTH;
     if (S.market.kind === "sleeper" && cfg.superflex && a.pos==="QB") m *= a.posRank<=12 ? 1.7 : a.posRank<=24 ? 2.2 : 1.3;
-    if (a.pos==="TE") m *= tepMult;
-    if (a.rank > 36) m *= sizeMult;
-    m *= {RB:sRB, WR:sWR, TE:sTE}[a.pos] || 1;
-    if (a.pos==="QB" && cfg.passTd >= 6) m *= 1.10;
-    if (["RB","WR","TE"].includes(a.pos) && a.rank > 24 && cfg.flex > 1) m *= Math.pow(1.05, cfg.flex-1);
-    if (a.pos==="WR" && cfg.wr >= 3) m *= 1.05;
-    a.raw = a.base * m;
+    if (SF){
+      m *= SF.get(a.id) ?? 1;                    // scoring and lineup, from projections
+    } else {
+      if (a.pos==="TE") m *= tepMult;
+      if (a.rank > 36) m *= sizeMult;
+      m *= {RB:sRB, WR:sWR, TE:sTE}[a.pos] || 1;
+      if (a.pos==="QB" && cfg.passTd >= 6) m *= 1.10;
+      if (["RB","WR","TE"].includes(a.pos) && a.rank > 24 && cfg.flex > 1) m *= Math.pow(1.05, cfg.flex-1);
+      if (a.pos==="WR" && cfg.wr >= 3) m *= 1.05;
+    }
+    a.adj = Math.min(ADJ_MAX, Math.max(ADJ_MIN, m));   // all adjustments together stay within x0.65 to x1.5 of market
+    a.raw = a.base * a.adj;
   }
 
   // rescale both columns to 0-10,000 so they compare cleanly
-  const topRaw = Math.max(1, ...list.map(a => a.raw));
-  const topBase = Math.max(1, ...list.map(a => a.base));
+  // Scale so a typical #1 lands at 10,000, using the top 5 so one player's swing doesn't move everyone
+  const top5 = arr => { const v = arr.slice().sort((x, y) => y - x).slice(0, 5); return v.length ? v.reduce((t, x) => t + x, 0) / v.length : 1; };
+  const topRaw = Math.max(1, top5(list.map(a => a.raw)) * 1.025, Math.max(...list.map(a => a.raw)) * 0.97);
+  const topBase = Math.max(1, top5(list.map(a => a.base)) * 1.025, Math.max(...list.map(a => a.base)) * 0.97);
   for (const a of list){ a.value = a.raw/topRaw*10000; a.market = a.base/topBase*10000; assets.set(a.id, a); }
   // Waiver-level value: roughly the player every team could pick up for free
   const byValue = list.map(a => a.value).sort((a, b) => b - a);
+  S.playerCurve = byValue;                     // draft picks are valued from this league's player values
+  S.pickTiming = draftTiming();
   S.eliteValue = byValue[Math.min(byValue.length - 1, 11)] || 9000;
   // the first player who wouldn't fit on any roster in this league (starters + bench, every team)
-  const rosterSpots = (cfg.rp || []).filter(x => !["IR","TAXI"].includes(x)).length || (cfg.starters + 10);
+  // starters + bench + taxi squads: taxi players are rostered too, so they push waiver level deeper
+  const rosterSpots = ((cfg.rp || []).filter(x => !["IR","TAXI"].includes(x)).length || (cfg.starters + 10)) + (Number(cfg.st?.taxi_slots) || 0);
   S.replacement = Math.min(1200, byValue[Math.min(byValue.length - 1, cfg.teams * rosterSpots)] || 300);
 
   // Ranks by this league's values: overall (#1, #2...) and by position (WR1, WR2...)
@@ -1988,14 +2107,22 @@ function buildValues(){
     const [s, rd, orig] = key.split("-").map(Number);
     const yi = s - firstSeason, t = teams.get(orig);
     if (!t) continue;
-    const slot = yi===0 ? t.slot : yi===1 ? (t.slot+mid)/2 : mid;
-    const overall = (rd-1)*cfg.teams + slot;
-    const p12 = (overall-1)*12/cfg.teams + 1;
-    const value = 7000 * Math.exp(-0.06*(p12-1)) * Math.pow(0.92, yi) * (S.nudge ? S.nudge.PICK : 1);
+    const odds = yi === 0 ? S.pickOdds?.get(orig) : null;
+    const p12of = sl => ((rd - 1) * cfg.teams + sl - 1) * 12 / cfg.teams + 1;
+    let slot = yi===0 ? t.slot : yi===1 ? (t.slot+mid)/2 : mid, value, range = "";
+    if (odds && odds.some(x => x > 0)){
+      // the average value over every slot this pick landed in across the simulated seasons
+      value = odds.reduce((sum, p, k) => sum + p * pickValue(p12of(k + 1), 0), 0);
+      slot = odds.reduce((sum, p, k) => sum + p * (k + 1), 0);
+      let c = 0, lo = 1, hi = cfg.teams;
+      for (let k = 0; k < odds.length; k++){ c += odds[k]; if (c >= 0.1){ lo = k + 1; break; } }
+      c = 0; for (let k = 0; k < odds.length; k++){ c += odds[k]; if (c >= 0.9){ hi = k + 1; break; } }
+      range = lo === hi ? "" : `simulated: likely ${rd}.${String(lo).padStart(2, "0")}–${rd}.${String(hi).padStart(2, "0")}`;
+    } else value = pickValue(p12of(slot), yi);
     let label;
     if (yi===0) label = `${s} Pick ${rd}.${String(Math.round(slot)).padStart(2,"0")}`;
     else { const tier = slot <= cfg.teams/3 ? "Early" : slot > cfg.teams*2/3 ? "Late" : "Mid"; label = yi===1 ? `${s} ${tier} ${ord(rd)}` : `${s} ${ord(rd)}`; }
-    const via = own !== orig ? `from ${t.name}` : (yi===0 ? "projected slot" : "own pick");
+    const via = own !== orig ? `from ${t.name}${range ? ", " + range : ""}` : (yi===0 ? (range || "projected slot") : "own pick");
     assets.set("k:"+key, { id:"k:"+key, kind:"pick", name: label, pos:"PICK", nfl: via, value, market: value, owner: own, round: rd, season: s });
   }
 
@@ -2146,8 +2273,8 @@ const DEPTH_FLOOR = 0.4, DEPTH_CURVE = 0.6;
 //  - discounts less for extra pieces that would crack the receiving team's starting lineup,
 //  - charges less for roster spots when the receiving team actually has open spots.
 const STAR_EXTRA = 0.12;      // up to 12% more depth discount against an elite piece
-const STARTER_RELIEF = 0.5;   // pieces that would start win back half of their depth discount
-const OPEN_SPOT_COST = 0.35;  // a spot that's already open costs 35% of a waiver-level player
+// (Team-specific relief for pieces that would start, and cheaper roster spots for teams with open
+// spots, were removed from the grade: trades are graded on league market value only.)
 function teamOpenSpots(rid){
   const r = S.rosters.find(x => x.roster_id === rid); if (!r) return 0;
   const size = (S.cfg.rp || []).filter(x => !["IR","TAXI"].includes(x)).length;
@@ -2160,33 +2287,54 @@ function wouldStart(a, rid, leaving){
   const vals = teamAssets(rid).filter(x => x.kind === "player" && x.pos === a.pos && !leaving.has(x.id)).map(x => x.value).sort((x, y) => y - x);
   return vals.length < k || a.value > vals[k - 1];
 }
-function tradeValueFor(getAssets, giveAssets, receiverRid){
-  if (!getAssets.length) return { total: 0, raw: 0 };
-  const all = getAssets.concat(giveAssets).map(a => a.value), top = Math.max(1, ...all);
-  const eliteLine = S.eliteValue || 9000;
-  const starness = Math.max(0, Math.min(1, (top - eliteLine * 0.75) / (10000 - eliteLine * 0.75)));
-  const leaving = new Set(giveAssets.map(a => a.id));
-  const v = [...getAssets].sort((a, b) => b.value - a.value);
-  let total = v[0].value;
-  for (let i = 1; i < v.length; i++){
-    let w = (DEPTH_FLOOR + (1 - DEPTH_FLOOR) * Math.pow(v[i].value / top, DEPTH_CURVE)) * (1 - STAR_EXTRA * starness);
-    if (wouldStart(v[i], receiverRid, leaving)) w += (1 - w) * STARTER_RELIEF;
-    total += v[i].value * w;
-  }
-  const extra = Math.max(0, getAssets.length - giveAssets.length);
-  const open = receiverRid != null ? teamOpenSpots(receiverRid) : 0;
-  const cheap = Math.min(extra, open), full = extra - cheap;
-  total -= (S.replacement || 0) * (full + cheap * OPEN_SPOT_COST);
-  return { total: Math.max(0, total), raw: getAssets.reduce((t, a) => t + a.value, 0) };
-}
+// One side's adjusted trade value. Rules:
+//  - Its best piece counts in full.
+//  - Every other piece is discounted by how far it falls short of the best piece it's being traded
+//    FOR (the other side's best): about 80% at half as valuable, 66% at a quarter, 55% at a tenth,
+//    and up to 12% more when that piece is a true star. Measuring against the OTHER side keeps the
+//    math monotonic: adding something to a side can never lower that side's total.
+//  - Each extra roster spot the side takes (more pieces in than out) costs about one waiver-level
+//    player, charged against its smallest pieces and never more than a piece is worth, so a throw-in
+//    can only add value, never subtract it.
+//  - It uses league market values only. How a trade fits a particular roster is shown separately
+//    (lineup impact) and never changes the grade.
 function tradeValue(getVals, giveVals){
   if (!getVals.length) return 0;
-  const all = getVals.concat(giveVals), top = Math.max(1, ...all);
-  const v = [...getVals].sort((a, b) => b - a);
-  let total = v[0];
-  for (let i = 1; i < v.length; i++) total += v[i] * (DEPTH_FLOOR + (1 - DEPTH_FLOOR) * Math.pow(v[i] / top, DEPTH_CURVE));
-  const extraSpots = Math.max(0, getVals.length - giveVals.length);
-  return Math.max(0, total - extraSpots * (S.replacement || 0));
+  const v = [...getVals].sort((a, b) => b - a), best = v[0];
+  const ref = giveVals.length ? Math.max(1, ...giveVals) : best;           // the best piece this side is getting traded for
+  const eliteLine = S.eliteValue || 9000;
+  const starness = Math.max(0, Math.min(1, (ref - eliteLine * 0.75) / (10000 - eliteLine * 0.75)));
+  const contrib = [{ c: best, w: 1 }];
+  for (let i = 1; i < v.length; i++){
+    const w = (DEPTH_FLOOR + (1 - DEPTH_FLOOR) * Math.pow(Math.min(1, v[i] / ref), DEPTH_CURVE)) * (1 - STAR_EXTRA * starness);
+    contrib.push({ c: v[i] * w, w });
+  }
+  // The roster-spot charge is the waiver level on the same discounted scale as the piece, so a piece
+  // is never penalized twice, and never charged more than it's worth.
+  const extra = Math.max(0, getVals.length - giveVals.length), rep = S.replacement || 0;
+  const charge = [...contrib].sort((a, b) => a.c - b.c).slice(0, extra).reduce((t, x) => t + Math.min(rep * x.w, x.c), 0);
+  return Math.max(0, contrib.reduce((t, x) => t + x.c, 0) - charge);
+}
+// Kept for the calculator: same market-only math, from assets instead of numbers
+function tradeValueFor(getAssets, giveAssets){
+  if (!getAssets.length) return { total: 0, raw: 0 };
+  const g = getAssets.map(a => a.value), s = giveAssets.map(a => a.value);
+  return { total: tradeValue(g, s), raw: g.reduce((t, x) => t + x, 0) };
+}
+// Lineup impact: how much a team's projected starting lineup (by league value) changes after the trade.
+// Shown next to the grade as roster fit; it never changes the grade itself.
+function lineupValue(players){
+  const need = slotNeeds(); let total = 0;
+  for (const p of ["QB", "RB", "WR", "TE"]){
+    const vals = players.filter(a => a.pos === p).map(a => a.value).sort((x, y) => y - x), k = need[p] || 0, whole = Math.floor(k);
+    total += vals.slice(0, whole).reduce((t, x) => t + x, 0) + (vals[whole] || 0) * (k - whole);
+  }
+  return total;
+}
+function lineupImpact(rid, outIds, inAssets){
+  const before = teamAssets(rid).filter(a => a.kind === "player");
+  const after = before.filter(a => !outIds.has(a.id)).concat(inAssets.filter(a => a.kind === "player"));
+  return lineupValue(after) - lineupValue(before);
 }
 
 function renderCalc(){
@@ -2270,6 +2418,11 @@ function renderCalc(){
   const bonus = Math.max(bonusS, bonusG);
   if (bonus > 0.05 * Math.max(rawS, rawG))
     hint = (hint ? hint + " " : "") + `The ${bonusS ? "side you send" : "side you get"} gets a +${fmt(bonus)} value adjustment, because one difference-maker is worth more than several smaller pieces that take up roster spots.`;
+  // Roster fit, shown separately from the grade: how each team's starting lineup changes
+  const youImp = lineupImpact(ra, S.sendIds, getA), themImp = lineupImpact(rb, S.getIds, sendA);
+  const sgn = n => (n >= 0 ? "+" : "−") + fmt(Math.abs(Math.round(n)));
+  if (Math.abs(youImp) >= 50 || Math.abs(themImp) >= 50)
+    hint = (hint ? hint + " " : "") + `Lineup impact (starters only, not part of the grade): your lineup ${sgn(youImp)}, theirs ${sgn(themImp)}.`;
   $("hint").textContent = hint;
 
   // suggest assets to even it out
@@ -2357,7 +2510,7 @@ function renderTuningLight(){
   if (S.nudge){
     const adj = ["QB","RB","WR","TE","PICK"].map(k => ({ k, m: S.nudge[k] }))
       .map(x => `<span class="chip">${x.k === "PICK" ? "Picks" : x.k + "s"} ×${(Math.round(x.m*100)/100).toFixed(2)}</span>`).join("");
-    el.innerHTML = `<span class="light on" aria-hidden="true"></span><div class="tuning-text"><b>League Tuning Is On</b><p>These values include your league's trade habits, learned from ${S.nudge.n} trades.</p><div class="chips">${adj}</div>${link}</div>`;
+    el.innerHTML = `<span class="light on" aria-hidden="true"></span><div class="tuning-text"><b>League Tuning Is On</b><p>These values include your league's trade habits, learned from ${S.nudge.n} trades. Your league's own evidence counts for ${Math.round((S.nudge.weight || 0) * 100)}% so far and grows as you trade; expert consensus makes up the rest.</p><div class="chips">${adj}</div>${link}</div>`;
   } else {
     const left = Math.max(0, NUDGE_MIN_TRADES - twoTeam);
     const pct = Math.min(100, Math.round(twoTeam / NUDGE_MIN_TRADES * 100));
@@ -2695,9 +2848,11 @@ function renderSettings(){
     ["First down bonus", sc.rec_fd || sc.rush_fd ? "Yes" : null],
     ["Fumble lost", sc.fum_lost ? pts(sc.fum_lost) : null]
   ]);
-  $("setRules").innerHTML = S.rules.length
+  const A = S.accuracy;
+  const accLi = A ? `<li><span class="mult">Check</span><span class="why">Accuracy on your league's ${A.n} trades<small>Using Front Office values, the two sides of your league's real trades come out ${Math.round(A.fo * 1000) / 10}% apart on average, vs ${Math.round(A.mk * 1000) / 10}% using plain market values${A.fo < A.mk ? `, so these values match how your league actually trades ${Math.round((1 - A.fo / A.mk) * 100)}% better` : A.fo > A.mk ? ". Plain market values fit your league's trades slightly better right now" : ""}. Recent trades count more.</small></span></li>` : "";
+  $("setRules").innerHTML = (S.rules.length
     ? S.rules.map(x => `<li><span class="mult">${esc(x.m)}</span><span class="why">${esc(x.t)}<small>${esc(x.d)}</small></span></li>`).join("")
-    : `<li><span class="why">Standard settings<small>This league matches the baseline (12 teams, 1QB, full PPR), so values match the market.</small></span></li>`;
+    : `<li><span class="why">Standard settings<small>This league matches the baseline (12 teams, 1QB, full PPR), so values match the market.</small></span></li>`) + accLi;
   // positional share
   const players = [...S.assets.values()].filter(a => a.kind === "player");
   const shareOf = key => {
@@ -3011,7 +3166,7 @@ function renderScores(data, week){
 // ============================================================
 const HISTORY_SEASONS = 4;      // this season plus up to 3 earlier ones
 const NUDGE_MIN_TRADES = 15;    // fewer trades than this = no value adjustment
-const NUDGE_MAX_WEIGHT = 0.3;   // the league's habits never count for more than 30%
+// (The league's weight now grows with evidence: see shrinkWeight. Each position stays within ±7.5%.)
 
 async function loadHistory(league){
   $("tradeList").innerHTML = `<p class="empty">Loading your league's trade history...</p>`;
@@ -3078,16 +3233,18 @@ async function loadHistory(league){
     S.history = { trades, pickResult, seasons: seasons.map(x => Number(x.season)) };
     S.historyError = false;
 
-    // Learn the league's habits, then rebuild values once with the adjustment
-    const nudge = learnNudge(trades);
+    // Learn the league's habits: first the shape of the value curve, then the per-position tuning
     S.nudge = null;
-    if (nudge){
-      S.nudge = nudge;
-      buildValues();
-      rerenderKeepingPlace();
-    } else {
-      renderHistory(); renderStrategy(); renderTuningLight();
-    }
+    const fit = fitCurve(trades), curveChanged = fit.B !== (S.curveB || 1) || fit.T !== (S.curveT || 1);
+    S.curveB = fit.B; S.curveT = fit.T;
+    if (curveChanged) buildValues();
+    const nudge = learnNudge(trades);
+    if (nudge){ S.nudge = nudge; buildValues(); }
+    S.accuracy = tradeAccuracy(trades);
+    if (nudge || curveChanged) rerenderKeepingPlace();
+    else { renderHistory(); renderStrategy(); renderTuningLight(); }
+    if (typeof renderSettings === "function" && S.cfg) renderSettings();
+    updatePickOdds();
   } catch(err){
     console.error(err);
     $("tradeList").innerHTML = `<p class="empty">Couldn't load trade history. Reopen the league to try again.</p>`;
@@ -3115,7 +3272,7 @@ function valueItem(it){
     return { name: slotTxt, pos: "PICK", value: a?.value || 0, sub: `Used on ${pname}${detail ? " (" + detail + ")" : ""}`, cat: "PICK", photoPid: pid, usedOn: pname };
   }
   const teams = S.cfg?.teams || 12;
-  const est = 7000 * Math.exp(-0.06 * (((it.round-1)*teams + (teams+1)/2 - 1) * 12/teams)) * (S.nudge ? S.nudge.PICK : 1);
+  const est = pickValue(((it.round-1)*teams + (teams+1)/2 - 1) * 12/teams + 1, 0) / (S.pickTiming || 1);
   return { name: label, pos: "PICK", value: est, sub: "Estimated (pick result unknown)", cat: "PICK" };
 }
 function gradeTrade(tr){
@@ -3135,18 +3292,95 @@ function gradeTrade(tr){
   return { ...tr, sides };
 }
 
+// ---------- Fit the value curve to this league's trades ----------
+// Tries curve shapes from B = 0.8 (bigger premium for elite players) to B = 1.2 (more value kept in
+// depth) and keeps the one that makes this league's accepted trades balance best, blended toward the
+// standard curve the same way as the trade-habit tuning (at most halfway with 30+ trades).
+const tradeWeight = t => Math.pow(0.5, Math.max(0, Date.now() - (t.created || Date.now())) / (365 * 864e5));   // a year-old trade counts half
+// Lopsided trades say less about the league's taste (they may be mistakes or collusion), so they're down-weighted:
+// a trade 35% out of balance by current values counts half, 70% out counts a fifth.
+function outlierWeight(t){
+  const g = gradeTrade(t);
+  const imb = Math.max(0, ...g.sides.map(x => Math.abs(x.margin) / Math.max(1, x.total, x.sentTotal)));
+  return 1 / (1 + Math.pow(imb / 0.35, 2));
+}
+// Bayesian-style shrinkage: how much the league's own evidence counts, from the effective number of
+// trades (recent, balanced trades count fully). 15 trades -> 20%, 30 -> 33%, 75 -> 56%, 150 -> 71%.
+const SHRINK_K = 60;
+const shrinkWeight = nEff => nEff / (nEff + SHRINK_K);
+function fitCurve(trades){
+  const recent = trades.filter(t => t.sides.length >= 2);
+  if (recent.length < NUDGE_MIN_TRADES) return { B: 1, T: 1 };
+  const players = [...S.assets.values()].filter(a => a.kind === "player" && a.mRank != null);
+  const itemPid = it => it.kind === "player" ? it.pid : (S.history?.pickResult.get(`${it.season}-${it.round}-${it.orig}`)?.pid || null);
+  const tw = new Map(recent.map(t => [t, tradeWeight(t) * outlierWeight(t)]));
+  const nEff = [...tw.values()].reduce((x, y) => x + y, 0);
+  const errFor = (B, T) => {
+    const raw = a => marketCurve(a.mRank, B, T) * (a.adj || 1);
+    const v = players.map(raw).sort((x, y) => y - x), scale = 10000 / Math.max(1, (v.slice(0, 5).reduce((t, x) => t + x, 0) / Math.max(1, Math.min(5, v.length))) * 1.025);
+    let err = 0;
+    for (const t of recent){
+      const w = tw.get(t);
+      const val = it => { const pid = itemPid(it), a = pid ? S.assets.get("p:" + pid) : null; return a && a.mRank != null ? raw(a) * scale : valueItem(it).value; };
+      for (const sd of t.sides){
+        const got = sd.gets.reduce((s2, it) => s2 + val(it), 0);
+        const gave = t.sides.filter(o => o !== sd).flatMap(o => o.gets.filter(it => it.from === sd.rid)).reduce((s2, it) => s2 + val(it), 0);
+        if (got + gave > 0) err += w * Math.pow((got - gave) / (got + gave), 2);
+      }
+    }
+    return err;
+  };
+  // 1) one curve shape for everyone
+  let best = 1, bestErr = errFor(1, 1);
+  for (let B = 0.8; B <= 1.2001; B += 0.05){ const e = errFor(B, 1); if (e < bestErr - 1e-9){ best = B; bestErr = e; } }
+  // 2) only if the data clearly asks for it (30+ trades and at least 10% better): a separate slope past rank 60
+  let tail = 1;
+  if (recent.length >= 30){
+    let tErr = bestErr;
+    for (const T of [0.8, 0.85, 0.9, 0.95, 1.05, 1.1, 1.15, 1.2]){ const e = errFor(best, T); if (e < tErr){ tErr = e; tail = T; } }
+    if (tErr > bestErr * 0.9) tail = 1;
+  }
+  const w = Math.min(0.7, shrinkWeight(nEff));
+  const r3 = x => Math.round(x * 1000) / 1000;
+  return { B: r3(1 + w * (best - 1)), T: r3(1 + w * (tail - 1)) };
+}
+// ---------- Accuracy check ----------
+// How far apart the two sides of your league's real trades come out, on average, using Front Office's
+// values vs plain market values. Managers agreed to these trades, so smaller is more accurate.
+function tradeAccuracy(trades){
+  const recent = trades.filter(t => t.sides.length >= 2);
+  if (recent.length < 5) return null;
+  const gap = useMarket => {
+    let tot = 0, wsum = 0;
+    for (const t of recent){
+      const w = tradeWeight(t);
+      const val = it => { const v = valueItem(it); if (!useMarket) return v.value; const a = it.kind === "player" ? S.assets.get("p:" + it.pid) : null; return a ? a.market : v.value; };
+      for (const sd of t.sides){
+        const got = sd.gets.map(val), gave = t.sides.filter(o => o !== sd).flatMap(o => o.gets.filter(it => it.from === sd.rid)).map(val);
+        if (!got.length || !gave.length) continue;
+        const a = tradeValue(got, gave), b = tradeValue(gave, got);
+        if (a + b > 0){ tot += w * Math.abs(a - b) / Math.max(a, b); wsum += w; }
+      }
+    }
+    return wsum ? tot / wsum : null;
+  };
+  const fo = gap(false), mk = gap(true);
+  return fo == null || mk == null ? null : { n: recent.length, fo, mk };
+}
 // Least-squares fit: what multiplier per position makes this league's trades balance?
 function learnNudge(trades){
   const recent = trades.filter(t => t.sides.length >= 2);
   if (recent.length < NUDGE_MIN_TRADES) return null;
   const K = ["QB","RB","WR","TE","PICK"], rows = [];
+  let nEff = 0;
   for (const t of recent){
-    const g = gradeTrade(t);
+    const g = gradeTrade(t), tw = tradeWeight(t) * outlierWeight(t), w = Math.sqrt(tw);   // recent, balanced trades count most
+    nEff += tw;
     // One balance equation per team; the last team's is implied by the others, so it's skipped
     g.sides.slice(0, -1).forEach(x => {
       const row = K.map(() => 0);
-      x.items.forEach(i => { const k = K.indexOf(i.cat); if (k >= 0) row[k] += i.value/10000; });
-      x.sentItems.forEach(i => { const k = K.indexOf(i.cat); if (k >= 0) row[k] -= i.value/10000; });
+      x.items.forEach(i => { const k = K.indexOf(i.cat); if (k >= 0) row[k] += w * i.value/10000; });
+      x.sentItems.forEach(i => { const k = K.indexOf(i.cat); if (k >= 0) row[k] -= w * i.value/10000; });
       rows.push(row);
     });
   }
@@ -3172,9 +3406,10 @@ function learnNudge(trades){
     for (let r = 0; r < N; r++) if (r !== c){ const f = M[r][c]/M[c][c]; for (let k = c; k < N; k++) M[r][k] -= f*M[c][k]; rhs[r] -= f*rhs[c]; }
   }
   const delta = K.map((_, a) => Math.abs(M[a][a]) < 1e-12 ? 0 : rhs[a]/M[a][a]);
-  const w = Math.min(NUDGE_MAX_WEIGHT, recent.length / 60);
-  const out = { n: recent.length };
-  K.forEach((k, i) => { const m = Math.min(1.25, Math.max(0.75, 1 + delta[i])); out[k] = 1 + w*(m - 1); });
+  // Shrink toward market by the amount of evidence, then a hard cap of ±7.5% per position
+  const w = shrinkWeight(nEff);
+  const out = { n: recent.length, nEff: Math.round(nEff * 10) / 10, weight: w };
+  K.forEach((k, i) => { const m = Math.min(1.2, Math.max(0.8, 1 + delta[i])); out[k] = Math.min(1.075, Math.max(0.925, 1 + w * (m - 1))); });
   return out;
 }
 
@@ -3991,11 +4226,11 @@ function buildSim(D){
   const sd = new Map(rids.map(r => [r, sdOf(r, playoffMean.get(r))]));
   return { rec, sched, playoffMean, sd, median, rids };
 }
-function runSim(M){
+function runSim(M, runs = SIM_RUNS, trackSlots = false){
   const nPO = Math.min(Number(S.league.settings?.playoff_teams) || 6, M.rids.length);
-  const out = new Map(M.rids.map(r => [r, { wins: 0, losses: 0, playoffs: 0, champ: 0, final: 0, seed: 0, bye: 0 }]));
+  const out = new Map(M.rids.map(r => [r, { wins: 0, losses: 0, playoffs: 0, champ: 0, final: 0, seed: 0, bye: 0, slots: new Array(M.rids.length).fill(0) }]));
   const draw = (r, mean) => mean + randn() * M.sd.get(r);
-  for (let n = 0; n < SIM_RUNS; n++){
+  for (let n = 0; n < runs; n++){
     const W = new Map(M.rids.map(r => { const R = M.rec.get(r); return [r, { w: R.w + R.t / 2, pf: R.pf }]; }));
     for (const wk of M.sched){
       let pairs = wk.pairs;
@@ -4009,19 +4244,49 @@ function runSim(M){
     const seeds = [...M.rids].sort((a, b) => W.get(b).w - W.get(a).w || W.get(b).pf - W.get(a).pf);
     seeds.forEach((r, i) => { const o = out.get(r); o.wins += W.get(r).w; o.losses += (M.rec.get(r).w + M.rec.get(r).l + M.rec.get(r).t + games) - W.get(r).w; o.seed += i + 1; });
     const field = seeds.slice(0, nPO); field.forEach(r => out.get(r).playoffs++);
-    const game = (a, b) => draw(a, M.playoffMean.get(a)) >= draw(b, M.playoffMean.get(b)) ? a : b;
+    const out1 = [];                     // playoff teams in the order they're knocked out: [team, round]
+    let rnd = 0;
+    const game = (a, b) => { const w = draw(a, M.playoffMean.get(a)) >= draw(b, M.playoffMean.get(b)) ? a : b; out1.push([w === a ? b : a, rnd]); return w; };
     let champ;
     if (nPO === 6){ out.get(field[0]).bye++; out.get(field[1]).bye++;
-      const w36 = game(field[2], field[5]), w45 = game(field[3], field[4]);
-      const s1 = game(field[0], w45), s2 = game(field[1], w36);
+      const w36 = game(field[2], field[5]), w45 = game(field[3], field[4]); rnd = 1;
+      const s1 = game(field[0], w45), s2 = game(field[1], w36); rnd = 2;
       out.get(s1).final++; out.get(s2).final++; champ = game(s1, s2); }
-    else if (nPO === 8){ const r1 = [game(field[0], field[7]), game(field[3], field[4]), game(field[1], field[6]), game(field[2], field[5])];
-      const s1 = game(r1[0], r1[1]), s2 = game(r1[2], r1[3]); out.get(s1).final++; out.get(s2).final++; champ = game(s1, s2); }
-    else if (nPO >= 4){ const s1 = game(field[0], field[3]), s2 = game(field[1], field[2]); out.get(s1).final++; out.get(s2).final++; champ = game(s1, s2); }
+    else if (nPO === 8){ const r1 = [game(field[0], field[7]), game(field[3], field[4]), game(field[1], field[6]), game(field[2], field[5])]; rnd = 1;
+      const s1 = game(r1[0], r1[1]), s2 = game(r1[2], r1[3]); rnd = 2; out.get(s1).final++; out.get(s2).final++; champ = game(s1, s2); }
+    else if (nPO >= 4){ const s1 = game(field[0], field[3]), s2 = game(field[1], field[2]); rnd = 1; out.get(s1).final++; out.get(s2).final++; champ = game(s1, s2); }
     else if (nPO >= 2){ out.get(field[0]).final++; out.get(field[1]).final++; champ = game(field[0], field[1]); }
     if (champ) out.get(champ).champ++;
+    if (trackSlots){
+      // Next year's draft order: non-playoff teams worst record first, then playoff teams by how early
+      // they were knocked out (worse seed first within a round), the runner-up second to last, the champion last
+      const order = seeds.slice(nPO).reverse();
+      const seedOf = r => seeds.indexOf(r);
+      order.push(...out1.sort((x, y) => x[1] - y[1] || seedOf(y[0]) - seedOf(x[0])).map(x => x[0]));
+      if (champ) order.push(champ);
+      field.forEach(r => { if (!order.includes(r)) order.push(r); });
+      order.forEach((r, i) => { const o = out.get(r); if (o && i < o.slots.length) o.slots[i]++; });
+    }
   }
   return { out, nPO };
+}
+// ---------- Draft pick odds from the season simulator ----------
+// Plays out the rest of the season 3,000 times in the background and records where each team's
+// next-year pick lands. A pick's value is then the average over all those possible slots, so a
+// 2-3 team that could still turn it around isn't valued like a locked-in 1.01.
+const PICK_SIM_RUNS = 3000;
+async function updatePickOdds(){
+  try {
+    if (S.nflState?.season_type !== "regular" || !S.league) return;
+    const league = S.league.league_id;
+    if (!simCache || simCache.league !== league || Date.now() - simCache.at > 10 * 60000) simCache = { league, at: Date.now(), D: await simData() };
+    const D = simCache.D;
+    if (S.league?.league_id !== league || D.done >= D.lastReg) return;
+    const M = buildSim(D), R = runSim(M, PICK_SIM_RUNS, true);
+    S.pickOdds = new Map([...R.out].map(([rid, o]) => [rid, o.slots.map(c => c / PICK_SIM_RUNS)]));
+    buildValues();
+    rerenderKeepingPlace();
+  } catch(e){ console.warn("Pick odds unavailable", e); }
 }
 const pct = (n, d = SIM_RUNS) => { const p = n / d * 100; return p >= 99.5 && n < d ? ">99%" : p > 0 && p < 0.5 ? "<1%" : Math.round(p) + "%"; };
 function headToHead(M, a, b){ const d = M.playoffMean.get(a) - M.playoffMean.get(b), s = Math.hypot(M.sd.get(a), M.sd.get(b)) || 1; return 0.5 * (1 + erf(d / s / Math.SQRT2)); }
@@ -4265,7 +4530,7 @@ window.addEventListener("scroll", closePop, { passive: true });
 const ADJUST_INFO_HTML = `<h4>What Is the Value Adjustment?</h4>
   <p>A fantasy roster has limited spots and limited starters, so one difference-maker is worth more than the same total value spread across several lesser players. Front Office adds a bonus to the side giving up the best piece, so a pile of depth can't "equal" a star.</p>
   <h4>How Is It Worked Out?</h4>
-  <p>Each side's best piece counts in full. Every extra piece is discounted by how far it falls below the best piece in the trade, and by more when that piece is a true star. Extra pieces that would start for the team receiving them lose less, since they actually help that lineup. Each extra roster spot costs about one waiver-wire player, or much less if that team has open spots. The difference between the two sides becomes the bonus.</p>
+  <p>Each side's best piece counts in full. Every extra piece is discounted by how far it falls below the best piece it's being traded for, and by more when that piece is a true star. Each extra roster spot costs about one waiver-wire player, charged against the smallest pieces and never more than a piece is worth, so adding something to a side never lowers it. The difference between the two sides becomes the bonus. It uses league market values only; how the trade fits each roster is shown separately as lineup impact.</p>
   <p>Front Office also shows a player on the other roster worth about the same as the bonus, so you know what it would take to even things out.</p>`;
 
 // ============================================================
