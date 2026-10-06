@@ -5,7 +5,9 @@ name: Update values
 
 on:
   schedule:
-    - cron: "0 11 * * *"   # every day at 11:00 UTC (6 or 7 AM Eastern)
+    - cron: "0 11 * * *"   # every day at 11:00 UTC (6 or 7 AM Eastern): values, stats, injuries, news
+    - cron: "0 17 * * *"   # midday refresh, mostly for fresh injury news (noon Eastern)
+    - cron: "0 23 * * *"   # evening refresh, after practice reports come out (6 or 7 PM Eastern)
   workflow_dispatch:        # adds a "Run workflow" button on the Actions tab
 
 permissions:
