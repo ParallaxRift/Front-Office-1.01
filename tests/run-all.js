@@ -72,6 +72,12 @@ async function openLeague(browser, viewport, opts){
       await page.close();
     }
 
+    // Home page preview before any username
+    { const hp = await browser.newPage({ viewport: { width: 1300, height: 900 } }); await setup(hp, { withHistory: false });
+      await hp.goto(`http://localhost:${PORT}/index.html`); await hp.waitForTimeout(800);
+      const n = await hp.$$eval('#homeTop li', x => x.length), v = await hp.textContent('.ht-verdict').catch(() => '');
+      check('home page shows a sample trade and top values', n === 10 && v.length > 0, `${n} values, "${v}"`); await hp.close(); }
+
     // 2) Core math on desktop
     const page = await openLeague(browser, { width: 1300, height: 900 });
     await page.evaluate(() => applyMode('freakshow', true));
@@ -134,6 +140,25 @@ async function openLeague(browser, viewport, opts){
     await page.evaluate(() => { const A = teamAssets(Number($("teamA").value)).filter(a => a.kind === 'player'), B = teamAssets(Number($("teamB").value)).filter(a => a.kind === 'player'); S.sendIds = new Set([A[0].id]); S.getIds = new Set([B[2].id, B[3].id, B[4].id]); renderCalc(); });
     const raw = await page.textContent('#sendRaw');
     check('calculator shows players & picks plus the adjustment', /players & picks.*value adjustment/.test(raw), raw);
+    // FAAB counts in the calculator
+    await page.evaluate(() => { const A = teamAssets(Number($("teamA").value)).filter(a => a.kind === 'player'), B = teamAssets(Number($("teamB").value)).filter(a => a.kind === 'player'); S.sendIds = new Set([A[3].id]); S.getIds = new Set([B[2].id]); S.faab = { send: 0, get: 0 }; renderCalc(); });
+    const before = await page.evaluate(() => Number($("sendNum").textContent.replace(/,/g, '')));
+    await page.fill('#faabSend', '50'); await page.waitForTimeout(150);
+    const after = await page.evaluate(() => Number($("sendNum").textContent.replace(/,/g, '')));
+    check('FAAB adds value to a side', after > before, `${before} -> ${after}`);
+    // Shared trade link reopens the same trade in a fresh browser
+    const link = await page.evaluate(() => tradeLink()), want = await page.evaluate(() => [$("sendNum").textContent, $("getNum").textContent].join(' / '));
+    const p2 = await browser.newPage({ viewport: { width: 1300, height: 900 } }); p2.errors = []; p2.on('pageerror', e => p2.errors.push(e.message));
+    await setup(p2); await p2.goto(link); await p2.waitForSelector('#appbar:not([hidden])', { timeout: 30000 }); await p2.waitForFunction(() => S.history, null, { timeout: 30000 }); await p2.waitForTimeout(1500);
+    const got = await p2.evaluate(() => [$("sendNum").textContent, $("getNum").textContent].join(' / '));
+    check('shared trade link reopens the same trade', got === want && !p2.errors.length, `${want} vs ${got}${p2.errors.length ? ' ' + p2.errors[0] : ''}`);
+    await p2.close();
+    // Trade image draws
+    const img = await page.evaluate(() => { const c = drawTradeImage(); return `${c.width}x${c.height}`; });
+    check('trade image draws', /^1200x\d+$/.test(img), img);
+    // Manager habits are learned from trade history
+    const habits = await page.evaluate(() => { const m = managerHabits(); return [...m.values()].filter(h => h.trades > 0).length; });
+    check('manager trade habits are learned from history', habits > 0, `${habits} managers with trades`);
     check('desktop: no script errors during checks', !page.errors.length, page.errors.slice(0, 3).join(' | '));
     await page.close();
   } catch (e){ check('test run finished', false, e.message.split('\n')[0]); }

@@ -1060,7 +1060,8 @@ th.sortable[aria-sort=ascending],th.sortable[aria-sort=descending]{color:var(--i
 .board .raw b{display:block;font-weight:700}
 .pc-val .pc-range{display:block;margin-top:2px;opacity:.85}
 /* Trade Analysis Breakdown: button beside the verdict, opens the reasoning */
-.ta-btn{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.08);color:inherit;border:1.5px solid rgba(255,255,255,.35);border-radius:8px;padding:6px 11px;font:inherit;font-size:14px;font-weight:600;cursor:pointer}
+.ta-btn{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.08);color:inherit;border:1px solid rgba(255,255,255,.35);border-radius:6px;padding:3px 8px;font:inherit;font-size:12.5px;font-weight:600;line-height:1.3;cursor:pointer}
+.ta-btn .chev{width:11px;height:11px}
 .ta-btn[hidden]{display:none}
 .ta-btn:hover{background:rgba(255,255,255,.16)}
 .ta-btn .chev{transition:transform .15s}
@@ -1073,3 +1074,37 @@ th.sortable[aria-sort=ascending],th.sortable[aria-sort=descending]{color:var(--i
 @media (max-width:600px){.ta-list li{grid-template-columns:1fr;gap:1px}}
 @media (prefers-color-scheme:dark){.ta-btn{border-color:rgba(0,0,0,.3);background:rgba(0,0,0,.05)}.ta-btn:hover{background:rgba(0,0,0,.1)}.ta-panel{background:rgba(0,0,0,.05);border-color:rgba(0,0,0,.12)}}
 .range-cell{color:var(--muted);font-size:14px}
+/* FAAB in trades */
+.faab-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;margin:10px 0 0;font-size:14px}
+.faab-row[hidden]{display:none}
+.faab-row label{display:inline-flex;align-items:center;gap:6px;font-weight:600}
+.faab-row input{width:80px;padding:4px 8px;border-radius:6px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.08);color:inherit;font:inherit}
+.faab-row small{opacity:.7}
+@media (prefers-color-scheme:dark){.faab-row input{border-color:rgba(0,0,0,.3);background:rgba(0,0,0,.05)}}
+.faab-ico{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--gold-soft);color:var(--gold);font-weight:800;flex:none}
+/* Share buttons beside Reset */
+.share-btns{display:flex;flex-wrap:wrap;gap:8px;margin-left:auto}
+.share-btns .reset-btn{margin-left:0}
+.moves small.habit{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+/* Home page preview: sample trade and top values */
+.home-extra{display:grid;grid-template-columns:1.2fr 1fr;gap:20px;margin:28px 0 0;align-items:start}
+#connect[hidden] + .home-extra{display:none}
+.home-extra h2{font-family:var(--display);font-size:26px;margin:0 0 4px}
+.home-extra .note{margin:0 0 12px}
+.ht-sides{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.ht-side{border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+.ht-lbl{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+.ht-row{display:flex;justify-content:space-between;align-items:center;gap:8px;font-variant-numeric:tabular-nums}
+.ht-row small{display:block;color:var(--muted);font-size:12.5px}
+.ht-adj b{color:var(--field)}.ht-adj span:last-child{color:var(--field);font-weight:700}
+.ht-total{margin-top:auto;padding-top:6px;border-top:1px solid var(--line);font-family:var(--display);font-weight:800;font-size:28px;text-align:right}
+.ht-verdict{font-family:var(--display);font-weight:700;font-size:22px;margin:12px 0}
+.home-top-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.home-list{list-style:none;margin:0;padding:0}
+.home-list li{display:grid;grid-template-columns:28px 1fr auto;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line)}
+.home-list .hr{color:var(--muted);font-weight:700;text-align:right}
+.home-list small{display:block;color:var(--muted);font-size:12.5px}
+.home-list .hv{font-family:var(--display);font-weight:700;font-size:19px;font-variant-numeric:tabular-nums}
+@media (max-width:860px){.home-extra{grid-template-columns:1fr}}
+@media (max-width:600px){.ht-sides{grid-template-columns:1fr}}
+body:not(.has-league) .side-switch,body:not(.has-league) #miniBar{display:none!important}

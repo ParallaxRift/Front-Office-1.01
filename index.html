@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=20261006f">
+<link rel="stylesheet" href="css/styles.css?v=20261006h">
 </head>
 <body>
 <div id="pcard" class="pc-backdrop" hidden></div>
@@ -68,6 +68,20 @@
       <p class="betanote">Sleeper leagues only during beta. Yahoo and ESPN are planned. <a href="#beta">Learn more</a></p>
     </div>
   </section>
+  <section class="home-extra" id="homeExtra" aria-label="A look at Front Office">
+    <div class="box home-trade">
+      <h2>Sample Trade</h2>
+      <p class="note">A sample trade graded with today's values in a standard 12-team league, the same way the calculator grades yours. Your league gets values built for its own scoring and trades.</p>
+      <div id="homeTrade"><p class="empty">Loading today's values…</p></div>
+      <button type="button" class="btn" id="homeTry">Try it with your league</button>
+    </div>
+    <div class="box home-top">
+      <div class="home-top-head"><h2>Top Dynasty Values</h2>
+        <div class="seg" id="homeFormat"><button type="button" aria-pressed="false" data-f="1qb">1QB</button><button type="button" aria-pressed="true" data-f="sf">Superflex</button></div></div>
+      <ol class="home-list" id="homeTop"></ol>
+      <p class="note" id="homeAsOf"></p>
+    </div>
+  </section>
 
   <section class="leaguebar" id="leagueBar">
     <div class="leaguehead"><span id="leagueAv"></span><div><div class="lname-row"><h2><button type="button" class="league-link" id="settingsBtn" aria-pressed="false" aria-controls="panel-settings" title="See this league's settings"><span id="leagueName"></span></button></h2><span class="champ-col"><span id="champSlot"></span></span></div><small id="myTeamLine"></small></div>
@@ -102,15 +116,24 @@
         <div class="bside right"><div class="side-label">You get</div><div class="bteam" id="getTeam"></div><div class="num" id="getNum">0</div><div class="raw" id="getRaw"></div></div>
       </div>
       <div class="track" aria-hidden="true"><div class="fill" id="fill" style="width:50%"></div><div class="mid"></div></div>
-      <div class="vrow"><p class="verdict" id="verdict">Tap players and picks to build a trade.</p><button type="button" class="ta-btn" id="analysisBtn" aria-expanded="false" aria-controls="hint" hidden><svg class="brain" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 4.5a2.5 2.5 0 0 0-4.6 1.3A2.8 2.8 0 0 0 3.5 10a2.8 2.8 0 0 0 .9 4.6 3 3 0 0 0 2.6 4.1 2.6 2.6 0 0 0 5 .8V5.8A2.5 2.5 0 0 0 9.5 4.5z"/><path d="M14.5 4.5a2.5 2.5 0 0 1 4.6 1.3A2.8 2.8 0 0 1 20.5 10a2.8 2.8 0 0 1-.9 4.6 3 3 0 0 1-2.6 4.1 2.6 2.6 0 0 1-5 .8"/><path d="M8 9.5c1 0 1.8.6 2 1.5M6.5 14c.8-.6 2-.6 2.8 0M16 9.5c-1 0-1.8.6-2 1.5M17.5 14c-.8-.6-2-.6-2.8 0"/></svg><span>Trade Analysis Breakdown</span><svg class="chev" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></div>
+      <div class="vrow"><p class="verdict" id="verdict">Tap players and picks to build a trade.</p><button type="button" class="ta-btn" id="analysisBtn" aria-expanded="false" aria-controls="hint" hidden><svg class="brain" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.2 12.6C3.4 9 5.6 5.4 9.4 4.6c2.2-.5 3.8 0 5 .7 1.6-.3 3.5.3 4.6 1.9 1.2 1.6 1.4 3.6.6 5.3-.5 1.2-1.6 2-2.9 2.2H11l-1.3 2.1H7.2l.4-2.3c-1.6-.3-3-1.1-3.4-1.9z"/><path d="M13.8 14.7c.6 1.1 1.7 1.7 3 1.6 1-.1 1.8-.7 2.2-1.6"/><path d="M8.6 7.6c1.1.1 1.9.9 2 2M12.9 6.2c-.3 1.2.3 2.3 1.5 2.7M16.6 8.6c-.9.5-1.2 1.6-.7 2.5M7 11.2c1-.6 2.3-.4 3 .5M12.4 11.6c.7-.7 1.9-.8 2.7-.2"/></svg><span>Trade Analysis Breakdown</span><svg class="chev" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></div>
       <div class="hint ta-panel" id="hint" hidden></div>
       <div class="bplayers" id="bPlayers" hidden>
         <div class="bcol"><div class="bp-label send">You send</div><div class="bitems" id="sendItems"></div></div>
         <div class="bcol"><div class="bp-label get">You get</div><div class="bitems" id="getItems"></div></div>
       </div>
+      <div class="faab-row" id="faabRow" hidden>
+        <label>You send FAAB $<input type="number" id="faabSend" min="0" inputmode="numeric" placeholder="0"></label>
+        <label>You get FAAB $<input type="number" id="faabGet" min="0" inputmode="numeric" placeholder="0"></label>
+        <small id="faabNote"></small>
+      </div>
       <div class="brow">
         <div class="suggest" id="suggest"></div>
-        <button type="button" class="reset-btn" id="resetTrade">Reset</button>
+        <div class="share-btns">
+          <button type="button" class="reset-btn" id="shareLink" disabled title="Copy a link that opens this exact trade">Copy link</button>
+          <button type="button" class="reset-btn" id="shareImage" disabled title="Save a picture of this trade to share">Save image</button>
+          <button type="button" class="reset-btn" id="resetTrade">Reset</button>
+        </div>
       </div>
     </div>
     <button type="button" class="minibar" id="miniBar" hidden aria-label="Back to the trade summary"><span class="mb-sides"><span>Send <b id="mbSend">0</b></span><span>Get <b id="mbGet">0</b></span></span><span class="mb-verdict" id="mbVerdict"></span></button>
@@ -419,7 +442,7 @@
     <li><b>Market value only.</b> The grade uses league market values, the same for every team. How a trade fits a particular roster is shown separately as <b>lineup impact</b> (how much each team's starting lineup changes), and never changes the grade.</li>
   </ul>
   <p>Under the adjustment, the calculator names a player on the other roster worth about the same as the bonus, so you can see what it would take to even the trade. Tap the <b>?</b> next to "Value adjustment" for a quick explanation.</p>
-  <p>For example, an early first-round pick worth about 6,000 traded for three veterans worth 2,000, 1,800, and 1,500 looks even on raw totals (6,000 vs. 5,300), but after the adjustment the three veterans count for well under half of the pick. The raw totals are still shown under each side's number, and a note explains the adjustment whenever it makes a real difference. A trade is called fair when the two sides are within 1,500 of each other (or within 5% on very big trades). When one side gets more than 15% extra, the calculator calls it lopsided and says who is giving up too much, since that trade is unlikely to be accepted and may be vetoed. When the gap is smaller than how much experts disagree about the players involved, it says the trade is too close to call. Each player's card also shows his value range: where most experts would put him. The same adjustment is used in Trade Finder and when grading Trade History.</p>
+  <p>For example, an early first-round pick worth about 6,000 traded for three veterans worth 2,000, 1,800, and 1,500 looks even on raw totals (6,000 vs. 5,300), but after the adjustment the three veterans count for well under half of the pick. The raw totals are still shown under each side's number, and a note explains the adjustment whenever it makes a real difference. A trade is called fair when the two sides are within 1,500 of each other (or within 5% on very big trades). When one side gets more than 15% extra, the calculator calls it lopsided and says who is giving up too much, since that trade is unlikely to be accepted and may be vetoed. When the gap is smaller than how much experts disagree about the players involved, it says the trade is too close to call. Each player's card also shows his value range: where most experts would put him. FAAB can be added to either side: a league's full FAAB budget counts like a late 2nd-round pick, and smaller amounts proportionally. Copy link makes a link that reopens the exact trade for anyone, and Save image makes a picture of it to share. The same adjustment is used in Trade Finder and when grading Trade History.</p>
 
   <h2>When Values Update</h2>
   <p>Nothing is stored on a Front Office server. Each time you open a league, it pulls your league fresh from Sleeper and loads the latest market values, so roster moves, trades, and pick swaps show up as soon as you reload. Market values refresh automatically once a day, each morning, and the date of the last update is shown under your league name. On game days, Live Scores refreshes every minute for the current week.</p>
@@ -517,26 +540,28 @@
 </footer>
 </div>
 
-<script src="js/core.js?v=20261006f"></script>
-<script src="js/league-load.js?v=20261006f"></script>
-<script src="js/values-engine.js?v=20261006f"></script>
-<script src="js/render.js?v=20261006f"></script>
-<script src="js/player-cards.js?v=20261006f"></script>
-<script src="js/settings-tab.js?v=20261006f"></script>
-<script src="js/strategy.js?v=20261006f"></script>
-<script src="js/live-scores.js?v=20261006f"></script>
-<script src="js/trade-history.js?v=20261006f"></script>
-<script src="js/modes.js?v=20261006f"></script>
-<script src="js/build-notes.js?v=20261006f"></script>
-<script src="js/feedback.js?v=20261006f"></script>
-<script src="js/standings-sim.js?v=20261006f"></script>
-<script src="js/calc-browse.js?v=20261006f"></script>
-<script src="js/calc-minibar.js?v=20261006f"></script>
-<script src="js/trophy.js?v=20261006f"></script>
-<script src="js/popovers.js?v=20261006f"></script>
-<script src="js/trade-finder.js?v=20261006f"></script>
-<script src="js/pickers.js?v=20261006f"></script>
-<script src="js/nav.js?v=20261006f"></script>
-<script src="js/about.js?v=20261006f"></script>
+<script src="js/core.js?v=20261006h"></script>
+<script src="js/league-load.js?v=20261006h"></script>
+<script src="js/values-engine.js?v=20261006h"></script>
+<script src="js/render.js?v=20261006h"></script>
+<script src="js/player-cards.js?v=20261006h"></script>
+<script src="js/settings-tab.js?v=20261006h"></script>
+<script src="js/strategy.js?v=20261006h"></script>
+<script src="js/live-scores.js?v=20261006h"></script>
+<script src="js/trade-history.js?v=20261006h"></script>
+<script src="js/modes.js?v=20261006h"></script>
+<script src="js/build-notes.js?v=20261006h"></script>
+<script src="js/feedback.js?v=20261006h"></script>
+<script src="js/standings-sim.js?v=20261006h"></script>
+<script src="js/calc-browse.js?v=20261006h"></script>
+<script src="js/calc-minibar.js?v=20261006h"></script>
+<script src="js/trophy.js?v=20261006h"></script>
+<script src="js/popovers.js?v=20261006h"></script>
+<script src="js/trade-finder.js?v=20261006h"></script>
+<script src="js/pickers.js?v=20261006h"></script>
+<script src="js/nav.js?v=20261006h"></script>
+<script src="js/about.js?v=20261006h"></script>
+<script src="js/share.js?v=20261006h"></script>
+<script src="js/home.js?v=20261006h"></script>
 </body>
 </html>

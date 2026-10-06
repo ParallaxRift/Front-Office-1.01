@@ -436,6 +436,51 @@ $("histTable").addEventListener("keydown", e => {
 });
 
 // Insights for Team Strategy
+// ---------- Each manager's trading habits ----------
+// From every trade Front Office can see: how often each manager trades, which positions they
+// buy and sell (by value, today's values), and how they use picks. Used by the Trade Finder's
+// "would they say yes?" score and by Best Trade Partners.
+let habitsCache = null;
+function managerHabits(){
+  const H = S.history; if (!H || !S.teams) return new Map();
+  if (habitsCache && habitsCache.h === H && habitsCache.a === S.assets) return habitsCache.m;
+  const byOwner = {}, yearAgo = Date.now() - 365 * 864e5;
+  const get = o => byOwner[o] ||= { trades: 0, recent: 0, won: 0, lost: 0, inV: {}, outV: {} };
+  for (const t of H.trades.map(gradeTrade)) for (const x of t.sides){
+    const h = get(x.owner); h.trades++; if ((t.created || 0) >= yearAgo) h.recent++;
+    if (x.result === "won") h.won++; else if (x.result === "lost") h.lost++;
+    for (const i of x.items) h.inV[i.cat] = (h.inV[i.cat] || 0) + i.value;
+    for (const i of x.sentItems) h.outV[i.cat] = (h.outV[i.cat] || 0) + i.value;
+  }
+  const m = new Map();
+  for (const team of S.teams.values()){
+    const h = byOwner[team.owner] || { trades: 0, recent: 0, won: 0, lost: 0, inV: {}, outV: {} };
+    const cats = ["QB", "RB", "WR", "TE", "PICK"], total = cats.reduce((s, c) => s + (h.inV[c] || 0) + (h.outV[c] || 0), 0) || 1;
+    // a position they clearly buy (or sell): net value in (or out) is at least 15% of everything they've traded
+    const net = c => ((h.inV[c] || 0) - (h.outV[c] || 0)) / total;
+    const buys = h.trades >= 2 ? cats.filter(c => net(c) >= 0.15) : [], sells = h.trades >= 2 ? cats.filter(c => net(c) <= -0.15) : [];
+    m.set(team.rid, { ...h, buys, sells, active: h.recent >= 3, never: h.trades === 0 });
+  }
+  habitsCache = { h: H, a: S.assets, m };
+  return m;
+}
+const catWord = c => c === "PICK" ? "picks" : c + "s";
+// "6 trades in the last year; buys RBs, sells picks"
+function habitText(h){
+  if (!h || h.never) return "hasn't made a trade Front Office can see";
+  const parts = [`${h.trades} trade${h.trades > 1 ? "s" : ""}${h.recent && h.recent !== h.trades ? ` (${h.recent} in the last year)` : ""}`];
+  if (h.buys.length) parts.push("buys " + andList(h.buys.map(catWord)));
+  if (h.sells.length) parts.push("sells " + andList(h.sells.map(catWord)));
+  return parts.join("; ");
+}
+// How much more (or less) likely a manager is to say yes, from their habits and what they'd receive
+function habitBoost(rid, receiving){
+  const h = managerHabits().get(rid); if (!h) return 0;
+  let b = h.active ? 0.4 : h.never ? -0.4 : 0;
+  const cats = receiving.map(a => a.kind === "pick" ? "PICK" : a.pos);
+  b += 0.3 * cats.filter(c => h.buys.includes(c)).length;
+  return b;
+}
 function historyInsightsHTML(rid){
   const H = S.history; if (!H) return "";
   const me = S.teams.get(rid); if (!me) return "";

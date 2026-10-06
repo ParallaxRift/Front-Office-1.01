@@ -21,6 +21,7 @@ function tradeCall(gap, bigger){
 // STATE
 // ============================================================
 const S = {
+  faab: { send: 0, get: 0 },   // FAAB dollars in the trade being built
   user: null, season: null, leagues: [], sleeperPlayers: null, market: null,
   league: null, rosters: [], users: [], traded: [], cfg: null,
   assets: new Map(), teams: new Map(), myRid: null,

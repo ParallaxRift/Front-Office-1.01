@@ -8,7 +8,7 @@ const rosters = [];
 for (let r = 1; r <= 12; r++) rosters.push({ settings: { wins: (r * 7) % 5, losses: 4 - ((r * 7) % 5), fpts: 400 + r * 13 }, roster_id: r, owner_id: 'u' + r, players: rosterOf(r) });
 const users = rosters.map(r => ({ user_id: r.owner_id, display_name: 'Manager' + r.roster_id, metadata: { team_name: r.roster_id === 3 ? "Test Team" : '' } }));
 const league = { league_id: 'L1', name: 'Test Dynasty', season: '2026', status: 'in_season', total_rosters: 12,
-  roster_positions: ['QB','RB','RB','WR','WR','WR','TE','FLEX','FLEX','SUPER_FLEX','BN','BN'], scoring_settings: { rec: 1 }, settings: { type: 2, draft_rounds: 4, playoff_teams: 6, playoff_week_start: 15 } };
+  roster_positions: ['QB','RB','RB','WR','WR','WR','TE','FLEX','FLEX','SUPER_FLEX','BN','BN'], scoring_settings: { rec: 1 }, settings: { type: 2, draft_rounds: 4, playoff_teams: 6, playoff_week_start: 15, waiver_budget: 100 } };
 
 // Weeks 1-4 are played; each week everyone faces a rotating opponent
 function matchups(w){

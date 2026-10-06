@@ -32,7 +32,7 @@ $("leagueList").addEventListener("click", e => {
   const b = e.target.closest(".lg"); if (b && !b.disabled) openLeague(b.dataset.id);
 });
 $("switchLeague").addEventListener("click", () => {
-  $("connect").hidden = false; $("appbar").hidden = true;
+  $("connect").hidden = false; $("appbar").hidden = true; document.body.classList.remove("has-league");
   renderLeagueList();
   window.scrollTo({ top: 0, behavior: "smooth" });
 });
@@ -133,7 +133,7 @@ async function openLeague(leagueId){
     S.history = null; S.nudge = null; S.curveB = 1; S.curveT = 1; S.ageStrength = 1; S.ageFit = null; S.accuracy = null; S.pickOdds = null; S.playoffOdds = null; S.weeksPlayed = 0; S.historyError = false;
     S.leagueSig = leagueSignature(league, S.rosters, S.traded); lastLeagueCheck = Date.now();
     buildValues();
-    S.sendIds.clear(); S.getIds.clear(); tfSend.clear(); tfTarget = null; trophy = null;
+    S.sendIds.clear(); S.getIds.clear(); S.faab = { send: 0, get: 0 }; tfSend.clear(); tfTarget = null; trophy = null;
     renderLeague();
     loadHistory(league);
     progress(3, "done");
@@ -161,5 +161,6 @@ async function openLeague(leagueId){
 
 // Pick up where you left off
 const savedName = store.get("tr_username");
-if (savedName){ $("username").value = savedName; loadUser({ auto: true }); }
+const openingShared = new URLSearchParams(location.search).has("trade");
+if (savedName){ $("username").value = savedName; window.userLoad = loadUser({ auto: !openingShared }); }
 

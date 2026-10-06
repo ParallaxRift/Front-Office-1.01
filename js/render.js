@@ -7,6 +7,10 @@ function renderLeague(){
   const c = S.cfg;
   $("leagueBar").style.display = "block";
   $("tabs").style.display = "flex"; $("groups").style.display = "flex";
+  document.body.classList.add("has-league");
+  // FAAB inputs only for leagues that use a FAAB budget
+  $("faabRow").hidden = !faabBudget();
+  $("faabNote").textContent = faabBudget() ? `League budget $${fmt(faabBudget())}. A full budget counts like a late 2nd-round pick.` : "";
   $("modeBar").hidden = false; applyMode(currentMode(), true);
   $("leagueName").textContent = S.league.name;
   $("leagueAv").innerHTML = avatar(S.league.avatar, S.league.name, "lg");
@@ -225,6 +229,12 @@ function renderAnalysis(notes){
   btn.setAttribute("aria-expanded", String(!panel.hidden));
 }
 $("analysisBtn").addEventListener("click", () => { analysisOpen = !analysisOpen; $("hint").hidden = !analysisOpen; $("analysisBtn").setAttribute("aria-expanded", String(analysisOpen)); });
+// ---------- FAAB in trades ----------
+// A league's full FAAB budget counts like a late 2nd-round pick in that league (12-team 2.12),
+// and any amount is that times its share of the budget. FAAB takes no roster spot, so it adds
+// straight on top without the depth discount.
+const faabBudget = () => Number(S.cfg?.st?.waiver_budget) || 0;
+function faabValue(amt){ const B = faabBudget(); return amt > 0 && B > 0 ? Math.round(amt / B * pickValue(24, 0)) : 0; }
 function renderCalc(){
   const ra = Number($("teamA").value), rb = Number($("teamB").value);
   syncPicker("teamA"); syncPicker("teamB");
@@ -237,6 +247,7 @@ function renderCalc(){
 
   const send = [...S.sendIds].map(id => S.assets.get(id).value);
   const get = [...S.getIds].map(id => S.assets.get(id).value);
+  $("shareLink").disabled = $("shareImage").disabled = !((send.length || S.faab.send) && (get.length || S.faab.get));
   // Value adjustment, shown KeepTradeCut-style: nobody's players lose value. Instead, the side with
   // the fewer, better pieces gets a bonus added on top, worth the difference the depth/roster-spot
   // math finds. (The comparison comes out exactly the same as discounting the other side.)
@@ -246,7 +257,8 @@ function renderCalc(){
   // what you get lands on your team (ra); what you send lands on theirs (rb)
   const adjDiff = both ? (rawG - tradeValueFor(getA, sendA, ra).total) - (rawS - tradeValueFor(sendA, getA, rb).total) : 0;
   const bonusS = Math.max(0, Math.round(adjDiff)), bonusG = Math.max(0, Math.round(-adjDiff));
-  const eS = rawS + bonusS, eG = rawG + bonusG;
+  const fS = faabValue(S.faab.send), fG = faabValue(S.faab.get);   // FAAB counts on top: it doesn't take a roster spot
+  const eS = rawS + bonusS + fS, eG = rawG + bonusG + fG;
   $("sendNum").textContent = fmt(eS); $("getNum").textContent = fmt(eG);
   // Team name + logo on each side, and the players/picks being traded (tap one to remove it)
   const tA = S.teams.get(ra), tB = S.teams.get(rb);
@@ -273,23 +285,26 @@ function renderCalc(){
     return `<div class="badj"><span><span>Value adjustment<button type="button" class="info-btn" data-info="adjust" aria-label="What is the value adjustment?">?</button></span>${eqA ? `<small class="badj-eq">About the same as them adding ${esc(eqA.name)}${injTag(eqA.pid)} (${fmt(eqA.value)})</small>` : ""}</span><b>+${fmt(n)}</b></div>`;
   };
   // bonus on your side = the other team (rb) would need to add; bonus on their side = you (ra) would
-  $("sendItems").innerHTML = itemsHTML(S.sendIds, "send") + adjRow(bonusS, rb, S.getIds);
-  $("getItems").innerHTML = itemsHTML(S.getIds, "get") + adjRow(bonusG, ra, S.sendIds).replace("them adding", "you adding");
-  $("bPlayers").hidden = !S.sendIds.size && !S.getIds.size;
+  const faabRow = (amt, val, side) => amt > 0 ? `<div class="bitem faab-item"><span class="bi-link"><span class="faab-ico" aria-hidden="true">$</span><span class="bi-text"><b>$${fmt(amt)} FAAB</b><small>waiver budget</small></span></span><span class="bi-val">${fmt(val)}</span><button type="button" class="bi-x" data-faab="${side}" aria-label="Remove FAAB">✕</button></div>` : "";
+  $("sendItems").innerHTML = itemsHTML(S.sendIds, "send") + faabRow(S.faab.send, fS, "send") + adjRow(bonusS, rb, S.getIds);
+  $("getItems").innerHTML = itemsHTML(S.getIds, "get") + faabRow(S.faab.get, fG, "get") + adjRow(bonusG, ra, S.sendIds).replace("them adding", "you adding");
+  $("bPlayers").hidden = !S.sendIds.size && !S.getIds.size && !S.faab.send && !S.faab.get;
+  $("faabSend").value = S.faab.send || ""; $("faabGet").value = S.faab.get || "";
   $("swCountA").textContent = S.sendIds.size ? `(${S.sendIds.size})` : ""; $("swCountB").textContent = S.getIds.size ? `(${S.getIds.size})` : "";
   $("swTeamA").textContent = browseAll.A ? "All Players" : (tA?.name || ""); $("swTeamB").textContent = browseAll.B ? "All Players" : (tB?.name || "");
-  $("resetTrade").disabled = !S.sendIds.size && !S.getIds.size;
+  $("resetTrade").disabled = !S.sendIds.size && !S.getIds.size && !S.faab.send && !S.faab.get;
   // Show the math under each total: players and picks, plus the value adjustment when there is one
-  const breakdown = (raw, bonus) => bonus ? `<span class="rawsum">${fmt(raw)} players &amp; picks</span><b>+${fmt(bonus)} value adjustment</b>` : "";
-  $("sendRaw").innerHTML = breakdown(rawS, bonusS);
-  $("getRaw").innerHTML = breakdown(rawG, bonusG);
+  const breakdown = (raw, bonus, faab) => bonus || faab ? `<span class="rawsum">${fmt(raw)} players &amp; picks${faab ? ` + ${fmt(faab)} FAAB` : ""}</span>${bonus ? `<b>+${fmt(bonus)} value adjustment</b>` : ""}` : "";
+  $("sendRaw").innerHTML = breakdown(rawS, bonusS, fS);
+  $("getRaw").innerHTML = breakdown(rawG, bonusG, fG);
   const total = eS + eG;
   $("fill").style.width = (total ? (eS/total*100) : 50) + "%";
   $("fill").className = "fill";   // gold until both sides have something
 
   const sug = $("suggest"); sug.innerHTML = "";
-  if (!send.length && !get.length){ $("verdict").textContent = "Tap players and picks to build a trade."; renderAnalysis([]); return; }
-  if (!send.length || !get.length){ $("verdict").textContent = "Add something to both sides."; renderAnalysis([]); return; }
+  const hasS = send.length || S.faab.send > 0, hasG = get.length || S.faab.get > 0;
+  if (!hasS && !hasG){ $("verdict").textContent = "Tap players and picks to build a trade."; renderAnalysis([]); return; }
+  if (!hasS || !hasG){ $("verdict").textContent = "Add something to both sides."; renderAnalysis([]); return; }
   const gap = eG - eS, pct = Math.abs(gap) / Math.max(eS, eG), call = tradeCall(gap, Math.max(eS, eG));
   // experts' disagreement on everyone in the trade: a gap smaller than this is within the noise
   const unsure = tradeUncertainty(sendA.concat(getA));
@@ -318,6 +333,7 @@ function renderCalc(){
   if (call === "lopsided" && Math.abs(gap) <= unsure) notes.push(["Expert split", "Experts are split on some of these players, so the gap could be smaller than it looks."]);
   if (me.status === "rebuild" && (getPicks || getYoung)) notes.push(["Team fit", "Picks and young players fit your rebuild."]);
   else if (me.status === "contend" && (getPicks || getYoung) && !(gap > 0)) notes.push(["Team fit", "You're contending, so trading proven players for futures could hurt this season."]);
+  if (fS || fG) notes.push(["FAAB", `A full $${fmt(faabBudget())} budget counts like a late 2nd-round pick (${fmt(faabValue(faabBudget()))}), so ${[S.faab.send ? `your $${fmt(S.faab.send)} is worth ${fmt(fS)}` : "", S.faab.get ? `their $${fmt(S.faab.get)} is worth ${fmt(fG)}` : ""].filter(Boolean).join(" and ")}.`]);
   // Explain the value adjustment when it changes the picture noticeably
   const bonus = Math.max(bonusS, bonusG);
   if (bonus > 0.05 * Math.max(rawS, rawG))
@@ -368,12 +384,16 @@ function setSideSwitch(side){
 $("sideSwitch").addEventListener("click", e => { const b = e.target.closest("button"); if (b) setSideSwitch(b.dataset.side); });
 setSideSwitch("A");
 $("listA").addEventListener("click", e => browseAll.A ? browseClick("A", e) : toggle(S.sendIds, e));
-$("resetTrade").addEventListener("click", () => { S.sendIds.clear(); S.getIds.clear(); renderCalc(); });
+$("resetTrade").addEventListener("click", () => { S.sendIds.clear(); S.getIds.clear(); S.faab = { send: 0, get: 0 }; renderCalc(); });
+// FAAB (waiver budget) can go in a trade on either side
+for (const [id, side] of [["faabSend", "send"], ["faabGet", "get"]])
+  $(id).addEventListener("input", e => { S.faab[side] = Math.max(0, Math.min(faabBudget(), Math.round(Number(e.target.value) || 0))); renderCalc(); });
 $("board").addEventListener("click", e => {
   const x = e.target.closest(".bi-x");
+  if (x && x.dataset.faab){ S.faab[x.dataset.faab] = 0; renderCalc(); return; }
   if (x){ (x.dataset.side === "send" ? S.sendIds : S.getIds).delete(x.dataset.id); renderCalc(); return; }
   const l = e.target.closest(".bi-link");
-  if (!l) return;
+  if (!l || !l.dataset.show) return;
   const a = S.assets.get(l.dataset.show);
   if (a && a.kind === "player") openPlayerCard(a.pid);    // players open their player card
   else showInValues(l.dataset.show);                      // picks still jump to Player Values

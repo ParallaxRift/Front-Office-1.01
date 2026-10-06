@@ -86,7 +86,9 @@ function renderStrategy(){
     const xSurplus = POS.filter(p => x.pos[p].depthRank <= deepCut && x.pos[p].rank <= N/2);
     let score = needs.filter(p => xSurplus.includes(p)).length + xNeeds.filter(p => surplus.includes(p)).length;
     if ((t.status==="contend" && x.team.status==="rebuild") || (t.status==="rebuild" && x.team.status==="contend")) score += 1.5;
-    return { x, score, fit: needs.filter(p => xSurplus.includes(p)), give: xNeeds.filter(p => surplus.includes(p)) };
+    const h = managerHabits().get(x.team.rid);
+    if (h){ score += h.active ? 0.75 : h.never ? -0.75 : 0; score += 0.4 * surplus.filter(p => h.buys.includes(p)).length; }   // willing traders who buy what you have
+    return { x, score, h, fit: needs.filter(p => xSurplus.includes(p)), give: xNeeds.filter(p => surplus.includes(p)) };
   }).filter(p => p.score > 0).sort((a,b) => b.score - a.score).slice(0,2);
 
   // settings-aware tips
@@ -137,7 +139,7 @@ function renderStrategy(){
       <span class="l2">${buyers.length ? `<span>Possible buyers: ${esc(buyers.join(", "))}</span>` : `<span>${buying ? "Bench piece to package" : "Aging, sell soon"}</span>`}</span>
     </span><span class="val">${fmt(a.value)}</span></div>`; }).join("")}</div></div>` : ""}
       ${historyInsightsHTML(t.rid)}
-      ${partners.length ? `<div class="box"><h3>Best Trade Partners</h3><ul class="moves">${partners.map(p => `<li><span class="teamcell" style="vertical-align:middle">${teamPhoto(p.x.team.rid, true)}<b>${esc(p.x.team.name)}</b></span> (${statusText[p.x.team.status].toLowerCase()})${p.fit.length ? `: deep at ${andList(p.fit)}` : ""}${p.give.length ? `${p.fit.length?",":":"} needs ${andList(p.give)}, where you're deep` : ""}.</li>`).join("")}</ul></div>` : ""}
+      ${partners.length ? `<div class="box"><h3>Best Trade Partners</h3><ul class="moves">${partners.map(p => `<li><span class="teamcell" style="vertical-align:middle">${teamPhoto(p.x.team.rid, true)}<b>${esc(p.x.team.name)}</b></span> (${statusText[p.x.team.status].toLowerCase()})${p.fit.length ? `: deep at ${andList(p.fit)}` : ""}${p.give.length ? `${p.fit.length?",":":"} needs ${andList(p.give)}, where you're deep` : ""}.${S.history ? ` <small class="habit">Trade habits: ${esc(habitText(p.h))}.</small>` : ""}</li>`).join("")}</ul></div>` : ""}
     </div>`;
 }
 $("stratTeam").addEventListener("change", renderStrategy);

@@ -99,8 +99,11 @@ function leagueSignature(league, rosters, traded){
 // Re-draw every tab after new data, keeping the teams, week, and trade you had picked
 function rerenderKeepingPlace(){
   const keep = { a: $("teamA").value, b: $("teamB").value, st: $("stratTeam").value, tf: $("tfTeam").value, wk: $("weekSelect").value };
+  // keep the trade being built: renderLeague briefly resets the teams, which would otherwise drop its pieces
+  const keepTrade = { send: new Set(S.sendIds), get: new Set(S.getIds) };
   const scoresOpen = $("panel-scores").classList.contains("on");
   renderLeague();
+  S.sendIds = keepTrade.send; S.getIds = keepTrade.get;
   const has = v => v !== "" && S.teams.has(Number(v));
   if (has(keep.a)) $("teamA").value = keep.a;
   if (has(keep.b)) $("teamB").value = keep.b;

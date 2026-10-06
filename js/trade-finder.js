@@ -177,7 +177,7 @@ function targetPackages(me, target, C = finderContext(me)){
     const theirFuture = pack.reduce((t, a) => t + C.futureVal(a), 0) - C.futureVal(target);
     let accept = th.team.status === "rebuild" ? theirFuture / 1000 : th.team.status === "contend" ? theirGain / 1000 : Math.max(theirGain, theirFuture) / 1000;
     const theirNeed = pack.filter(a => a.kind === "player" && th.pos[a.pos].rank > C.N / 2).length;
-    accept += theirNeed * 0.5;
+    accept += theirNeed * 0.5 + habitBoost(rid, pack);
     const score = fit + 0.6 * accept - 3 * Math.abs(S2 - T) / T;
     results.push({ pack, S2, gain, gainBy, futureGain, theirNeed, score });
   }
@@ -193,6 +193,9 @@ function packageWhy(r, C, th){
   if (r.pack.some(a => a.kind === "pick") && r.gain > -200) why.push("Uses draft picks instead of your starters.");
   if (r.theirNeed) why.push(`${th.team.name} needs ${andList([...new Set(r.pack.filter(a => a.kind === "player" && th.pos[a.pos].rank > C.N / 2).map(a => a.pos))])}, so this should appeal to them.`);
   else if (th.team.status === "rebuild" && r.pack.some(a => a.kind === "pick" || (a.age && a.age <= 24))) why.push(`${th.team.name} is rebuilding, so youth and picks appeal to them.`);
+  const h = managerHabits().get(th.team.rid), hb = h ? h.buys.filter(c => r.pack.some(a => (a.kind === "pick" ? "PICK" : a.pos) === c)) : [];
+  if (hb.length) why.push(`${th.team.name} tends to buy ${andList(hb.map(catWord))} in trades.`);
+  else if (h && h.never) why.push(`${th.team.name} hasn't made a trade yet, so expect a harder sell.`);
   return why;
 }
 const tfRowHTML = a => `<div class="tf-row">${assetPhoto(a, "md")}<span class="tn"><b>${esc(a.name)}${injTag(a.pid)}</b><small>${esc(a.kind === "player" ? [a.pos + (a.lgPosRank || ""), a.nfl, a.age ? "age " + ageText(a.age) : ""].filter(Boolean).join(", ") : a.nfl)}</small></span><span class="v">${fmt(a.value)}</span></div>`;
@@ -312,7 +315,7 @@ function findTrades(me, sending, V){
       let accept = theirDir === "build" ? (sentFuture - pack.reduce((s, a) => s + futureVal(a), 0)) / 1000 : theirGain / 1000;
       if (theirDir === "either") accept = Math.max(accept, (sentFuture - pack.reduce((s, a) => s + futureVal(a), 0)) / 1000);
       const theirNeed = sending.filter(a => a.kind === "player" && th.pos[a.pos].rank > N / 2).length;
-      accept += theirNeed * 0.5;
+      accept += theirNeed * 0.5 + habitBoost(rid, sending);     // their trading habits: active traders, positions they buy
       const score = fit + 0.5 * accept - 3 * Math.abs(R - V) / V + (R - V) / V;
       results.push({ rid, pack, R, gain, gainBy, futureGain, fills, accept, theirNeed, score, theirDir, spots });
      }
@@ -341,6 +344,9 @@ function findTrades(me, sending, V){
     if (r.theirNeed) why.push(`${th.name} ${th.status === "rebuild" ? "is rebuilding but" : "is " + statusPhrase[th.status] + " and"} needs ${andList([...new Set(sending.filter(a => a.kind === "player" && prof.get(r.rid).pos[a.pos].rank > N / 2).map(a => a.pos))])}, so they should be interested.`);
     else if (r.theirDir === "build" && sending.some(a => a.kind === "pick" || (a.age && a.age <= 24))) why.push(`${th.name} is rebuilding, so youth and picks appeal to them.`);
     else if (r.theirDir === "win") why.push(`${th.name} is contending, so they're looking to win now.`);
+    { const h = managerHabits().get(r.rid); const hb = h && h.buys.filter(c => sending.some(a => (a.kind === "pick" ? "PICK" : a.pos) === c));
+      if (hb && hb.length) why.push(`${th.name} tends to buy ${andList(hb.map(catWord))} in trades.`);
+      else if (h && h.active) why.push(`${th.name} trades often (${h.recent} trades in the last year).`); }
     if (!why.length) why.push("Close in value and keeps your lineup balanced.");
     return `<article class="tf-card${i === 0 ? " best" : ""}">
       <div class="tf-card-head"><span class="tf-rank" title="Rank ${i + 1} of ${picks.length}">${i === 0 ? "#1 Best trade" : "#" + (i + 1)}</span>${teamPhoto(r.rid, "md")}<span class="nm"><b>${esc(th.name)}</b><small>${statusText[th.status]}</small></span></div>
