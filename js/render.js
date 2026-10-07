@@ -356,7 +356,7 @@ function renderCalc(){
   if (call === "lopsided") notes.push(["Who gives up too much", gap > 0
     ? `${themName} gives up too much here: you get about ${extraPct}% more than you send. They're unlikely to accept, and a league with trade review might veto it.`
     : `You give up too much here: ${themName} gets about ${extraPct}% more than you. Ask for more back before sending it.`]);
-  else if (call === "fair") notes.push(["Why it's fair", `The two sides are ${fmt(Math.abs(gap))} apart, inside the 1,500 fair range.`]);
+  else if (call === "fair") notes.push(["Why it's fair", `The two sides are ${fmt(Math.abs(gap))} apart, inside the fair range (${fmt(FAIR_POINTS)} points, or ${Math.round(FAIR_BAND * 100)}% of the bigger side on large trades).`]);
   else if (tooClose) notes.push(["Too close to call", `Experts disagree enough on these players (values could move about ${fmt(Math.round(unsure / 50) * 50)} either way) that neither side clearly wins.`]);
   else notes.push(["The edge", `${gap > 0 ? "You get" : themName + " gets"} about ${extraPct}% more. That's a normal negotiating gap, not one-sided.`]);
   if (call === "lopsided" && Math.abs(gap) <= unsure) notes.push(["Expert split", "Experts are split on some of these players, so the gap could be smaller than it looks."]);
