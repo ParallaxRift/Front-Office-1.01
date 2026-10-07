@@ -1,5 +1,5 @@
 {
- "checked": "2026-10-07T21:54:01+00:00",
+ "checked": "2026-10-07T22:35:04+00:00",
  "key_present": true,
  "calls": 3,
  "rate_limited": 0,
@@ -16,7 +16,7 @@
    "url": "https://api.fantasypros.com/public/v2/json/nfl/news?category=injury&limit=500",
    "status": 200,
    "records": 25,
-   "sample": "{\"id\": 612727, \"created\": \"2026-10-07 21:52:42\", \"created_formated\": \"Wed, Oct 7th 9:52pm UTC\", \"author\": \"Leo Sells\", \"player_id\": 24177, \"team_id\": \"LV\", \"title\": \"Jalen Nailor (concussion) misses practice Wednesday\", \"sport_id\": \"NFL\", \"categories\": [\"Commentary\", \"News\", \"Injury\"], \"link\": \"http"
+   "sample": "{\"id\": 612752, \"created\": \"2026-10-07 22:11:00\", \"created_formated\": \"Wed, Oct 7th 10:11pm UTC\", \"author\": \"Ari Koslow\", \"player_id\": 17353, \"team_id\": \"MIN\", \"title\": \"Brian O'Neill (knee) limited in practice Wednesday \", \"sport_id\": \"NFL\", \"categories\": [\"Commentary\", \"News\", \"Injury\"], \"link\": \"h"
   }
  ],
  "seasons": {
@@ -26,6 +26,6 @@
  "injury_seasons_saved": [
   2026
  ],
- "players_with_this_week": 123,
- "news_matched": 11
+ "players_with_this_week": 136,
+ "news_matched": 9
 }
