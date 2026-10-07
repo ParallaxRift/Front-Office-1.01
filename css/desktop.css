@@ -1,0 +1,183 @@
+/* ============================================================
+   Front Office: desktop look ("Broadcast")
+   Loaded only on screens wider than 600px (see the media attribute in index.html),
+   so phones and the installed app never see any of this.
+
+   Idea: a TV sports graphic. A dark broadcast header carries the brand, the league
+   and the sections; the trade calculator opens with a scoreboard (both teams' totals
+   in big stadium numerals, the call in the middle, a red/green split bar underneath);
+   everything else sits on a cool light canvas in clean white panels with dark
+   stat-table headers.
+
+   Type: Big Shoulders Display for numbers, the wordmark and headings;
+         Inter Tight for everything you read.
+   Color: night #121B24 (header), deck #18242F (scoreboard, table heads),
+          canvas #EEF1F4, send red #E05A4A, get green #3FB97A, gold #F2B33D (what's selected).
+   ============================================================ */
+:root{
+  --bc-night:#121B24; --bc-deck:#18242F; --bc-deck2:#22313E; --bc-canvas:#EEF1F4; --bc-card:#FFFFFF;
+  --bc-ink:#121B24; --bc-muted:#64727E; --bc-line:#DCE2E8; --bc-line2:#E9EDF1;
+  --bc-send:#E05A4A; --bc-get:#3FB97A; --bc-gold:#F2B33D; --bc-pos:#1F7A4D; --bc-neg:#C2412D;
+  --bc-num:"Big Shoulders Display","Barlow Condensed",Impact,sans-serif;
+  --bc-text:"Inter Tight","Inter",system-ui,sans-serif;
+  /* the rest of the stylesheet reads these */
+  --paper:var(--bc-canvas); --card:var(--bc-card); --ink:var(--bc-ink); --muted:var(--bc-muted); --line:var(--bc-line);
+  --display:var(--bc-num); --body:var(--bc-text);
+}
+@media (prefers-color-scheme:dark){
+  :root{ --bc-canvas:#0D141B; --bc-card:#16212B; --bc-ink:#E8EDF1; --bc-muted:#93A2AE; --bc-line:#273542; --bc-line2:#1E2A35;
+    --bc-night:#0A1016; --bc-deck:#121C25; --bc-deck2:#1B2833; --bc-pos:#4FC48A; --bc-neg:#F07A66; }
+}
+body{background:var(--bc-canvas);color:var(--bc-ink);font-family:var(--bc-text);font-size:15px;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1280px;padding:0 32px 72px}
+:focus-visible{outline:2px solid var(--bc-gold);outline-offset:2px}
+
+/* ---------- Broadcast header: appbar + league + sections, one dark band ---------- */
+.appbar,.leaguebar,.groups{background:var(--bc-night);box-shadow:0 0 0 100vmax var(--bc-night);clip-path:inset(0 -100vmax)}
+.appbar{border-bottom:0!important;padding:14px 0 6px!important;color:#E9EEF2}
+.appbar .brand,.foot .brand{color:#fff;font-family:var(--bc-num);font-weight:900;font-size:24px;letter-spacing:.04em;text-transform:uppercase;gap:10px}
+.appbar .brand .logo{width:30px;height:30px}
+.appbar .who,.appbar .who *{color:#AAB8C3!important;font-size:13px}
+.appbar .ghost,#switchLeague{background:transparent;color:#E9EEF2;border:1px solid #3A4A58;border-radius:6px;padding:7px 14px;font:600 13px var(--bc-text)}
+.appbar .ghost:hover{border-color:var(--bc-gold);color:#fff}
+body.has-league .leaguebar{display:flex!important}
+.leaguebar{padding:14px 0 6px!important;color:#E9EEF2;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px 24px}
+.leaguebar h2{font-family:var(--bc-num)!important;font-weight:900!important;font-size:46px!important;line-height:.95!important;color:#fff;letter-spacing:.01em;margin:0 0 4px!important}
+.leaguebar h2 button,.leaguebar .league-link{color:#fff!important}
+.leaguebar .league-link:hover{text-decoration:underline;text-decoration-color:var(--bc-gold);text-underline-offset:6px}
+.leaguebar .teamline,.leaguebar .myteam,.leaguebar .leaguehead small,.leaguebar .leaguehead span:not([id]){color:#AAB8C3}
+.leaguebar .leaguehead *{color:inherit}
+.leaguebar .chips,.leaguebar .chips *{color:#AAB8C3}
+.leaguebar .chips > *{background:var(--bc-deck2);border-color:transparent;color:#C9D4DC}
+.mode-toggle{background:var(--bc-deck);border:1px solid #2C3B48;border-radius:7px;padding:3px}
+.mode-toggle button{color:#AAB8C3;border-radius:5px;font:600 13px var(--bc-text);padding:6px 12px}
+.mode-toggle button[aria-checked=true]{background:var(--bc-gold);color:#121B24}
+.groups{margin:0!important;padding:0!important;border:0!important;gap:2px}
+.group{font-family:var(--bc-text)!important;font-weight:600!important;font-size:15px!important;font-style:normal!important;color:#9AA9B5!important;padding:14px 16px 13px!important;border-bottom:3px solid transparent!important;margin:0!important;letter-spacing:.01em}
+.group:hover{color:#fff!important}
+.group[aria-pressed=true]{color:#fff!important;border-bottom-color:var(--bc-gold)!important}
+.group.group-notes{font-style:normal!important}
+
+/* section sub-tabs: a quiet segmented row on the canvas */
+.tabs:not(.single){display:flex;gap:6px;margin:22px 0 4px!important;padding:0!important;border:0!important;background:none!important}
+.tabs .tab{font-family:var(--bc-text)!important;font-weight:600!important;font-size:14px!important;color:var(--bc-muted)!important;background:transparent!important;border:1px solid transparent!important;border-radius:999px!important;padding:7px 16px!important;box-shadow:none!important}
+.tabs .tab:hover{color:var(--bc-ink)!important;border-color:var(--bc-line)!important}
+.tabs .tab[aria-selected=true]{background:var(--bc-ink)!important;color:var(--bc-canvas)!important;border-color:var(--bc-ink)!important}
+.panel{padding-top:18px}
+
+/* ---------- Type ---------- */
+h1,h2,h3,.sec-h,.box h3{font-family:var(--bc-num);letter-spacing:.01em}
+.sec-h,.box h3,.panel > h3{color:var(--bc-ink)}
+.sec-h,.box > h3,.tf-head h3,.box h3{font-weight:800;font-size:28px;line-height:1.05;margin:0 0 10px}
+.note,.sec-sub{color:var(--bc-muted);font-size:14px;line-height:1.5}
+a{color:var(--bc-pos)}
+
+/* ---------- Panels, buttons, fields ---------- */
+.box,.tf-findbox,.tf-main,.side,.sim-box,.status-key,.ccard,.home-card{background:var(--bc-card)!important;border:1px solid var(--bc-line)!important;border-radius:10px!important;box-shadow:none!important}
+.btn{background:var(--bc-ink)!important;color:var(--bc-canvas)!important;border:0!important;border-radius:7px!important;font:700 14px var(--bc-text)!important;padding:10px 18px!important;letter-spacing:.01em}
+.btn:hover{background:var(--bc-deck2)!important;color:#fff!important}
+.ghost{border-radius:7px!important;font-family:var(--bc-text)!important;font-weight:600!important}
+input[type=search],input[type=text],select,textarea{font-family:var(--bc-text);border-radius:7px!important;border-color:var(--bc-line)!important}
+input[type=search]:focus,input[type=text]:focus,select:focus,textarea:focus{border-color:var(--bc-ink)!important;outline:none;box-shadow:0 0 0 3px rgba(242,179,61,.35)}
+.badge{border-radius:4px!important;font:700 11.5px var(--bc-text)!important;letter-spacing:.02em;padding:3px 8px!important}
+
+/* ---------- Stat tables: dark heads, quiet rows, tabular numbers ---------- */
+.tablewrap{border:1px solid var(--bc-line)!important;border-radius:10px!important;overflow:hidden;background:var(--bc-card)}
+table.stand,#valuesTable,#histTable{font-family:var(--bc-text);font-variant-numeric:tabular-nums;border-collapse:collapse}
+table.stand thead th,#valuesTable thead th,#histTable thead th{background:var(--bc-deck)!important;color:#C9D4DC!important;font:600 12px var(--bc-text)!important;letter-spacing:.03em;border:0!important;padding-top:11px!important;padding-bottom:11px!important}
+table.stand thead th button,#valuesTable thead th button,#histTable thead th button{color:inherit!important;font:inherit!important}
+table.stand thead th[aria-sort=ascending],table.stand thead th[aria-sort=descending],#valuesTable thead th[aria-sort=ascending],#valuesTable thead th[aria-sort=descending]{color:var(--bc-gold)!important}
+table.stand tbody td,#valuesTable tbody td,#histTable tbody td{border-color:var(--bc-line2)!important}
+table.stand tbody tr:hover td,#valuesTable tbody tr:hover td{background:rgba(242,179,61,.07)}
+table.stand tr.me td,#valuesTable tr.me td{background:rgba(63,185,122,.10)!important}
+table.stand tr.cut td{border-bottom:2px solid var(--bc-gold)!important}
+.info-btn{border-color:currentColor!important;color:inherit!important}
+
+/* ---------- Trade calculator: the scoreboard ---------- */
+.board{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(190px,auto) minmax(0,1fr);background:transparent!important;color:var(--bc-ink)!important;padding:0!important;border-radius:12px!important;overflow:visible;margin-top:6px}
+.board[style*="none"]{display:none!important}
+.board .totals{display:contents!important}
+.board .bside{grid-row:1;background:var(--bc-deck);color:#fff;padding:18px 24px 16px!important;border-top:4px solid var(--bc-send)!important;min-width:0}
+.board .bside:first-child{grid-column:1;border-radius:12px 0 0 0}
+.board .bside.right{grid-column:3;border-top-color:var(--bc-get)!important;border-radius:0 12px 0 0;text-align:right}
+.board .side-label{display:block!important;font:600 12px var(--bc-text)!important;letter-spacing:.06em;color:#9DB0BE!important;text-transform:uppercase;background:none!important;padding:0!important;margin:0 0 4px!important}
+.board .bteam{font:600 15px var(--bc-text)!important;color:#fff;gap:8px}
+.board .bteam .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.board .num{font-family:var(--bc-num)!important;font-weight:900!important;font-size:clamp(52px,6vw,76px)!important;line-height:.95!important;letter-spacing:.01em;color:#fff;margin-top:8px!important}
+.board .vrow{grid-row:1;grid-column:2;background:var(--bc-deck);border-top:4px solid var(--bc-deck2);margin:0!important;padding:16px 10px!important;display:flex!important;flex-direction:column;justify-content:center;align-items:center;gap:8px;text-align:center}
+.board .verdict{font:700 15px/1.3 var(--bc-text)!important;color:#fff;max-width:200px}
+.board .track{grid-row:2;grid-column:1 / -1;height:10px!important;margin:0!important;border-radius:0!important;background:var(--bc-get)!important}
+.board .track .fill{background:var(--bc-send)!important;transition:width .45s cubic-bezier(.2,.8,.2,1)}
+.board .track .mid{background:#fff!important;width:3px!important}
+.board .bplayers{grid-row:3;grid-column:1 / -1;display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;background:transparent!important;padding:16px 0 0!important;margin:0!important;color:var(--bc-ink)}
+.board .bplayers[hidden]{display:none!important}
+.board .bp-label{display:none}
+.board .bplayers .bcol{background:var(--bc-card);border:1px solid var(--bc-line);border-radius:10px;padding:6px 14px;min-height:56px}
+.board .bplayers .bitem{background:transparent!important;border-radius:0!important;border-bottom:1px solid var(--bc-line2);padding:10px 2px!important}
+.board .bplayers .bitem:last-child{border-bottom:0}
+.board .bplayers .bitem .bi-text b{font:700 15px var(--bc-text)!important;color:var(--bc-ink)}
+.board .bplayers .bitem .bi-text small{font-size:12.5px!important;color:var(--bc-muted)!important}
+.board .bplayers .bitem .bi-val{font-family:var(--bc-num)!important;font-weight:800!important;font-size:24px!important;color:var(--bc-ink)}
+.board .bplayers .bitem .bi-x{color:var(--bc-muted)!important}
+.board .badj{border:0!important;border-top:1px dashed var(--bc-line)!important;border-radius:0!important;background:transparent!important;padding:10px 2px!important;color:var(--bc-pos)}
+.board .badj b{font-family:var(--bc-num);font-weight:800;font-size:22px}
+.board .tmath{grid-row:4;grid-column:1 / -1;margin:14px 0 0!important;display:flex;justify-content:center}
+.board .tm-grid{background:var(--bc-card);border:1px solid var(--bc-line);border-radius:10px;padding:12px 26px;color:var(--bc-ink)}
+.board .tm-grid > div:not(.tm-lbl):not(.tm-head){font-family:var(--bc-num)!important;font-weight:800!important;font-size:26px!important}
+.board .tm-grid div.tot:not(.tm-lbl){font-size:34px!important;font-weight:900!important}
+.board .tm-lbl{font:600 12px var(--bc-text)!important;letter-spacing:.06em;text-transform:uppercase;color:var(--bc-muted)!important;opacity:1!important}
+.board .tm-grid .adj{color:var(--bc-pos)!important}
+.board .tm-grid .tot{border-top-color:var(--bc-ink)!important}
+.board .brow{grid-row:5;grid-column:1 / -1;margin-top:14px!important;padding:12px 16px;background:var(--bc-card);border:1px solid var(--bc-line);border-radius:10px}
+.board .suggest .hint{color:var(--bc-muted)!important;font-size:13.5px!important}
+.board .suggest button{background:var(--bc-canvas)!important;color:var(--bc-ink)!important;border:1px solid var(--bc-line)!important;font-family:var(--bc-text)!important}
+.board .suggest button:hover{border-color:var(--bc-ink)!important}
+.board .share-btns .icon-btn{border:1px solid var(--bc-line)!important;color:var(--bc-ink)!important;background:var(--bc-card)!important}
+.board .share-btns .icon-btn:hover{border-color:var(--bc-ink)!important}
+.board .share-btns .icon-btn[aria-expanded=true]{background:var(--bc-ink)!important;color:#fff!important}
+.board > #hint{grid-column:1 / -1;grid-row:6;color:var(--bc-ink)}
+/* the call in the middle of the scoreboard */
+.board .vrow::before{content:"";width:12px;height:12px;border-radius:50%;background:#7C8B97;box-shadow:0 0 0 4px rgba(255,255,255,.06)}
+.board:has(.fill.win) .vrow::before,.board:has(.fill.even) .vrow::before{background:var(--bc-get)}
+.board:has(.fill.lose) .vrow::before{background:var(--bc-send)}
+.board:has(.fill.lopsided) .vrow::before{background:var(--bc-gold)}
+/* rosters under the board */
+.sides{gap:16px!important;margin-top:18px!important}
+.side{padding:16px!important}
+.side-label{font:700 12px var(--bc-text)!important;letter-spacing:.06em;text-transform:uppercase}
+.list .asset{border-radius:6px}
+.list .asset.on,.list .asset[aria-pressed=true]{box-shadow:inset 3px 0 0 var(--bc-get)}
+#listA .asset.on,#listA .asset[aria-pressed=true]{box-shadow:inset 3px 0 0 var(--bc-send)}
+.asset .v,.asset .val{font-family:var(--bc-num);font-weight:800;font-size:22px}
+
+/* ---------- Home page (before a league is open): a broadcast hero ---------- */
+body:not(.has-league) .connect{background:var(--bc-night);box-shadow:0 0 0 100vmax var(--bc-night);clip-path:inset(0 -100vmax);padding:40px 0 48px!important;margin:0 0 28px!important;color:#E9EEF2}
+body:not(.has-league) .connect h1{font-family:var(--bc-num)!important;font-weight:900!important;font-size:clamp(64px,7.4vw,108px)!important;line-height:.88!important;color:#fff;max-width:9ch;letter-spacing:.005em;text-transform:uppercase}
+body:not(.has-league) .connect .brand-hero{color:#fff;font-family:var(--bc-num);font-weight:900;font-size:26px;letter-spacing:.04em;text-transform:uppercase}
+body:not(.has-league) .connect .note,body:not(.has-league) .connect .hero-copy p{color:#AAB8C3}
+body:not(.has-league) .connect .ccard{color:var(--bc-ink);border:0!important;border-top:4px solid var(--bc-gold)!important}
+.betatag{background:var(--bc-gold)!important;color:#121B24!important;border-radius:4px!important}
+
+/* ---------- Footer ---------- */
+.foot{background:var(--bc-night);box-shadow:0 0 0 100vmax var(--bc-night);clip-path:inset(0 -100vmax);color:#93A2AE;border-top:0!important;padding:26px 0 30px!important;margin-top:48px!important}
+.foot a{color:#C9D4DC}
+.foot a:hover{color:#fff}
+.foot p,.foot .ver{color:#7D8C98}
+
+/* ---------- Small things ---------- */
+.pc{border-radius:12px!important}
+.toast{background:var(--bc-ink)!important;color:var(--bc-canvas)!important;border-radius:8px!important;font-family:var(--bc-text)!important}
+::selection{background:rgba(242,179,61,.4)}
+@media (prefers-reduced-motion:reduce){.board .track .fill{transition:none}}
+
+/* ---------- Fixes from the first review ---------- */
+.mode-toggle button[aria-checked=true]{background:var(--bc-gold)!important;color:#121B24!important}
+.mode-toggle button[aria-checked=false]{background:transparent!important;color:#AAB8C3!important}
+.board .verdict{font:800 22px/1.15 var(--bc-num)!important;letter-spacing:.02em;max-width:230px}
+body:not(.has-league) .connect .brand-hero,body:not(.has-league) .connect .brand-hero span{color:#fff!important}
+body:not(.has-league) .connect{border-bottom:0!important}
+.foot nav a,.foot a:not(.brand){color:#C9D4DC!important;text-decoration:none}
+.foot nav a:hover{color:#fff!important;text-decoration:underline;text-decoration-color:var(--bc-gold)}
+.sim-champ{background:var(--bc-deck)!important;border:0!important;border-left:4px solid var(--bc-gold)!important;border-radius:0 10px 10px 0!important;color:#fff!important}
+.sim-champ small{color:#9DB0BE!important}.sim-champ b{color:#fff!important;font-family:var(--bc-num);font-size:30px}.sim-champ span{color:#C9D4DC!important}
+.grid2{align-items:start}
