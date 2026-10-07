@@ -45,6 +45,7 @@ jobs:
           [ -d data/history ] && git add data/history
           [ -f data/values-status.json ] && git add data/values-status.json
           [ -f data/players.json ] && git add data/players.json
+          [ -f data/sleeper-players.json ] && git add data/sleeper-players.json
           [ -d data/fp-injuries ] && git add data/fp-injuries
           [ -d data/season-stats ] && git add data/season-stats
           [ -f data/fp-status.json ] && git add data/fp-status.json
