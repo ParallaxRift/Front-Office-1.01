@@ -1,5 +1,5 @@
 {
- "checked": "2026-10-06T21:33:21+00:00",
+ "checked": "2026-10-07T01:06:10+00:00",
  "key_present": true,
  "calls": 3,
  "rate_limited": 0,
@@ -15,8 +15,8 @@
   {
    "url": "https://api.fantasypros.com/public/v2/json/nfl/news?category=injury&limit=500",
    "status": 200,
-   "records": 11,
-   "sample": "{\"id\": 612514, \"created\": \"2026-10-06 20:53:34\", \"created_formated\": \"Tue, Oct 6th 8:53pm UTC\", \"author\": \"Ari Koslow\", \"player_id\": 22783, \"team_id\": \"ARI\", \"title\": \"Hunter Long placed on IR\", \"sport_id\": \"NFL\", \"categories\": [\"Commentary\", \"News\", \"Injury\"], \"link\": \"https://www.fantasypros.com/n"
+   "records": 6,
+   "sample": "{\"id\": 612557, \"created\": \"2026-10-07 00:06:19\", \"created_formated\": \"Wed, Oct 7th 12:06am UTC\", \"author\": \"Ari Koslow\", \"player_id\": 22908, \"team_id\": \"PHI\", \"title\": \"Tank Bigsby (core) lands on IR \", \"sport_id\": \"NFL\", \"categories\": [\"Commentary\", \"News\", \"Injury\"], \"link\": \"https://www.fantasypr"
   }
  ],
  "seasons": {
@@ -27,5 +27,5 @@
   2026
  ],
  "players_with_this_week": 178,
- "news_matched": 5
+ "news_matched": 3
 }

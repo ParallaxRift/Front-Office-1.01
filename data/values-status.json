@@ -1,9 +1,9 @@
 {
- "checked": "2026-10-06T21:32:58+00:00",
+ "checked": "2026-10-07T01:05:47+00:00",
  "rankings": {
   "1QB": {
    "status": 200,
-   "players": 457,
+   "players": 444,
    "fields": [
     "cbs_player_id",
     "player_age",
@@ -203,7 +203,7 @@
    ]
   }
  ],
- "smoothed_days": 1,
+ "smoothed_days": 2,
  "projection_basis": "rest of season",
  "ros_probe": [
   {
@@ -214,6 +214,6 @@
   }
  ],
  "projected_players": 472,
- "snapshot": "2026-10-06.json",
+ "snapshot": "2026-10-07.json",
  "calls": 11
 }
