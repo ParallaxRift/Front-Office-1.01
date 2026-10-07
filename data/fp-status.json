@@ -1,22 +1,22 @@
 {
- "checked": "2026-10-07T17:34:39+00:00",
+ "checked": "2026-10-07T21:54:01+00:00",
  "key_present": true,
- "calls": 4,
+ "calls": 3,
  "rate_limited": 0,
  "injuries": [
   {
-   "url": "https://api.fantasypros.com/public/v2/json/nfl/injuries?season=2026&week=3",
+   "url": "https://api.fantasypros.com/public/v2/json/nfl/injuries?season=2026&week=4",
    "status": 200,
-   "records": 440,
-   "sample": "{\"player_id\": 23180, \"yahoo_id\": \"40168\", \"name\": \"Puka Nacua\", \"status\": \"OUT\", \"injury_type\": \"\", \"comment\": \"injured\", \"injury_update_date\": \"2026-09-27 12:00:00\", \"team_id\": \"LAR\", \"position_id\": \"WR\", \"rank\": 11, \"status_short\": \"O\", \"filename\": \"puka-nacua.php\", \"ir_weeks\": [], \"probability_of"
+   "records": 471,
+   "sample": "{\"player_id\": 22916, \"yahoo_id\": \"40039\", \"name\": \"Zay Flowers\", \"status\": \"Questionable\", \"injury_type\": \"Hamstring\", \"comment\": \"\", \"injury_update_date\": \"2026-10-04 11:20:03\", \"team_id\": \"BAL\", \"position_id\": \"WR\", \"rank\": 18, \"status_short\": \"Q\", \"filename\": \"zay-flowers.php\", \"ir_weeks\": [], \"p"
   }
  ],
  "news": [
   {
    "url": "https://api.fantasypros.com/public/v2/json/nfl/news?category=injury&limit=500",
    "status": 200,
-   "records": 20,
-   "sample": "{\"id\": 612592, \"created\": \"2026-10-07 17:29:33\", \"created_formated\": \"Wed, Oct 7th 5:29pm UTC\", \"author\": \"Ari Koslow\", \"player_id\": 27131, \"team_id\": \"CHI\", \"title\": \"Kyle Monangai: Thumb injury not an issue\", \"sport_id\": \"NFL\", \"categories\": [\"Commentary\", \"News\", \"Injury\"], \"link\": \"https://www.f"
+   "records": 25,
+   "sample": "{\"id\": 612727, \"created\": \"2026-10-07 21:52:42\", \"created_formated\": \"Wed, Oct 7th 9:52pm UTC\", \"author\": \"Leo Sells\", \"player_id\": 24177, \"team_id\": \"LV\", \"title\": \"Jalen Nailor (concussion) misses practice Wednesday\", \"sport_id\": \"NFL\", \"categories\": [\"Commentary\", \"News\", \"Injury\"], \"link\": \"http"
   }
  ],
  "seasons": {
@@ -26,6 +26,6 @@
  "injury_seasons_saved": [
   2026
  ],
- "players_with_this_week": 89,
- "news_matched": 14
+ "players_with_this_week": 123,
+ "news_matched": 11
 }
