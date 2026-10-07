@@ -4,6 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Front Office</title>
+<meta name="description" content="Dynasty trade values built for your Sleeper league: a trade calculator, trade finder, team strategy and season simulator, re-valued for your scoring, lineup and size.">
+<!-- Link previews (iMessage, Discord, Slack, X, Facebook) -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Front Office">
+<meta property="og:title" content="Front Office: dynasty trade values built for your league">
+<meta property="og:description" content="Every player and pick re-valued for your Sleeper league's scoring, lineup and size, with a trade calculator and a game plan for every team.">
+<meta property="og:url" content="https://parallaxrift.github.io/Front-Office-1.01/">
+<meta property="og:image" content="https://parallaxrift.github.io/Front-Office-1.01/icons/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2064%2064%22%20role%3D%22img%22%20aria-label%3D%22Front%20Office%22%3E%20%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2215%22%20fill%3D%22%231E6B47%22/%3E%20%3Cpath%20d%3D%22M11%2014h20.5v7.5H19.5v6.5H29v7h-9.5V50H11z%22%20fill%3D%22%23F4F6F2%22/%3E%20%3Cpath%20d%3D%22M44%2012c11.6%206%2011.6%2034%200%2040-11.6-6-11.6-34%200-40z%22%20fill%3D%22%23F4F6F2%22/%3E%20%3Cpath%20d%3D%22M38.6%2018.8h10.8M38.6%2045.2h10.8%22%20stroke%3D%22%231E6B47%22%20stroke-width%3D%221.9%22%20stroke-linecap%3D%22round%22/%3E%20%3Cpath%20d%3D%22M44%2025v14%22%20stroke%3D%22%23D99A1E%22%20stroke-width%3D%222.3%22%20stroke-linecap%3D%22round%22/%3E%20%3Cpath%20d%3D%22M40.8%2028h6.4M40.8%2032h6.4M40.8%2036h6.4%22%20stroke%3D%22%23D99A1E%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22/%3E%20%3C/svg%3E">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#1E6B47">
@@ -322,6 +333,8 @@
         <button aria-pressed="false" data-pos="WR">WR</button>
         <button aria-pressed="false" data-pos="TE">TE</button>
         <button aria-pressed="false" data-pos="PICK">Picks</button>
+        <button aria-pressed="false" data-pos="ROOKIE" title="First-year players">Rookies</button>
+        <button aria-pressed="false" data-pos="IR" title="Players on the NFL's injured reserve (also PUP and non-football injury lists)">IR</button>
       </div>
       <div class="vsearch"><input type="search" id="valueSearch" placeholder="Search players" aria-label="Search players"><button type="button" class="clear-f" id="valueClear" title="Clear the search and show everyone" aria-label="Clear search" hidden>✕</button></div>
       <label style="font-size:14px;display:flex;gap:6px;align-items:center"><input type="checkbox" id="rosteredOnly" checked> Only rostered in this league</label>
@@ -545,23 +558,23 @@
 </div>
 
 <script src="js/core.js?v=20261007a"></script>
-<script src="js/league-load.js?v=20261007a"></script>
+<script src="js/league-load.js?v=20261007f"></script>
 <script src="js/values-engine.js?v=20261007a"></script>
-<script src="js/render.js?v=20261007a"></script>
-<script src="js/player-cards.js?v=20261007a"></script>
+<script src="js/render.js?v=20261007g"></script>
+<script src="js/player-cards.js?v=20261007g"></script>
 <script src="js/settings-tab.js?v=20261007a"></script>
-<script src="js/strategy.js?v=20261007a"></script>
+<script src="js/strategy.js?v=20261007g"></script>
 <script src="js/live-scores.js?v=20261007d"></script>
 <script src="js/trade-history.js?v=20261007a"></script>
 <script src="js/modes.js?v=20261007a"></script>
 <script src="js/build-notes.js?v=20261007a"></script>
-<script src="js/feedback.js?v=20261007a"></script>
+<script src="js/feedback.js?v=20261007f"></script>
 <script src="js/standings-sim.js?v=20261007d"></script>
 <script src="js/calc-browse.js?v=20261007a"></script>
 <script src="js/calc-minibar.js?v=20261007a"></script>
 <script src="js/trophy.js?v=20261007a"></script>
 <script src="js/popovers.js?v=20261007a"></script>
-<script src="js/trade-finder.js?v=20261007a"></script>
+<script src="js/trade-finder.js?v=20261007g"></script>
 <script src="js/pickers.js?v=20261007e"></script>
 <script src="js/nav.js?v=20261007a"></script>
 <script src="js/app-shell.js?v=20261007e"></script>

@@ -507,13 +507,18 @@ const VALUE_SORTS = {
   age: a => a.age || 0, value: a => a.value, range: a => a.lo != null ? a.hi - a.lo : -1, market: a => a.market || 0, change: valueChange
 };
 const SORT_FIRST_DIR = { rank: 1, name: 1, pos: 1 };   // A to Z and #1 first; numbers biggest first
+// Rookies: first NFL season (Sleeper's years of experience is 0, or his rookie year is this season)
+const isRookie = a => { if (a.kind !== "player") return false; const sp = S.sleeperPlayers?.[a.pid] || {};
+  return sp.years_exp === 0 || Number(sp.metadata?.rookie_year) === Number(S.nflState?.season || S.season); };
+// IR: on the NFL's injured reserve, or the similar PUP and non-football injury lists
+const onIR = a => a.kind === "player" && ["IR", "PUP", "NFI"].includes(S.sleeperPlayers?.[a.pid]?.injury_status);
 function renderValues(){
   renderTuningLight(); renderUpdated();
   $("valueClear").hidden = !$("valueSearch").value;
   const q = normName($("valueSearch").value), pos = S.posFilter, rosteredOnly = $("rosteredOnly").checked;
   const key = VALUE_SORTS[valuesSort.key] || VALUE_SORTS.value, dir = valuesSort.dir;
   const all = [...S.assets.values()]
-    .filter(a => pos === "ALL" ? a.kind === "player" : pos === "PICK" ? a.kind === "pick" : a.pos === pos)
+    .filter(a => pos === "ALL" ? a.kind === "player" : pos === "PICK" ? a.kind === "pick" : pos === "ROOKIE" ? isRookie(a) : pos === "IR" ? onIR(a) : a.pos === pos)
     .filter(a => !rosteredOnly || a.owner != null)
     .filter(a => !q || normName(a.name).includes(q))
     .sort((a, b) => { const x = key(a), y = key(b); return (x < y ? -1 : x > y ? 1 : 0) * dir || b.value - a.value; });

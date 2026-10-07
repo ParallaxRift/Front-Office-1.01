@@ -72,6 +72,7 @@ function renderStrategy(){
     .flatMap(x => x.players.filter(a => a.pos === p))
     .filter(a => buying ? (a.age||0) >= 24 && a.age < CLIFF[p] : (a.age||99) <= 24)
     .filter(a => a.value > 1000 && a.value <= myTop*1.1)
+    .filter(a => !(buying && seasonOutlook(a.pid)?.done))     // a contender can't use a player who's out for the season
     .sort((a,b) => b.value - a.value).slice(0,3);
 
   // sell candidates

@@ -153,6 +153,23 @@ function returnEstimate(sp, news, fpNow){
   const conf = why[0]?.startsWith("Reports") ? "Based on reported timeline" : why.some(w => w.startsWith("FantasyPros gives")) ? "Based on FantasyPros' odds" : "Rough estimate";
   return { head, sub, why: why.join("; ") + ".", conf, lo, hi };
 }
+// Will an injured player help a fantasy lineup again this season? Uses the same return estimate as the
+// player card. "done" = out for the season, or even the earliest return comes after the league's
+// championship week. "back" = the likely week he returns. null = healthy (or not in season).
+function lastFantasyWeek(){
+  const st = S.league?.settings || {};
+  const rounds = Math.max(1, Math.ceil(Math.log2(Math.max(2, Number(st.playoff_teams) || 6))));
+  return Math.min(18, (Number(st.playoff_week_start) || 15) + rounds - 1);
+}
+function seasonOutlook(pid){
+  const sp = S.sleeperPlayers?.[pid]; if (!sp?.injury_status) return null;
+  const c = cardData?.players?.[pid], est = returnEstimate(sp, c?.n || [], c?.c);
+  if (!est) return null;
+  if (est.lo >= 99) return { done: true, back: null, est };
+  if (S.nflState?.season_type !== "regular") return null;
+  const now = currentWeek(), back = now + Math.max(1, Math.round((est.lo + est.hi) / 2));
+  return { done: now + est.lo > lastFantasyWeek(), back, est };
+}
 function currentStatus(sp, rec, news){
   const st = sp?.injury_status, lab = INJ_LABEL[st];
   if (!st && (!sp?.status || sp.status === "Active")) {

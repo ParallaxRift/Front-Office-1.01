@@ -74,7 +74,8 @@ async function openLeague(browser, viewport, opts){
         check('phone: trade summary bar stays pinned while scrolling', /Send.*Get/.test(bar), bar);
       }
       check(`${vp.name}: no script errors`, !page.errors.length, page.errors.slice(0, 3).join(' | '));
-      check(`${vp.name}: no missing site files`, !page.missing.length, page.missing.slice(0, 3).join(', '));
+      const missing = page.missing.filter(u => !u.includes('data/sleeper-players.json'));   // optional: the site asks Sleeper when it's not there yet
+      check(`${vp.name}: no missing site files`, !missing.length, missing.slice(0, 3).join(', '));
       await page.close();
     }
 
@@ -122,6 +123,26 @@ async function openLeague(browser, viewport, opts){
     for (let i = 0; i < 3; i++){ await page.click('#simBtn'); await page.waitForFunction(() => !document.getElementById('simBtn').disabled); seen.add(await sample()); }
     check('simulator: Simulate Again plays out a different season', seen.size > 1, seen.size + ' different results in 4 runs');
 
+    // Sleeper's player list comes from the daily saved copy when it's fresh, and from Sleeper when it's missing or stale
+    const src = await page.evaluate(async () => {
+      const realFetch = window.fetch, big = {}; for (let i = 0; i < 1600; i++) big['x' + i] = { position: 'WR' };
+      const fake = body => async url => String(url).includes('data/sleeper-players.json') ? new Response(JSON.stringify(body), { status: 200 }) : realFetch(url);
+      const out = [];
+      window.fetch = fake({ updated: new Date().toISOString(), players: big }); const a = await loadSleeperPlayers(); out.push(S.sleeperPlayersSource + ':' + Object.keys(a).length);
+      window.fetch = fake({ updated: '2020-01-01T00:00:00Z', players: big }); const b = await loadSleeperPlayers(); out.push(S.sleeperPlayersSource + ':' + Object.keys(b).length);
+      window.fetch = realFetch; return out.join(',');
+    });
+    check('player list: saved copy when fresh, Sleeper when stale', /^copy:1600,sleeper:\d+$/.test(src) && !src.endsWith(':1600'), src);
+
+    // Feedback board: with an Official column, typing "Pat" no longer earns the crown; only rows marked yes do
+    const crowns = await page.evaluate(async () => {
+      const realFetch = window.fetch;
+      window.fetch = async url => String(url).includes('docs.google.com') ? new Response('Timestamp,Name,Message,Official\n1,Pat,[Update] fake,\n2,Dev,real note,yes\n3,Sam,[Update] sneaky,\n', { status: 200 }) : realFetch(url);
+      await loadFeedback(); window.fetch = realFetch;
+      return [...document.querySelectorAll('#fbList .fb-item')].map(e => e.querySelector('.fb-name').firstChild.textContent.trim() + ':' + (e.querySelector('.crown') ? 'crown' : '-') + ':' + e.querySelector('.fb-type').textContent).join(',');
+    });
+    check('feedback: only Official rows get the crown', crowns === 'Sam:-:Other,Dev:crown:Update,Pat:-:Other', crowns);
+
     // Live Scores flips to the next week on Tuesday morning (6 a.m. Central), not Wednesday
     const flips = await page.evaluate(() => { const real = Date.now, st = { season_start_date: '2026-09-10' };
       const at = iso => { Date.now = () => new Date(iso).getTime(); const w = flipWeek(st); Date.now = real; return w; };
@@ -139,10 +160,34 @@ async function openLeague(browser, viewport, opts){
     await page.click('th[data-sort=age]');
     const ages = await page.$$eval('#valuesBody tr', x => x.slice(0, 20).map(r => parseFloat(r.cells[3].textContent) || 0));
     check('sorting by a column works', ages.every((v, i) => !i || v <= ages[i - 1]), ages.slice(0, 3).join(', '));
+    // Rookies and IR filters: mark two players, then each filter shows exactly its player
+    const flt = await page.evaluate(async () => {
+      const ps = [...S.assets.values()].filter(a => a.kind === 'player' && a.owner != null).slice(5, 7), [r, i] = ps.map(a => S.sleeperPlayers[a.pid]);
+      const keep = [r.years_exp, i.injury_status]; r.years_exp = 0; i.injury_status = 'IR';
+      const names = async f => { document.querySelector(`#posFilter [data-pos=${f}]`).click(); await new Promise(z => setTimeout(z, 50)); return [...document.querySelectorAll('#valuesBody tr')].map(t => t.textContent); };
+      const rk = await names('ROOKIE'), ir = await names('IR');
+      r.years_exp = keep[0]; i.injury_status = keep[1]; document.querySelector('#posFilter [data-pos=ALL]').click();
+      return [rk.length === 1 && rk[0].includes(ps[0].name), ir.length === 1 && ir[0].includes(ps[1].name)].join(',');
+    });
+    check('Player Values: Rookies and IR filters', flt === 'true,true', flt);
     // Trade Finder starts with suggestions
     await page.click('#groups [data-group=trade]'); await page.click('[data-tab=finder]'); await page.waitForTimeout(400);
     const sugg = await page.$$eval('#tfResults .tf-card', x => x.length), recs = await page.$$eval('#tfRecs .tf-rec', x => x.length);
     check('Trade Finder suggests trades before anything is picked', sugg > 0, `${sugg} suggestions, ${recs} recommendations`);
+    // A player who's out for the season isn't pitched to a contender; one out a few weeks says when he's back
+    const inj = await page.evaluate(() => {
+      const me = S.myRid; renderRecs(me); const first = tfRecTop[0]?.a; if (!first) return 'no recs';
+      const sp = S.sleeperPlayers[first.pid], keep = { ...sp };
+      Object.assign(sp, { injury_status: 'IR', injury_notes: 'Placed on IR, out for the season', injury_body_part: 'Knee' });
+      renderRecs(me); const gone = !tfRecTop.some(r => r.a.pid === first.pid);
+      const done = seasonOutlook(first.pid)?.done;
+      Object.assign(sp, { injury_status: 'Out', injury_notes: '', injury_body_part: 'Hamstring', injury_start_date: '' });
+      const ol = seasonOutlook(first.pid);
+      renderRecs(me); const r = tfRecTop.find(r => r.a.pid === first.pid);
+      for (const k of Object.keys(sp)) delete sp[k]; Object.assign(sp, keep); renderRecs(me);
+      return [gone, done, ol && !ol.done, !r || !/would start/i.test(r.why) || /once he's back/.test(r.why)].join(',');
+    });
+    check('Trade Finder: season-ending injuries left out for contenders', inj === 'true,true,true,true', inj);
     // Pick names follow one pattern
     const names = await page.evaluate(() => [...S.assets.values()].filter(a => a.kind === 'pick').map(a => a.name));
     check('pick names use one pattern (2027 1.08, 2028 Late 1st, 2029 1st)', names.every(n => /^\d{4} (\d\.\d{2}|(Early|Mid|Late) \d+(st|nd|rd|th)|\d+(st|nd|rd|th))$/.test(n)), names.find(n => !/^\d{4} (\d\.\d{2}|(Early|Mid|Late) \d+(st|nd|rd|th)|\d+(st|nd|rd|th))$/.test(n)) || '');

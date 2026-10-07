@@ -1287,3 +1287,11 @@ body:not(.has-league) .side-switch,body:not(.has-league) #miniBar{display:none!i
   body.settings-open .tabs .tab.ps-settings{display:inline-flex!important}
   body.settings-open.has-league .tabs{position:sticky;top:0;z-index:30;background:var(--paper);margin:0 -12px!important;padding:8px 12px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;border-bottom:1px solid var(--line)!important}
 }
+/* Phones: very long Sleeper team names wrap or trim instead of pushing the page sideways */
+@media (max-width:600px){
+  #sideSwitch > *{min-width:0}
+  #sideSwitch small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+  #sides > *, .histstats > *{min-width:0}
+  .histstats .hs b, .histstats .hs span{overflow-wrap:anywhere}
+  .leaguebar h2, .leaguebar .teamline{overflow-wrap:anywhere}
+}

@@ -48,7 +48,7 @@ async function loadFeedback(){
     const rows = parseCSV(await r.text());
     const h = (rows[0] || []).map(x => x.trim().toLowerCase());
     const col = (...names) => h.findIndex(x => names.some(n => x.includes(n)));
-    const iTime = col("timestamp"), iName = col("name"), iType = col("type"), iMsg = col("feedback", "message"), iLeague = col("league"), iHide = col("hidden");
+    const iTime = col("timestamp"), iName = col("name"), iType = col("type"), iMsg = col("feedback", "message"), iLeague = col("league"), iHide = col("hidden"), iOfficial = col("official");
     fbPosts = rows.slice(1).filter(r => r[iMsg] && !(iHide >= 0 && /^(y|yes|x|true|hide)/i.test((r[iHide] || "").trim())))
       .map(r => {
         let msg = r[iMsg], type = iType >= 0 ? (r[iType] || "").trim() : "", league = iLeague >= 0 ? r[iLeague] : "";
@@ -56,7 +56,11 @@ async function loadFeedback(){
         const m = msg.match(/^\[(Update|Idea|Bug|Other|Question|Praise)(?: \| ([^\]]*))?\]\s*/);
         if (m){ type = type || m[1]; league = league || m[2] || ""; msg = msg.slice(m[0].length); }
         if (type === "Question" || type === "Praise") type = "Other";   // older posts
-        return { time: r[iTime] || "", name: r[iName] || "", type: type || "Other", msg, league };
+        // With an "Official" column in the sheet, only rows you mark "yes" there get the crown and count as
+        // Updates, so nobody can pose as you by typing your name. Without that column, names decide (as before).
+        const official = iOfficial >= 0 ? /^(y|yes|x|true)/i.test((r[iOfficial] || "").trim()) : null;
+        if (official === false && type === "Update") type = "Other";
+        return { time: r[iTime] || "", name: r[iName] || "", type: type || "Other", msg, league, official };
       });
     fbPosts.reverse(); // newest first
     // Drop local "just posted" items once they show up on the board
@@ -70,17 +74,17 @@ async function loadFeedback(){
 // Posts from these names get a crown (not case-sensitive)
 const CROWN_NAMES = ["pat", "dev"];
 const CROWN = `<svg class="crown" viewBox="0 0 24 24" width="17" height="17" fill="currentColor" role="img" aria-label="Front Office team"><title>Front Office team</title><path d="M3 7.5l4.6 3.6L12 4l4.4 7.1L21 7.5l-1.8 10.2H4.8L3 7.5zM5 19h14v2H5z"/></svg>`;
-const isCrowned = name => CROWN_NAMES.includes(String(name || "").trim().toLowerCase());
+const isCrowned = (name, official) => official == null ? CROWN_NAMES.includes(String(name || "").trim().toLowerCase()) : official;
 function renderFeedback(){
   const all = [...fbPending, ...(fbPosts || [])]
-    .map(p => isCrowned(p.name) ? { ...p, type: "Update" } : p)     // your posts are always Updates
+    .map(p => isCrowned(p.name, p.official) ? { ...p, type: "Update" } : p)     // your posts are always Updates
     .filter(p => fbFilter === "All" || p.type === fbFilter);
   if (!all.length){ $("fbList").innerHTML = `<p class="empty">${fbFilter === "All" ? "No feedback yet. Be the first to post." : "Nothing here yet."}</p>`; return; }
   const types = ["Update","Idea","Bug","Other"];
   $("fbList").innerHTML = all.slice(0, 200).map(p => {
     const type = types.includes(p.type) ? p.type : "Other";
     return `<article class="fb-item${p.pending ? " pending" : ""}">
-      <div class="fb-meta"><span class="fb-type t-${type}">${type}</span><b class="fb-name">${esc(p.name || "Anonymous")}${isCrowned(p.name) ? CROWN : ""}</b>${p.league ? `<span>${esc(p.league)}</span>` : ""}<span>${esc(p.pending ? "Just posted, visible to everyone within a few minutes" : p.time)}</span></div>
+      <div class="fb-meta"><span class="fb-type t-${type}">${type}</span><b class="fb-name">${esc(p.name || "Anonymous")}${isCrowned(p.name, p.official) ? CROWN : ""}</b>${p.league ? `<span>${esc(p.league)}</span>` : ""}<span>${esc(p.pending ? "Just posted, visible to everyone within a few minutes" : p.time)}</span></div>
       <p class="fb-msg">${esc(p.msg)}</p></article>`;
   }).join("");
 }

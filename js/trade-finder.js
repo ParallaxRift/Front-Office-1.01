@@ -114,10 +114,14 @@ function renderRecs(me){
       const add = C.starterSum(myPlayers.concat([a]), a.pos) - C.starterSum(myPlayers, a.pos);
       const isWeak = C.weak.includes(a.pos), young = a.age && a.age <= 24.5, old = a.age && a.age >= (CLIFF[a.pos] || 30) - 1;
       let score, why;
+      const ol = seasonOutlook(a.pid), wk = currentWeek(), away = ol && ol.back && ol.back > wk + 1;   // injured for more than this week
       if (C.dir === "win"){
+        if (ol?.done) continue;                                                        // out for the season: no help to a contender
         if (add <= 0 && !isWeak) continue;                                             // must actually help
         score = add / 800 + (add / Math.max(1, a.value)) * 1.5 + (isWeak ? 1 : 0) + (young ? 0.3 : 0) - (old ? 0.8 : 0);
+        if (away){ const left = Math.max(1, lastFantasyWeek() - wk + 1); score *= 0.4 + 0.6 * Math.max(0, (lastFantasyWeek() - ol.back + 1) / left); }   // weeks he'll miss count against him
         why = add > 0 ? (isWeak ? `Cheap fix for your thin ${a.pos} room` : `Would start for you at ${a.pos}`) : `Depth at your weak ${a.pos} spot`;
+        if (away) why += ` once he's back (around Week ${ol.back})`;
       } else {
         if (old || tooOldForRebuild(a)) continue;
         score = C.futureVal(a) / 2500 + (young ? 0.9 : 0) + (isWeak ? 0.3 : 0) + (C.futureVal(a) / Math.max(1, a.value) - 1);
@@ -126,6 +130,7 @@ function renderRecs(me){
       if (young && C.dir === "win") why += ", with upside";
       if (th.team.status === "rebuild" && C.dir === "win") why += "; his team is rebuilding";
       if (th.team.status === "contend" && C.dir === "build") why += "; his team is contending";
+      if (ol?.done && C.dir === "build") why += "; out for the season, so he may come cheap";
       recs.push({ a, score, why });
     }
   }

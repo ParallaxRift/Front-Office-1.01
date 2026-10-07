@@ -107,6 +107,20 @@ function progress(i, state){
   li.querySelector(".dot").textContent = state === "done" ? "✓" : "";
 }
 
+// Sleeper's full player list is big (several MB) and Sleeper asks apps to download it at most once a day,
+// so the daily GitHub update saves a trimmed copy in data/sleeper-players.json. Use that; ask Sleeper
+// directly only if the copy is missing, broken or more than three days old.
+async function loadSleeperPlayers(){
+  try {
+    const r = await fetch("data/sleeper-players.json");
+    if (r.ok){
+      const d = await r.json(), age = Date.now() - Date.parse(d.updated || 0);
+      if (d.players && Object.keys(d.players).length > 1500 && age < 3 * 864e5){ S.sleeperPlayersSource = "copy"; return d.players; }
+    }
+  } catch(_){}
+  S.sleeperPlayersSource = "sleeper";
+  return getJSON("/players/nfl");
+}
 async function openLeague(leagueId){
   const buttons = [...document.querySelectorAll(".lg")];
   buttons.forEach(b => { b.disabled = true; b.classList.toggle("loading", b.dataset.id === leagueId); });
@@ -121,7 +135,7 @@ async function openLeague(leagueId){
     progress(0, "done");
 
     progress(1, "active");
-    if (!S.sleeperPlayers) S.sleeperPlayers = await getJSON("/players/nfl");
+    if (!S.sleeperPlayers) S.sleeperPlayers = await loadSleeperPlayers();
     progress(1, "done");
 
     progress(2, "active");

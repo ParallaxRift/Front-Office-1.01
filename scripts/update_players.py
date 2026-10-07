@@ -74,6 +74,36 @@ try:
     sleeper = get_json(SLEEPER_PLAYERS)
 except Exception as e:
     raise SystemExit(f"Couldn't download Sleeper's player list ({e}), so players.json was left unchanged.")
+
+# Save a trimmed copy of Sleeper's player list for the website. Sleeper asks apps to download this big
+# file at most once a day and keep their own copy, so the site loads this file instead of asking Sleeper
+# on every visit (it's also much faster on phones). Only players who could be on a roster are kept, and
+# Sleeper's cross-site ID numbers and search helpers are dropped. The site falls back to Sleeper itself if
+# this file is missing or more than three days old.
+SITE_PLAYERS = os.path.join(HERE, "..", "data", "sleeper-players.json")
+DROP_FIELDS = {"espn_id", "yahoo_id", "sportradar_id", "fantasy_data_id", "rotowire_id", "rotoworld_id", "gsis_id",
+               "stats_id", "swish_id", "pandascore_id", "oddsjam_id", "opta_id", "kalshi_id", "hashtag", "high_school",
+               "search_first_name", "search_last_name", "search_full_name", "birth_city", "birth_state", "birth_country",
+               "sport", "competitions", "team_changed_at", "news_updated", "team_abbr"}
+try:
+    keep = {}
+    for pid, p in sleeper.items():
+        if not isinstance(p, dict): continue
+        if not (p.get("team") or p.get("active") or p.get("position") == "DEF"): continue   # retired, never-signed
+        q = {k: v for k, v in p.items() if k not in DROP_FIELDS and v not in (None, "", [], {})}
+        if isinstance(q.get("metadata"), dict):
+            q["metadata"] = {k: v for k, v in q["metadata"].items() if k == "rookie_year"} or None
+            if not q["metadata"]: del q["metadata"]
+        keep[pid] = q
+    if len(keep) > 1500:                     # a sane list; never replace a good file with a broken download
+        with open(SITE_PLAYERS, "w") as f:
+            json.dump({"updated": datetime.now(timezone.utc).isoformat(timespec="seconds"), "players": keep},
+                      f, separators=(",", ":"), sort_keys=True)
+        print(f"Saved {len(keep)} Sleeper players for the website (data/sleeper-players.json)")
+    else:
+        print(f"Only {len(keep)} Sleeper players came back; kept the old data/sleeper-players.json")
+except Exception as e:
+    print(f"Couldn't save data/sleeper-players.json ({e}); the site will ask Sleeper directly")
 skill = {pid: p for pid, p in sleeper.items() if p.get("position") in POSITIONS}
 by_name = {}
 for pid, p in skill.items():
