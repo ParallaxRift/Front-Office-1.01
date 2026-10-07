@@ -15,7 +15,7 @@ const results = []; let failures = 0;
 const check = (name, ok, detail = '') => { results.push(`${ok ? 'PASS' : 'FAIL'}  ${name}${detail ? ' (' + detail + ')' : ''}`); if (!ok) failures++; };
 
 async function openLeague(browser, viewport, opts){
-  const page = await browser.newPage({ viewport, isMobile: viewport.width < 500, hasTouch: viewport.width < 500 });
+  const page = await browser.newPage({ serviceWorkers: 'block', viewport, isMobile: viewport.width < 500, hasTouch: viewport.width < 500 });
   page.errors = []; page.missing = [];
   page.on('pageerror', e => page.errors.push(e.message));
   // data/build-notes.json is optional: it only exists after build notes are saved from the site
@@ -68,14 +68,13 @@ async function openLeague(browser, viewport, opts){
       else check('desktop: unchanged header, no phone tab bar or app guide', !shell.bar && shell.head && await page.evaluate(() => getComputedStyle(document.querySelector('.home-app')).display === 'none'), JSON.stringify(shell));
       if (vp.width < 500){
         await page.tap('#tabbar [data-go=trade]'); await page.waitForTimeout(200);
-        // Calculator: + Your players / + Their players open the roster in a sheet with a live result strip
-        await page.tap('#pkAdds [data-pick=A]'); await page.waitForTimeout(350);
-        await page.tap('#pkBody .asset:not(.faab-asset) .nm >> nth=0'); await page.tap('.pk-tabs [data-pick=B]'); await page.waitForTimeout(200);
-        await page.tap('#pkBody .asset:not(.faab-asset) .nm >> nth=2'); await page.waitForTimeout(200);
-        const live = await page.evaluate(() => ({ strip: document.getElementById('pkVerdict').textContent, board: document.getElementById('verdict').textContent, n: S.sendIds.size + S.getIds.size }));
-        await page.tap('.pk-foot .btn'); await page.waitForTimeout(500);
-        const back = await page.evaluate(() => document.getElementById('pickSheet').hidden && document.querySelectorAll('#sides .side').length === 2 && document.getElementById('board').getBoundingClientRect().top < innerHeight);
-        check('phone: add players from a sheet with a live result, then land on the result', live.n === 2 && live.strip === live.board && back, JSON.stringify(live) + ' back:' + back);
+        // Calculator (KeepTradeCut-style): two stacked team boxes with their own search, the result right below
+        await page.tap('#ktQA'); await page.waitForTimeout(200); await page.tap('#ktDropA .kt-opt[data-id] >> nth=0'); await page.waitForTimeout(200);
+        await page.tap('#ktQB'); await page.fill('#ktQB', 'a'); await page.waitForTimeout(150); await page.tap('#ktDropB .kt-opt[data-id] >> nth=1'); await page.waitForTimeout(250);
+        const kt = await page.evaluate(() => { const top = id => document.querySelector(id).getBoundingClientRect().top;
+          return { n: S.sendIds.size + S.getIds.size, closed: document.getElementById('ktDropB').hidden, resultBelowTeams: top('#verdict') > top('#getItems'), total: document.getElementById('ktTotB').textContent, opened: document.querySelector('#tabs .tab[aria-selected=true]').dataset.tab }; });
+        check('phone: KeepTradeCut-style calculator adds from each team box, result below', kt.n === 2 && kt.closed && kt.resultBelowTeams && /Total [1-9]/.test(kt.total), JSON.stringify(kt));
+        await page.evaluate(() => { S.sendIds.clear(); S.getIds.clear(); renderCalc(); });
         // Trade Finder: pick players to trade away in a sheet; the ideas show right after
         await page.evaluate(() => navTab('finder').click()); await page.waitForTimeout(300);
         await page.tap('#tfOpenPick'); await page.waitForTimeout(350); await page.tap('#tfsBody .asset >> nth=1'); await page.tap('#tfsDone'); await page.waitForTimeout(600);
@@ -94,7 +93,7 @@ async function openLeague(browser, viewport, opts){
     }
 
     // Home page preview before any username
-    { const hp = await browser.newPage({ viewport: { width: 1300, height: 900 } }); await setup(hp, { withHistory: false });
+    { const hp = await browser.newPage({ serviceWorkers: 'block', viewport: { width: 1300, height: 900 } }); await setup(hp, { withHistory: false });
       await hp.goto(`http://localhost:${PORT}/index.html`); await hp.waitForTimeout(800);
       const n = await hp.$$eval('#homeTop li', x => x.length), v = await hp.textContent('.ht-verdict').catch(() => '');
       check('home page shows a sample trade and top values', n === 10 && v.length > 0, `${n} values, "${v}"`); await hp.close(); }
@@ -224,7 +223,7 @@ async function openLeague(browser, viewport, opts){
     check('FAAB adds value to a side', after > before, `${before} -> ${after}`);
     // Shared trade link reopens the same trade in a fresh browser
     const link = await page.evaluate(() => tradeLink()), want = await page.evaluate(() => [$("sendNum").textContent, $("getNum").textContent].join(' / '));
-    const p2 = await browser.newPage({ viewport: { width: 1300, height: 900 } }); p2.errors = []; p2.on('pageerror', e => p2.errors.push(e.message));
+    const p2 = await browser.newPage({ serviceWorkers: 'block', viewport: { width: 1300, height: 900 } }); p2.errors = []; p2.on('pageerror', e => p2.errors.push(e.message));
     await setup(p2); await p2.goto(link); await p2.waitForFunction(() => document.body.classList.contains('has-league'), null, { timeout: 30000 }); await p2.waitForFunction(() => S.history, null, { timeout: 30000 }); await p2.waitForTimeout(1500);
     const got = await p2.evaluate(() => [$("sendNum").textContent, $("getNum").textContent].join(' / '));
     check('shared trade link reopens the same trade', got === want && !p2.errors.length, `${want} vs ${got}${p2.errors.length ? ' ' + p2.errors[0] : ''}`);

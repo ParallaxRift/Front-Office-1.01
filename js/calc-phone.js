@@ -1,75 +1,77 @@
-// Front Office: phone trade calculator (pick players from a sheet that slides up)
+// Front Office: phone trade calculator and Trade Finder helpers
 // Part of the site; loaded in order by index.html. All files share one global scope.
 // ============================================================
-// PHONE CALCULATOR
-// On phones the trade board stays at the top of the screen. Each side has an "Add" button that
-// opens that team's roster in a sheet sliding up from the bottom, with a live result strip at the
-// top, so you never switch sides or scroll back up to see the verdict. Tap Done to close it.
-// The roster inside the sheet is the same one desktop shows (same search, filters, FAAB row);
-// it's simply moved into the sheet while it's open and put back after. Desktop never sees any of this.
+// PHONE CALCULATOR (KeepTradeCut-style)
+// On phones the calculator is two stacked team boxes, then the result:
+//   You send: team picker, an "Add a player or pick" search box, the pieces added, the total
+//   You get:  the same, for the trade partner
+//   Result:   the verdict, the bar, the math and the share buttons, right below
+// Tapping the search box lists that team's roster; typing narrows it. Everything fits on one
+// screen, so there's no switching sides and no scrolling back up for the result.
+// It reuses the desktop board's own pieces (the same players, value adjustment and verdict),
+// rearranged by the phone stylesheet. Desktop never shows any of this.
 // ============================================================
-const pkAdds = document.createElement("div");
-pkAdds.className = "pk-adds"; pkAdds.id = "pkAdds";
-pkAdds.innerHTML = `<button type="button" data-pick="A"><b>+ Your players</b><small id="pkNameA"></small></button><button type="button" data-pick="B"><b>+ Their players</b><small id="pkNameB"></small></button>`;
-$("bPlayers").after(pkAdds);
-
-const pickSheet = document.createElement("div");
-pickSheet.className = "more-sheet pick-sheet"; pickSheet.id = "pickSheet"; pickSheet.hidden = true;
-pickSheet.innerHTML = `<div class="ms-backdrop" data-done></div>
-  <div class="ms-panel pk-panel" role="dialog" aria-modal="true" aria-label="Add players to the trade">
-    <div class="pk-live" id="pkLive" aria-live="polite">
-      <div class="pk-nums"><span class="s">Send <b id="pkSend">0</b></span><span class="g">Get <b id="pkGet">0</b></span></div>
-      <div class="pk-verdict" id="pkVerdict"></div>
-      <div class="pk-track"><i id="pkFill"></i><span></span></div>
-    </div>
-    <div class="pk-tabs" role="tablist"><button type="button" data-pick="A">You send</button><button type="button" data-pick="B">You get</button></div>
-    <div class="pk-body" id="pkBody"></div>
-    <div class="pk-foot"><button type="button" class="btn" data-done>Done, see the result</button></div>
-  </div>`;
-document.body.appendChild(pickSheet);
-
-let pkSide = null;
-const sideEl = s => document.querySelector(`.side[data-side="${s}"]`);
-// (only writes when something changed: the team names sit on the board, which is being watched)
-const pkSet = (id, txt) => { const e = $(id); if (e.textContent !== txt) e.textContent = txt; };
-function pkSync(){
-  pkSet("pkSend", $("sendNum").textContent); pkSet("pkGet", $("getNum").textContent);
-  pkSet("pkVerdict", $("verdict").textContent);
-  const f = $("fill"), pf = $("pkFill"), w = f.style.width || "50%";
-  if (pf.style.width !== w) pf.style.width = w;
-  if (pf.className !== f.className) pf.className = f.className;
-  pkSet("pkNameA", S.teams?.get(Number($("teamA").value))?.name || "");
-  pkSet("pkNameB", S.teams?.get(Number($("teamB").value))?.name || "");
+const PK_SIDES = { A: { set: () => S.sendIds, sel: "teamA", faab: "send", col: 0 }, B: { set: () => S.getIds, sel: "teamB", faab: "get", col: 1 } };
+const pkCols = [...document.querySelectorAll("#bPlayers .bcol")];
+for (const [side, cfg] of Object.entries(PK_SIDES)){
+  const col = pkCols[cfg.col];
+  const top = document.createElement("div"); top.className = "kt-top";
+  top.innerHTML = `<div class="kt-team"><span class="kt-av" id="ktAv${side}"></span><select id="ktTeam${side}" aria-label="${side === "A" ? "Your team" : "Trade partner"}"></select></div>
+    <div class="kt-search"><input type="search" id="ktQ${side}" placeholder="Add a player or pick" autocomplete="off" aria-label="Add a player or pick to the ${side === "A" ? "send" : "get"} side"><div class="kt-drop" id="ktDrop${side}" hidden></div></div>`;
+  col.querySelector(".bp-label").after(top);
+  const tot = document.createElement("div"); tot.className = "kt-total"; tot.id = "ktTot" + side;
+  col.appendChild(tot);
 }
-function pkShow(side){
-  if (pkSide && pkSide !== side) $("sides").insertBefore(sideEl(pkSide), pkSide === "A" ? $("sides").firstChild : null);   // put the other roster back
-  pkSide = side;
-  $("pkBody").replaceChildren(sideEl(side));
-  for (const b of pickSheet.querySelectorAll(".pk-tabs button")) b.setAttribute("aria-selected", b.dataset.pick === side);
-  $("pkBody").scrollTop = 0; pkSync();
+function ktTeams(){
+  for (const side of ["A", "B"]){
+    const src = $(PK_SIDES[side].sel), sel = $("ktTeam" + side);
+    if (sel.innerHTML !== src.innerHTML) sel.innerHTML = src.innerHTML;
+    if (sel.value !== src.value) sel.value = src.value;
+    const rid = Number(src.value), av = rid ? teamPhoto(rid, "sm") : "";
+    if ($("ktAv" + side).dataset.rid !== String(rid)){ $("ktAv" + side).innerHTML = av; $("ktAv" + side).dataset.rid = rid; }
+  }
+  const t = (id, txt) => { if ($(id).textContent !== txt) $(id).textContent = txt; };
+  t("ktTotA", "Total " + $("sendNum").textContent); t("ktTotB", "Total " + $("getNum").textContent);
 }
-function openPicker(side){
-  pkShow(side);
-  pickSheet.hidden = false; document.body.classList.add("sheet-open");
-  requestAnimationFrame(() => pickSheet.classList.add("open"));
+// the roster list under the search box
+function ktDrop(side){
+  const cfg = PK_SIDES[side], rid = Number($(cfg.sel).value), q = normName($("ktQ" + side).value), set = cfg.set();
+  const items = teamAssets(rid).filter(a => a.value > 0 && (!q || normName(a.name).includes(q))).sort((a, b) => b.value - a.value).slice(0, 60);
+  const faab = !q || "faab".includes(q) ? faabLeft(rid) : 0;
+  $("ktDrop" + side).innerHTML = (faab > 0 ? `<button type="button" class="kt-opt${S.faabOn[cfg.faab] ? " on" : ""}" data-faab="${cfg.faab}"><span class="kt-pos">FAAB</span><span class="kt-nm"><b>FAAB</b><small>$${faab} left · tap to ${S.faabOn[cfg.faab] ? "remove" : "add"}</small></span><span class="kt-v">${fmt(faabValue(faab))}</span></button>` : "")
+    + (items.map(a => `<button type="button" class="kt-opt${set.has(a.id) ? " on" : ""}" data-id="${esc(a.id)}"><span class="kt-pos">${esc(a.kind === "pick" ? "PICK" : a.pos)}</span><span class="kt-nm"><b>${esc(a.name)}${a.kind === "player" ? injTag(a.pid) : ""}</b><small>${esc(a.kind === "player" ? [a.nfl, a.age ? "age " + ageText(a.age) : ""].filter(Boolean).join(", ") : a.nfl || "")}</small></span><span class="kt-v">${fmt(a.value)}</span></button>`).join("")
+    || `<p class="kt-none">No players match.</p>`);
+  $("ktDrop" + side).hidden = false;
 }
-function closePicker(){
-  if (!pkSide) return;
-  $("sides").insertBefore(sideEl(pkSide), pkSide === "A" ? $("sides").firstChild : null);
-  pkSide = null; document.body.classList.remove("sheet-open");
-  pickSheet.classList.remove("open"); setTimeout(() => { pickSheet.hidden = true; }, 200);
-  window.scrollTo({ top: Math.max(0, $("board").getBoundingClientRect().top + window.scrollY - 70), behavior: "smooth" });
+const ktClose = side => { $("ktDrop" + side).hidden = true; $("ktQ" + side).value = ""; };
+for (const side of ["A", "B"]){
+  const cfg = PK_SIDES[side];
+  $("ktQ" + side).addEventListener("focus", () => { ktClose(side === "A" ? "B" : "A"); ktDrop(side); });
+  $("ktQ" + side).addEventListener("input", () => ktDrop(side));
+  $("ktDrop" + side).addEventListener("pointerdown", e => e.preventDefault());   // keep the keyboard steady while picking
+  $("ktDrop" + side).addEventListener("click", e => {
+    const f = e.target.closest("[data-faab]"), o = e.target.closest("[data-id]");
+    if (f){ const rid = Number($(cfg.sel).value); S.faabOn[cfg.faab] = !S.faabOn[cfg.faab]; S.faab[cfg.faab] = S.faabOn[cfg.faab] ? faabLeft(rid) : 0; }
+    else if (o){ const set = cfg.set(); set.has(o.dataset.id) ? set.delete(o.dataset.id) : set.add(o.dataset.id); }
+    else return;
+    renderCalc(); ktClose(side); $("ktQ" + side).blur();
+  });
+  $("ktTeam" + side).addEventListener("change", e => { const src = $(cfg.sel); src.value = e.target.value; src.dispatchEvent(new Event("change", { bubbles: true })); });
 }
-pkAdds.addEventListener("click", e => { const b = e.target.closest("[data-pick]"); if (b) openPicker(b.dataset.pick); });
-pickSheet.addEventListener("click", e => {
-  if (e.target.closest("[data-done]")) return closePicker();
-  const t = e.target.closest(".pk-tabs [data-pick]"); if (t) pkShow(t.dataset.pick);
+document.addEventListener("pointerdown", e => { for (const side of ["A", "B"]) if (!e.target.closest(`#ktDrop${side}, #ktQ${side}`) && !$("ktDrop" + side).hidden) ktClose(side); });
+// FAAB on the board: tap the amount to change it
+$("bPlayers").addEventListener("click", e => {
+  if (!isPhoneView()) return;
+  const it = e.target.closest(".bitem"), x = it?.querySelector(".bi-x[data-faab]");
+  if (!x || e.target.closest(".bi-x")) return;
+  const side = x.dataset.faab, rid = Number($(side === "send" ? "teamA" : "teamB").value), max = faabLeft(rid);
+  const v = prompt(`How much FAAB? ($0–$${max})`, S.faab[side]); if (v == null) return;
+  const n = Math.max(0, Math.min(max, Math.round(Number(String(v).replace(/[^0-9]/g, "")) || 0)));
+  S.faab[side] = n; S.faabOn[side] = n > 0; renderCalc();
 });
-// keep the strip in step with the board, whatever changes it
-new MutationObserver(pkSync).observe($("board"), { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ["style", "class"] });
-// leaving the calculator (or the phone turning into a wide screen) puts the rosters back
-new MutationObserver(() => { if (pkSide && !$("panel-calc").classList.contains("on")) closePicker(); }).observe($("panel-calc"), { attributes: true, attributeFilter: ["class"] });
-window.addEventListener("resize", () => { if (pkSide && !isPhoneView()) closePicker(); });
+new MutationObserver(ktTeams).observe($("board"), { subtree: true, childList: true, characterData: true });
+["teamA", "teamB"].forEach(id => $(id).addEventListener("change", () => setTimeout(ktTeams)));
+ktTeams();
 
 // ---------- Trade Finder on phones: pick players to trade away from a sheet ----------
 // The "Player to Trade Away" roster is long, and the trade ideas used to sit below it. On phones the

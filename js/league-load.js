@@ -155,7 +155,7 @@ async function openLeague(leagueId){
     store.set("tr_league", leagueId);
     $("whoMini").innerHTML = `${avatar(league.avatar, league.name, true)}<span class="nm">${esc(league.name)}</span>${teamPhoto(S.myRid, true)}`;
     // Return to the tab you were last on
-    const lastTab = store.get("tr_tab");
+    const lastTab = isPhoneView() ? "calc" : store.get("tr_tab");   // the phone app always opens on the Trade Calculator
     const tabBtn = lastTab && $("tabs").querySelector(`[data-tab="${lastTab}"]`);
     if (lastTab === "settings") openSettingsPanel();
     else if (tabBtn && !tabBtn.hidden && tabBtn.getAttribute("aria-selected") !== "true") tabBtn.click();

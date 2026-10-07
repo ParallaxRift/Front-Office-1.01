@@ -1356,34 +1356,51 @@ body:not(.has-league) .side-switch,body:not(.has-league) #miniBar{display:none!i
   @keyframes agtap{0%,100%{box-shadow:0 0 0 0 rgba(240,184,72,0)}40%{box-shadow:0 0 0 4px rgba(240,184,72,.95);background:rgba(240,184,72,.25)}}
   @media (prefers-reduced-motion:reduce){.agd-f.on .tap{animation:none;box-shadow:0 0 0 3px rgba(240,184,72,.95)}}
 }
-/* ===== Phone calculator: Add buttons on the board + roster sheet (phones only; desktop never shows these) ===== */
-.pk-adds{display:none}
+/* ===== Phone sheets (Trade Finder roster picker) ===== */
 @media (max-width:600px){
-  body.has-league #sideSwitch, body.has-league #sides{display:none!important}
-  .pk-adds{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
-  .pk-adds button{display:flex;flex-direction:column;align-items:flex-start;gap:1px;min-width:0;padding:10px 12px;border-radius:12px;border:1.5px dashed rgba(255,255,255,.4);background:rgba(255,255,255,.06);color:inherit;font:inherit;text-align:left;cursor:pointer}
-  .pk-adds button b{font-size:14.5px}
-  .pk-adds button[data-pick=A] b{color:#FF8A80}.pk-adds button[data-pick=B] b{color:#7BE0A6}
-  .pk-adds button small{font-size:12px;opacity:.75;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .pick-sheet .pk-panel{display:flex;flex-direction:column;height:88vh;max-height:88vh;padding:0;overflow:hidden}
-  .pk-live{flex:none;background:var(--ink);color:var(--paper);padding:12px 16px 10px;border-radius:18px 18px 0 0}
-  .pk-nums{display:flex;justify-content:space-between;font-size:13px;font-weight:600}
-  .pk-nums b{font-family:var(--display);font-weight:800;font-size:24px;margin-left:4px}
-  .pk-nums .s{color:#FF8A80}.pk-nums .g{color:#7BE0A6}
-  .pk-verdict{text-align:center;font-family:var(--display);font-weight:700;font-size:17px;margin:2px 0 6px}
-  .pk-track{position:relative;height:10px;border-radius:5px;background:rgba(255,255,255,.14);overflow:hidden}
-  .pk-track span{position:absolute;left:50%;top:0;bottom:0;width:2px;background:var(--paper)}
-  .pk-tabs{flex:none;display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:10px 12px 6px;background:var(--card)}
-  .pk-tabs button{border:2px solid var(--line);background:var(--card);border-radius:10px;padding:7px;font:inherit;font-weight:700;color:var(--muted);cursor:pointer}
-  .pk-tabs button[data-pick=A][aria-selected=true]{border-color:var(--loss);color:var(--loss);background:var(--loss-soft)}
-  .pk-tabs button[data-pick=B][aria-selected=true]{border-color:var(--field);color:var(--field);background:var(--field-soft)}
   .pk-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 12px 10px;background:var(--card)}
-  .pk-body .side{border:0;padding:4px 0 0;display:block!important}
-  .pk-body .side-label{display:none}
+  .pk-body .side, .pk-body .tf-pick{border:0;padding:4px 0 0;display:block!important}
   .pk-foot{flex:none;padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));background:var(--card);border-top:1px solid var(--line)}
   .pk-foot .btn{width:100%}
   body.sheet-open{overflow:hidden}
   body.sheet-open #miniBar{display:none!important}
+}
+/* ===== Phone calculator, KeepTradeCut-style: two stacked team boxes, then the result (phones only) ===== */
+.kt-top,.kt-total{display:none}
+@media (max-width:600px){
+  body.has-league #sideSwitch, body.has-league #sides, body.has-league #miniBar{display:none!important}
+  body.has-league .board:not([style*="none"]){display:flex!important;flex-direction:column;padding:10px 10px 12px}
+  .board .totals{display:none!important}
+  .board .bplayers{order:1;margin-top:0!important;display:grid!important;grid-template-columns:1fr;gap:10px;background:none;padding:0}
+  .board .bplayers .bcol{background:var(--card);color:var(--ink);border-radius:12px;padding:10px}
+  .board .bp-label{font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;margin:0 0 6px}
+  .board .vrow{order:2;margin:14px 0 4px!important}
+  .board .track{order:3}
+  .board .tmath{order:4}
+  .board .brow{order:5}
+  .board > #hint{order:6}
+  .kt-top{display:flex;flex-direction:column;gap:8px;margin-bottom:8px}
+  .kt-team{display:flex;align-items:center;gap:8px}
+  .kt-team select{flex:1;min-width:0;font:inherit;font-weight:700;font-size:15px;padding:8px 10px;border:1.5px solid var(--line);border-radius:9px;background:var(--card);color:var(--ink)}
+  .kt-av:empty{display:none}
+  .kt-search{position:relative}
+  .kt-search input{width:100%;font:inherit;font-size:16px;padding:10px 12px 10px 36px;border:1.5px solid var(--field);border-radius:10px;background:var(--card) no-repeat 11px center/17px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235D6B76' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-4-4'/%3E%3C/svg%3E");color:var(--ink)}
+  .kt-drop{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:40;max-height:52vh;overflow-y:auto;background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 30px rgba(0,0,0,.22);padding:4px}
+  .kt-drop[hidden]{display:none}
+  .kt-opt{display:flex;align-items:center;gap:10px;width:100%;padding:9px 8px;border:0;border-radius:8px;background:none;color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+  .kt-opt + .kt-opt{border-top:1px solid var(--line)}
+  .kt-opt.on{background:var(--field-soft)}
+  .kt-opt.on .kt-v::after{content:" ✓";color:var(--field)}
+  .kt-pos{flex:none;width:36px;font-size:11px;font-weight:800;color:var(--muted)}
+  .kt-nm{flex:1;min-width:0;display:flex;flex-direction:column}
+  .kt-nm b{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .kt-nm small{font-size:12px;color:var(--muted)}
+  .kt-v{flex:none;font-family:var(--display);font-weight:800;font-size:17px}
+  .kt-none{margin:10px;color:var(--muted);font-size:14px}
+  .kt-total{display:block;text-align:right;font-family:var(--display);font-weight:800;font-size:20px;margin-top:8px;padding-top:8px;border-top:1px solid var(--line)}
+  .board .bplayers .bitems:empty{display:none}
+  .board .bplayers .bitems:empty::after{content:none}
 }
 /* Phone Trade Finder: roster picker in a sheet (phones only) */
 .tf-open-pick{display:none}

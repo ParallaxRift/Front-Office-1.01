@@ -33,6 +33,8 @@ async function setup(page, { withHistory = true } = {}){
   await page.route('**/*', route => {
     const u = route.request().url();
     const j = d => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(d), headers: { 'access-control-allow-origin': '*' } });
+    // The test league uses made-up player IDs, so it must not pick up the real saved player list
+    if (u.includes('/data/sleeper-players.json')) return route.fulfill({ status: 404, body: '' });
     if (u.startsWith('http://localhost:')) return route.continue();
     if (u.includes('/user/tester')) return j({ user_id: 'u3', display_name: 'Tester' });
     if (u.includes('/state/nfl')) return j({ season: '2026', league_season: '2026', season_type: 'regular', week: 5, display_week: 5 });
