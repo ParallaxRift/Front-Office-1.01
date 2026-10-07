@@ -30,11 +30,10 @@ moreSheet.innerHTML = `<div class="ms-backdrop" data-close></div>
     <div class="ms-grab" aria-hidden="true"></div>
     <div class="ms-list">
       <button type="button" data-more="feedback"><b>Feedback &amp; Build Notes</b><small>Report a bug, suggest an idea, see what's new</small></button>
-      <button type="button" data-more="settings"><b>League Settings</b><small>Scoring, lineup and how they change values</small></button>
-      <div class="ms-mode"><span>View</span><div class="ms-toggle" id="msMode"><button type="button" data-mode="basics">The Basics</button><button type="button" data-mode="freak">Freakshow</button></div></div>
       <button type="button" data-more="modes"><b>The Basics vs. Freakshow</b><small>What each view shows</small></button>
       <button type="button" data-more="about"><b>About Front Office</b><small>How the values work</small></button>
       <button type="button" data-more="switch"><b>Switch league</b><small>Open a different Sleeper league</small></button>
+      <div class="ms-mode"><span>View</span><div class="ms-toggle" id="msMode"><button type="button" data-mode="basics">The Basics</button><button type="button" data-mode="freak">Freakshow</button></div></div>
     </div>
     <p class="ms-fine">Expert consensus rankings provided by FantasyPros. Not affiliated with Sleeper or FantasyPros. <span id="msVersion"></span></p>
   </div>`;
@@ -47,7 +46,6 @@ moreSheet.addEventListener("click", e => {
   const b = e.target.closest("[data-more]"); if (!b) return;
   const go = b.dataset.more; closeMore();
   if (go === "feedback") $("groups").querySelector('[data-group="more"]')?.click();
-  else if (go === "settings") openSettingsPanel();
   else if (go === "about") location.hash = "#about";
   else if (go === "modes") location.hash = "#modes";
   else if (go === "switch") $("switchLeague").click();
@@ -67,7 +65,8 @@ tabbar.addEventListener("click", e => {
 function syncTabbar(){
   const open = $("groups").querySelector('.group[aria-pressed="true"]')?.dataset.group;
   const settings = $("settingsBtn").getAttribute("aria-pressed") === "true";
-  const cur = settings || open === "more" ? "more" : open || "";
+  const cur = settings ? "league" : open === "more" ? "more" : open || "";
+  document.body.classList.toggle("settings-open", settings);
   for (const b of tabbar.children){
     b.setAttribute("aria-current", b.dataset.go === cur ? "page" : "false");
     if (b.dataset.go !== "more"){ const gb = $("groups").querySelector(`[data-group="${b.dataset.go}"]`); b.hidden = !gb || gb.hidden; }
@@ -115,3 +114,11 @@ function showInstallTip(){
   });
 }
 setTimeout(showInstallTip, 2500);
+
+// Phones: League Settings is a third tab under League (Standings & Simulator, Trophy Room, League Settings).
+// It's an extra button in the tab row that only phones show; it opens the same settings page as the
+// football button beside the league name on desktop.
+const psTab = document.createElement("button");
+psTab.type = "button"; psTab.className = "tab ps-settings"; psTab.dataset.group = "league"; psTab.textContent = "League Settings";
+$("tabs").appendChild(psTab);
+psTab.addEventListener("click", () => { openSettingsPanel(); syncTabbar(); window.scrollTo({ top: 0 }); });

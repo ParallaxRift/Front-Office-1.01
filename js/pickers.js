@@ -73,7 +73,7 @@ PICKERS.forEach(makePicker);
 
 // tabs
 $("tabs").addEventListener("click", e => {
-  const b = e.target.closest(".tab"); if (!b) return;
+  const b = e.target.closest(".tab[data-tab]"); if (!b) return;   // (the phone-only League Settings tab has no data-tab and opens itself)
   for (const t of $("tabs").children) t.setAttribute("aria-selected", t === b);
   for (const name of ["calc","finder","standings","trophy","history","feedback","scores","values","settings","strategy"]) $("panel-"+name).classList.toggle("on", b.dataset.tab === name);
   if (b.dataset.tab === "scores") loadScores();
