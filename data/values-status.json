@@ -1,9 +1,9 @@
 {
- "checked": "2026-10-07T02:19:37+00:00",
+ "checked": "2026-10-07T17:34:17+00:00",
  "rankings": {
   "1QB": {
    "status": 200,
-   "players": 444,
+   "players": 457,
    "fields": [
     "cbs_player_id",
     "player_age",
@@ -36,7 +36,7 @@
   },
   "Superflex": {
    "status": 200,
-   "players": 527,
+   "players": 389,
    "fields": [
     "cbs_player_id",
     "player_age",
@@ -213,7 +213,7 @@
    "qb_pass_yds_vs_season": 0.055
   }
  ],
- "projected_players": 472,
+ "projected_players": 461,
  "snapshot": "2026-10-07.json",
  "calls": 11
 }
