@@ -1295,3 +1295,105 @@ body:not(.has-league) .side-switch,body:not(.has-league) #miniBar{display:none!i
   .histstats .hs b, .histstats .hs span{overflow-wrap:anywhere}
   .leaguebar h2, .leaguebar .teamline{overflow-wrap:anywhere}
 }
+/* ===== "Get the app" guide (phones only) ===== */
+.home-app{display:none}
+@media (max-width:600px){
+  .home-app:not([hidden]){display:flex;align-items:center;gap:12px;width:100%;margin-top:14px;padding:12px;background:var(--field-soft);border:1.5px solid var(--field);border-radius:14px;color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+  .home-app img{width:44px;height:44px;border-radius:11px;flex:none}
+  .home-app > span:not(.ha-go){flex:1;min-width:0;display:flex;flex-direction:column}
+  .home-app b{font-size:16px;color:var(--field)}.home-app small{font-size:13px;color:var(--muted)}
+  .home-app .ha-go{font-size:26px;color:var(--field);line-height:1}
+  .app-guide .ms-panel{max-height:92vh;padding-top:6px}
+  .ag-x{position:absolute;top:10px;right:12px;background:none;border:0;font-size:18px;color:var(--muted);padding:6px;cursor:pointer}
+  .ag-head{display:flex;gap:12px;align-items:flex-start;margin:4px 30px 12px 0}
+  .ag-head img{width:52px;height:52px;border-radius:13px;flex:none}
+  .ag-head h3{margin:0 0 4px;font-family:var(--display);font-size:24px;line-height:1.1}
+  .ag-head p{margin:0;font-size:13.5px;color:var(--muted);line-height:1.4}
+  .ag-os{margin:0 0 12px}
+  .ag-install:not([hidden]){display:flex;flex-direction:column;gap:4px;margin:0 0 12px}
+  .ag-install small{color:var(--muted);font-size:12.5px}
+  .ag-steps{margin:0;padding:0;list-style:none;counter-reset:ag}
+  .ag-steps li{counter-increment:ag;position:relative;padding:9px 8px 9px 40px;border-radius:10px;font-size:15px;transition:background .25s;cursor:pointer}
+  .ag-steps li::before{content:counter(ag);position:absolute;left:8px;top:9px;width:24px;height:24px;border-radius:50%;background:var(--line);color:var(--ink);display:grid;place-items:center;font-weight:700;font-size:13px;transition:background .25s,color .25s}
+  .ag-steps li.on{background:var(--field-soft)}
+  .ag-steps li.on::before{background:var(--field);color:#fff}
+  .ag-steps li > span:not(.ag-key){display:block;font-size:13px;color:var(--muted);margin-top:2px;line-height:1.4}
+  .ag-key{display:inline-grid;place-items:center;vertical-align:middle;width:28px;height:26px;border:1.5px solid var(--line);border-radius:7px;margin-left:4px;color:#2F7DF6;background:var(--card)}
+  .ag-key svg{width:16px;height:16px}
+  .ag-fine{font-size:12.5px;color:var(--muted);margin:12px 0}
+  .ag-done{width:100%}
+  /* animated phone */
+  .ag-demo{display:flex;justify-content:center;margin:2px 0 12px}
+  .agd-phone{position:relative;width:150px;height:220px;border:6px solid #16212B;border-radius:24px;background:#F4F6F2;overflow:hidden}
+  .agd-phone[hidden]{display:none}
+  .agd-f{position:absolute;inset:0;opacity:0;transition:opacity .35s}
+  .agd-f.on{opacity:1}
+  .agd-page{position:absolute;inset:28px 12px 40px;display:flex;flex-direction:column;gap:9px}
+  .agd-page i{display:block;height:12px;border-radius:4px;background:#D9DED6}
+  .agd-page i.s{width:60%}.agd-page.dim{opacity:.35}
+  .agd-bar{position:absolute;left:0;right:0;height:34px;background:#fff;display:flex;align-items:center;justify-content:space-around;color:#2F7DF6;font-size:18px;border-color:#D9DED6;border-style:solid;border-width:0}
+  .agd-bar.bottom{bottom:0;border-top-width:1px}.agd-bar.top{top:0;border-bottom-width:1px;justify-content:space-between;padding:0 6px;color:#5D6B76}
+  .agd-bar .url{flex:1;margin-right:6px;font-size:10px;background:#EEF1EC;border-radius:10px;padding:4px 8px;color:#5D6B76}
+  .agd-bar svg{width:16px;height:16px}
+  .agd-sheet,.agd-menu{position:absolute;background:#fff;display:flex;flex-direction:column;font-size:10.5px;color:#16212B;box-shadow:0 -4px 16px rgba(0,0,0,.15)}
+  .agd-sheet{left:0;right:0;bottom:0;border-radius:14px 14px 0 0;padding:8px}
+  .agd-sheet b{font-size:11px;margin-bottom:4px}
+  .agd-menu{top:30px;right:6px;width:112px;border-radius:8px;padding:4px 0}
+  .agd-sheet u,.agd-menu u{text-decoration:none;padding:6px 6px;border-radius:6px;display:flex;align-items:center;justify-content:space-between;gap:4px}
+  .agd-sheet u svg{width:12px;height:12px}
+  .agd-top{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:8px 6px;font-size:9.5px;color:#2F7DF6;background:#fff;border-bottom:1px solid #D9DED6}
+  .agd-top b{color:#16212B}
+  .agd-add{position:absolute;top:48px;left:12px;right:12px;display:flex;align-items:center;gap:8px;background:#fff;border-radius:8px;padding:8px;font-size:11px;color:#16212B}
+  .agd-add img{width:30px;height:30px;border-radius:8px}
+  .agd-dialog{position:absolute;left:12px;right:12px;top:70px;background:#fff;border-radius:12px;padding:12px;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10.5px;color:#16212B;box-shadow:0 6px 20px rgba(0,0,0,.2)}
+  .agd-dialog img{width:30px;height:30px;border-radius:8px}
+  .agd-dialog > div{display:flex;gap:14px;margin-top:6px;color:#1E6B47;font-weight:700}
+  .agd-dialog u{text-decoration:none;padding:3px 6px;border-radius:6px}
+  .agd-home{position:absolute;inset:0;background:linear-gradient(160deg,#2B4C7E,#1E6B47);display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:30px 14px;align-content:start}
+  .agd-home i,.agd-home img{width:100%;aspect-ratio:1;border-radius:9px}
+  .agd-home i{background:rgba(255,255,255,.28)}
+  .agd-f.on .tap{animation:agtap 1.2s ease-in-out .5s infinite;border-radius:8px}
+  @keyframes agtap{0%,100%{box-shadow:0 0 0 0 rgba(240,184,72,0)}40%{box-shadow:0 0 0 4px rgba(240,184,72,.95);background:rgba(240,184,72,.25)}}
+  @media (prefers-reduced-motion:reduce){.agd-f.on .tap{animation:none;box-shadow:0 0 0 3px rgba(240,184,72,.95)}}
+}
+/* ===== Phone calculator: Add buttons on the board + roster sheet (phones only; desktop never shows these) ===== */
+.pk-adds{display:none}
+@media (max-width:600px){
+  body.has-league #sideSwitch, body.has-league #sides{display:none!important}
+  .pk-adds{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+  .pk-adds button{display:flex;flex-direction:column;align-items:flex-start;gap:1px;min-width:0;padding:10px 12px;border-radius:12px;border:1.5px dashed rgba(255,255,255,.4);background:rgba(255,255,255,.06);color:inherit;font:inherit;text-align:left;cursor:pointer}
+  .pk-adds button b{font-size:14.5px}
+  .pk-adds button[data-pick=A] b{color:#FF8A80}.pk-adds button[data-pick=B] b{color:#7BE0A6}
+  .pk-adds button small{font-size:12px;opacity:.75;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pick-sheet .pk-panel{display:flex;flex-direction:column;height:88vh;max-height:88vh;padding:0;overflow:hidden}
+  .pk-live{flex:none;background:var(--ink);color:var(--paper);padding:12px 16px 10px;border-radius:18px 18px 0 0}
+  .pk-nums{display:flex;justify-content:space-between;font-size:13px;font-weight:600}
+  .pk-nums b{font-family:var(--display);font-weight:800;font-size:24px;margin-left:4px}
+  .pk-nums .s{color:#FF8A80}.pk-nums .g{color:#7BE0A6}
+  .pk-verdict{text-align:center;font-family:var(--display);font-weight:700;font-size:17px;margin:2px 0 6px}
+  .pk-track{position:relative;height:10px;border-radius:5px;background:rgba(255,255,255,.14);overflow:hidden}
+  .pk-track span{position:absolute;left:50%;top:0;bottom:0;width:2px;background:var(--paper)}
+  .pk-tabs{flex:none;display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:10px 12px 6px;background:var(--card)}
+  .pk-tabs button{border:2px solid var(--line);background:var(--card);border-radius:10px;padding:7px;font:inherit;font-weight:700;color:var(--muted);cursor:pointer}
+  .pk-tabs button[data-pick=A][aria-selected=true]{border-color:var(--loss);color:var(--loss);background:var(--loss-soft)}
+  .pk-tabs button[data-pick=B][aria-selected=true]{border-color:var(--field);color:var(--field);background:var(--field-soft)}
+  .pk-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 12px 10px;background:var(--card)}
+  .pk-body .side{border:0;padding:4px 0 0;display:block!important}
+  .pk-body .side-label{display:none}
+  .pk-foot{flex:none;padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));background:var(--card);border-top:1px solid var(--line)}
+  .pk-foot .btn{width:100%}
+  body.sheet-open{overflow:hidden}
+  body.sheet-open #miniBar{display:none!important}
+}
+/* Phone Trade Finder: roster picker in a sheet (phones only) */
+.tf-open-pick{display:none}
+@media (max-width:600px){
+  .tf-main > .tf-pick{display:none}
+  .tf-open-pick{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;margin:0 0 14px;padding:12px 14px;border-radius:12px;border:1.5px dashed var(--field);background:var(--field-soft);color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+  .tf-open-pick b{color:var(--field);font-size:15px}
+  .tf-open-pick small{color:var(--muted);font-size:12.5px}
+  .tfs-head{flex:none;padding:16px 16px 8px;background:var(--card);border-radius:18px 18px 0 0;display:flex;flex-direction:column}
+  .tfs-head b{font-family:var(--display);font-size:22px}.tfs-head small{color:var(--muted);font-size:13px}
+  .tf-sheet .tf-pick h3{display:none}
+  #tfHeading, #board{scroll-margin-top:64px}
+}

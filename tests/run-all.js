@@ -65,13 +65,27 @@ async function openLeague(browser, viewport, opts){
       }
       const shell = await page.evaluate(() => ({ bar: getComputedStyle(document.getElementById('tabbar')).display !== 'none', head: getComputedStyle(document.getElementById('appbar')).display !== 'none' }));
       if (vp.width < 500) check('phone: app tab bar shown, desktop header hidden', shell.bar && !shell.head, JSON.stringify(shell));
-      else check('desktop: unchanged header, no phone tab bar', !shell.bar && shell.head, JSON.stringify(shell));
+      else check('desktop: unchanged header, no phone tab bar or app guide', !shell.bar && shell.head && await page.evaluate(() => getComputedStyle(document.querySelector('.home-app')).display === 'none'), JSON.stringify(shell));
       if (vp.width < 500){
         await page.tap('#tabbar [data-go=trade]'); await page.waitForTimeout(200);
-        await page.tap('#listA .asset .nm >> nth=0'); await page.tap('#sideSwitch [data-side=B]'); await page.tap('#listB .asset .nm >> nth=2');
-        await page.evaluate(() => window.scrollTo(0, 1600)); await page.waitForTimeout(400);
-        const bar = await page.$eval('#miniBar', e => e.hidden ? '' : e.textContent);
-        check('phone: trade summary bar stays pinned while scrolling', /Send.*Get/.test(bar), bar);
+        // Calculator: + Your players / + Their players open the roster in a sheet with a live result strip
+        await page.tap('#pkAdds [data-pick=A]'); await page.waitForTimeout(350);
+        await page.tap('#pkBody .asset:not(.faab-asset) .nm >> nth=0'); await page.tap('.pk-tabs [data-pick=B]'); await page.waitForTimeout(200);
+        await page.tap('#pkBody .asset:not(.faab-asset) .nm >> nth=2'); await page.waitForTimeout(200);
+        const live = await page.evaluate(() => ({ strip: document.getElementById('pkVerdict').textContent, board: document.getElementById('verdict').textContent, n: S.sendIds.size + S.getIds.size }));
+        await page.tap('.pk-foot .btn'); await page.waitForTimeout(500);
+        const back = await page.evaluate(() => document.getElementById('pickSheet').hidden && document.querySelectorAll('#sides .side').length === 2 && document.getElementById('board').getBoundingClientRect().top < innerHeight);
+        check('phone: add players from a sheet with a live result, then land on the result', live.n === 2 && live.strip === live.board && back, JSON.stringify(live) + ' back:' + back);
+        // Trade Finder: pick players to trade away in a sheet; the ideas show right after
+        await page.evaluate(() => navTab('finder').click()); await page.waitForTimeout(300);
+        await page.tap('#tfOpenPick'); await page.waitForTimeout(350); await page.tap('#tfsBody .asset >> nth=1'); await page.tap('#tfsDone'); await page.waitForTimeout(600);
+        const tf = await page.evaluate(() => ({ ideas: document.querySelectorAll('#tfResults article').length, back: !!document.querySelector('.tf-main > .tf-pick'), label: document.getElementById('tfOpenPick').textContent }));
+        check('phone: Trade Finder roster sheet shows trade ideas', tf.ideas > 0 && tf.back && /Trading away/.test(tf.label), JSON.stringify(tf));
+        await page.evaluate(() => { tfSend.clear(); renderFinder(); });
+        await page.tap('#tabbar [data-go=more]'); await page.waitForTimeout(300); await page.tap('#moreSheet [data-more=getapp]'); await page.waitForTimeout(500);
+        const guide = await page.evaluate(() => { const g = document.getElementById('appGuide'); return !g.hidden && g.querySelectorAll('.ag-steps:not([hidden]) li').length === 4 && g.querySelectorAll('.agd-phone:not([hidden]) .agd-f.on').length === 1; });
+        await page.tap('#appGuide .ag-done'); await page.waitForTimeout(300);
+        check('phone: Get the app guide opens from More with steps and a walkthrough', guide, String(guide));
       }
       check(`${vp.name}: no script errors`, !page.errors.length, page.errors.slice(0, 3).join(' | '));
       const missing = page.missing.filter(u => !u.includes('data/sleeper-players.json'));   // optional: the site asks Sleeper when it's not there yet
