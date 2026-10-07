@@ -126,7 +126,7 @@ async function openLeague(browser, viewport, opts){
     check('fair buffer of 1,500 and lopsided call-out', rules === 'fair,fair,lopsided,edge,fair', rules);
 
     // 4) Season simulator: title odds add to ~100%, playoff odds to ~(playoff teams x 100%)
-    await page.click('#groups [data-group=league]'); await page.click('[data-tab=standings]'); await page.click('#simBtn'); await page.waitForSelector('.sim-champ', { timeout: 30000 });
+    await page.click('#groups [data-group=league]'); await page.click('[data-tab=sim]'); await page.click('#simBtn'); await page.waitForSelector('.sim-champ', { timeout: 30000 });
     const sums = await page.$$eval('.sim-table tbody tr', rows => { const v = t => t.includes('>99') ? 100 : t.includes('<1') ? 0.3 : parseFloat(t) || 0;
       return rows.reduce((s, r) => ({ title: s.title + v(r.cells[8].textContent), po: s.po + v(r.cells[5].textContent) }), { title: 0, po: 0 }); });
     check('simulator title odds add to about 100%', Math.abs(sums.title - 100) <= 4, Math.round(sums.title) + '%');

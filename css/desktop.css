@@ -181,3 +181,23 @@ body:not(.has-league) .connect{border-bottom:0!important}
 .sim-champ{background:var(--bc-deck)!important;border:0!important;border-left:4px solid var(--bc-gold)!important;border-radius:0 10px 10px 0!important;color:#fff!important}
 .sim-champ small{color:#9DB0BE!important}.sim-champ b{color:#fff!important;font-family:var(--bc-num);font-size:30px}.sim-champ span{color:#C9D4DC!important}
 .grid2{align-items:start}
+
+/* ---------- Requests 10/6 evening ---------- */
+/* the math box under the players is gone on desktop: the scoreboard already shows both totals */
+.board .tmath{display:none!important}
+/* Basics/Freakshow sits at the right edge of the header, lined up under Switch league */
+.leaguebar{position:relative}
+.leaguebar .modebar{position:absolute;right:0;top:24px;margin:0!important}
+/* Live Scores: two matchups per row, yours across the top */
+#matchups{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:16px!important}
+#matchups .mb.mine{grid-column:1 / -1}
+.mb{border-color:var(--bc-line)!important}
+.mb .sb{background:var(--bc-deck);color:#fff}
+.mb .sb-team small{color:#9DB0BE}
+.mb .sb-team .sb-st{color:#C9D4DC}
+.mb .sb-pts{font-family:var(--bc-num);font-weight:900;font-size:40px;color:#C9D4DC}
+.mb .sb-team.lead .sb-pts{color:#fff}
+.mb .sb-vs{color:#7D8C98}
+.mb .sb-bar{background:var(--bc-get)}.mb .sb-bar i{background:var(--bc-send)}
+.mb .mb-tag{background:var(--bc-gold);color:#121B24}
+.mb .bx-v{font-family:var(--bc-num);font-weight:800;font-size:20px}

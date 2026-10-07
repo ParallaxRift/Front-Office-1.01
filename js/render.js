@@ -25,7 +25,7 @@ function renderLeague(){
   if (!c.dynasty) chips.push("Not a dynasty league");
   $("chips").innerHTML = "";   // league format details now live only on the League Settings tab
   $("champSlot").replaceChildren();
-  loadChampion(S.league);
+  // (last year's champion used to show here; it was removed from the header on 10/6. The Trophy Room still lists every champion.)
   const tuned = S.nudge ? `, and tuned to ${S.nudge.n} of your league's trades` : "";
   $("source").textContent = S.market.kind === "fp"
     ? `Market values: Expert consensus from top fantasy football experts (rankings via FantasyPros), adjusted for this league's settings${tuned}.`

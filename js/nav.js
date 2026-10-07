@@ -13,7 +13,7 @@ const NAV_GROUPS = [
   { id: "trade",  label: "Trade Tools",   tabs: ["calc", "finder", "history"], always: "calc" },
   { id: "values", label: "Player Values", tabs: ["values"] },
   { id: "team",   label: "My Team",       tabs: ["strategy"] },
-  { id: "league", label: "League Locker", tabs: ["standings", "trophy"] },
+  { id: "league", label: "League Locker", tabs: ["standings", "power", "sim", "trophy", "statuses"] },
   { id: "scores", label: "Live Scores",   tabs: ["scores"] },
   { id: "more",   label: "Feedback & Build Notes", tabs: ["feedback"] }
 ];

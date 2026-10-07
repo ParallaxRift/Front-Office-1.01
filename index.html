@@ -26,8 +26,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600&family=Big+Shoulders+Display:wght@700;800;900&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=20261007m">
-<link rel="stylesheet" href="css/desktop.css?v=20261007l" media="(min-width: 601px)">
+<link rel="stylesheet" href="css/styles.css?v=20261007n">
+<link rel="stylesheet" href="css/desktop.css?v=20261007n" media="(min-width: 601px)">
 </head>
 <body>
 <div id="pcard" class="pc-backdrop" hidden></div>
@@ -122,8 +122,11 @@
     <button class="tab" role="tab" aria-selected="false" data-tab="values" data-full="Player Values">Player Values</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="strategy" data-full="My Team Strategy">Team Strategy</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="history" data-full="Trade History">Trade History</button>
-    <button class="tab" role="tab" aria-selected="false" data-tab="standings" data-full="League Analysis">Standings &amp; Simulator</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="standings" data-full="Standings">Standings</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="power" data-full="Power Rankings">Power Rankings</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="sim" data-full="Season Simulator">Season Simulator</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="trophy" data-full="Trophy Room">Trophy Room</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="statuses" data-full="Team Statuses">Team Statuses</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="scores" data-full="Live Scores">Live Scores</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="feedback" data-full="Feedback &amp; Build Notes">Feedback &amp; Build Notes</button>
   </div>
@@ -191,6 +194,14 @@
     <div class="tablewrap"><table id="standTable" class="stand"></table></div>
     <p class="note sec-sub" id="standNote" style="margin:10px 0 0"></p>
 
+  </section>
+  <section class="panel" id="panel-power">
+    <h3 class="sec-h">Power Rankings</h3>
+    <p class="note sec-sub">Ranked by roster strength, not record, using the combined value of each team’s optimal starting lineup plus its three highest-valued bench players.</p>
+    <div class="tablewrap"><table id="powerTable" class="stand"></table></div>
+
+  </section>
+  <section class="panel" id="panel-sim">
     <div class="box sim-box">
       <div class="sim-top"><h3>Season Simulator</h3>
         <div class="sim-btns"><button type="button" class="ghost" id="simReset" hidden>Reset</button><button type="button" class="btn" id="simBtn">Simulate Season</button></div>
@@ -198,10 +209,8 @@
       <div id="simOut"></div>
     </div>
 
-    <h3 class="sec-h" style="margin-top:28px">Power Rankings</h3>
-    <p class="note sec-sub">Ranked by roster strength, not record, using the combined value of each team’s optimal starting lineup plus its three highest-valued bench players.</p>
-    <div class="tablewrap"><table id="powerTable" class="stand"></table></div>
-
+  </section>
+  <section class="panel" id="panel-statuses">
     <div class="box status-key">
       <h3>What the Team Statuses Mean</h3>
       <p class="note sec-sub">Every team is ranked by roster strength using the same value score behind the Power Rankings, then the league is divided into three tiers: top, middle, and bottom third. During the season, each team's playoff odds from the Season Simulator count too, starting after Week 3 and growing to 60% of the score late in the season.</p>
@@ -561,24 +570,24 @@
 <script src="js/core.js?v=20261007a"></script>
 <script src="js/league-load.js?v=20261007k"></script>
 <script src="js/values-engine.js?v=20261007a"></script>
-<script src="js/render.js?v=20261007g"></script>
+<script src="js/render.js?v=20261007n"></script>
 <script src="js/player-cards.js?v=20261007g"></script>
 <script src="js/settings-tab.js?v=20261007a"></script>
 <script src="js/strategy.js?v=20261007g"></script>
-<script src="js/live-scores.js?v=20261007d"></script>
-<script src="js/trade-history.js?v=20261007a"></script>
-<script src="js/modes.js?v=20261007a"></script>
+<script src="js/live-scores.js?v=20261007n"></script>
+<script src="js/trade-history.js?v=20261007n"></script>
+<script src="js/modes.js?v=20261007n"></script>
 <script src="js/build-notes.js?v=20261007a"></script>
 <script src="js/feedback.js?v=20261007f"></script>
 <script src="js/standings-sim.js?v=20261007d"></script>
 <script src="js/calc-browse.js?v=20261007a"></script>
 <script src="js/calc-minibar.js?v=20261007a"></script>
 <script src="js/trophy.js?v=20261007a"></script>
-<script src="js/popovers.js?v=20261007a"></script>
+<script src="js/popovers.js?v=20261007n"></script>
 <script src="js/trade-finder.js?v=20261007m"></script>
-<script src="js/pickers.js?v=20261007e"></script>
-<script src="js/nav.js?v=20261007a"></script>
-<script src="js/app-shell.js?v=20261007m"></script>
+<script src="js/pickers.js?v=20261007n"></script>
+<script src="js/nav.js?v=20261007n"></script>
+<script src="js/app-shell.js?v=20261007n"></script>
 <script src="js/calc-phone.js?v=20261007m"></script>
 <script src="js/about.js?v=20261007a"></script>
 <script src="js/share.js?v=20261007a"></script>

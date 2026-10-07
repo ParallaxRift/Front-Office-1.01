@@ -122,6 +122,9 @@ async function loadScores(){
 }
 
 function renderScores(data, week){
+  // Each matchup is a small scoreboard: both teams face to face with their scores and a bar for who's
+  // ahead, a "yet to play" line during the live week, then one side-by-side box score for the starting
+  // lineups (and the bench), so you compare slot by slot instead of reading two separate lists.
   const slots = (S.cfg.rp || []).filter(x => !["BN","IR","TAXI"].includes(x));
   const slotName = { SUPER_FLEX:"SF", FLEX:"FLX", WRRB_FLEX:"W/R", REC_FLEX:"W/T", IDP_FLEX:"IDP" };
   const groups = new Map();
@@ -131,39 +134,41 @@ function renderScores(data, week){
     return;
   }
   const pts = m => Number(m.custom_points ?? m.points ?? 0);
+  const live = !!S.gameStatus && week === currentWeek();
+  const gameOf = pid => { const team = /^[A-Z]{2,3}$/.test(pid) ? pid : S.sleeperPlayers?.[pid]?.team; return team ? S.gameStatus?.[team] || "pre" : "bye"; };
+  const statusLine = m => {
+    if (!live) return "";
+    const st = (m.starters || []).filter(pid => pid && pid !== "0").map(gameOf);
+    const left = st.filter(x => x === "pre").length, now = st.filter(x => x === "in").length;
+    return [now ? `<b>${now}</b> playing` : "", left ? `<b>${left}</b> yet to play` : "", !now && !left ? "All done" : ""].filter(Boolean).join(" · ");
+  };
   const list = [...groups.values()].sort((a,b) => (b.some(m=>m.roster_id===S.myRid)) - (a.some(m=>m.roster_id===S.myRid)));
+  const cell = (pid, raw, side) => {
+    if (!pid || pid === "0") return `<span class="bx-p ${side} empty"><span class="bx-nm">Empty</span><b>0.00</b></span>`;
+    const pl = playerLabel(pid); if (!pl) return `<span class="bx-p ${side} empty"><span class="bx-nm">Unknown</span><b>–</b></span>`;
+    const g = live ? gameOf(pid) : "", v = notStarted(pid) && !Number(raw) ? "–" : ptsText(raw);
+    return `<span class="bx-p ${side}${g === "in" ? " now" : ""}">${scorePhoto(pid, pl)}<span class="bx-nm"><b>${esc(pl.name)}${injTag(pid)}</b><small>${esc([pl.pos, pl.team].filter(Boolean).join(" · "))}</small></span><b class="bx-v">${v}</b></span>`;
+  };
   $("matchups").innerHTML = list.map(pair => {
     const mine = pair.some(m => m.roster_id === S.myRid);
     if (mine) pair.sort((a,b) => (b.roster_id===S.myRid) - (a.roster_id===S.myRid));
-    const top = Math.max(...pair.map(pts));
-    const anyPts = pair.some(m => pts(m) > 0);
-    const row = m => { const t = S.teams.get(m.roster_id);
-      return `<div class="mu-row${anyPts && pts(m) === top ? " lead" : ""}">${teamPhoto(m.roster_id, "md")}
-        <span class="mu-name"><b>${esc(t?.name || "Team " + m.roster_id)}</b>${t?.manager && t.manager !== t.name ? `<small>${esc(t.manager)}</small>` : ""}</span>
-        <span class="mu-pts">${pts(m).toFixed(2)}</span></div>`; };
-    const lineup = m => (m.starters || []).map((pid, i) => {
-      const pl = playerLabel(pid), sp = m.starters_points?.[i];
-      const slot = slotName[slots[i]] || slots[i] || "";
-      const raw = sp ?? m.players_points?.[pid];
-      return pl ? `<div class="lu"><span><i>${esc(slot)}</i>${scorePhoto(pid, pl)}${esc(pl.name)}${injTag(pid)}</span><b>${notStarted(pid) && !Number(raw) ? "–" : ptsText(raw)}</b></div>`
-                : `<div class="lu empty"><span><i>${esc(slot)}</i>Empty</span><b>0.00</b></div>`;
-    }).join("");
-    // Bench = everyone on the roster who isn't starting, highest scorers first
-    const benchOf = m => {
-      const starters = new Set(m.starters || []);
-      return (m.players || []).filter(pid => pid && pid !== "0" && !starters.has(pid))
-        .map(pid => ({ pid, pl: playerLabel(pid), p: Number(m.players_points?.[pid] ?? 0) }))
-        .filter(x => x.pl).sort((a, b) => b.p - a.p);
-    };
-    const bench = m => { const b = benchOf(m);
-      return b.length ? b.map(x => `<div class="lu"><span><i>${esc(x.pl.pos || "BN")}</i>${scorePhoto(x.pid, x.pl)}${esc(x.pl.name)}${injTag(x.pid)}</span><b>${notStarted(x.pid) && !x.p ? "–" : ptsText(x.p)}</b></div>`).join("")
-        + `<div class="lu total"><span>Bench total</span><b>${ptsText(b.reduce((s, x) => s + x.p, 0))}</b></div>`
-        : `<div class="lu empty"><span>No bench players</span><b></b></div>`; };
-    return `<article class="mu${mine ? " mine" : ""}">${mine ? `<div class="mu-tag">Your matchup</div>` : ""}
-      ${pair.map(row).join("")}
-      ${pair.length === 2 ? `<details${mine ? " open" : ""}><summary>Starting Lineups</summary><div class="lineups"><div>${lineup(pair[0])}</div><div>${lineup(pair[1])}</div></div></details>
-      <details><summary>Bench</summary><div class="lineups"><div>${bench(pair[0])}</div><div>${bench(pair[1])}</div></div></details>` : ""}
+    const [A, B] = pair, a = pts(A), b = B ? pts(B) : 0, any = a + b > 0;
+    const team = (m, side) => { const t = S.teams.get(m.roster_id), lead = any && pts(m) === Math.max(a, b);
+      return `<div class="sb-team ${side}${lead ? " lead" : ""}">${teamPhoto(m.roster_id, "md")}<span class="sb-nm"><b>${esc(t?.name || "Team " + m.roster_id)}</b>${t?.manager && t.manager !== t.name ? `<small>${esc(t.manager)}</small>` : ""}${statusLine(m) ? `<small class="sb-st">${statusLine(m)}</small>` : ""}</span><span class="sb-pts">${pts(m).toFixed(2)}</span></div>`; };
+    if (!B) return `<article class="mb${mine ? " mine" : ""}"><div class="sb">${team(A, "l")}</div></article>`;
+    const share = any ? Math.round(a / (a + b) * 100) : 50;
+    const rows = slots.map((slot, i) => `<div class="bx-row">${cell(A.starters?.[i], A.starters_points?.[i] ?? A.players_points?.[A.starters?.[i]], "l")}<span class="bx-slot">${esc(slotName[slot] || slot)}</span>${cell(B.starters?.[i], B.starters_points?.[i] ?? B.players_points?.[B.starters?.[i]], "r")}</div>`).join("");
+    const benchOf = m => { const st = new Set(m.starters || []);
+      return (m.players || []).filter(pid => pid && pid !== "0" && !st.has(pid) && playerLabel(pid)).map(pid => ({ pid, p: Number(m.players_points?.[pid] ?? 0) })).sort((x, y) => y.p - x.p); };
+    const bA = benchOf(A), bB = benchOf(B), n = Math.max(bA.length, bB.length);
+    const bench = n ? Array.from({ length: n }, (_, i) => `<div class="bx-row">${bA[i] ? cell(bA[i].pid, bA[i].p, "l") : `<span class="bx-p l none"></span>`}<span class="bx-slot">BN</span>${bB[i] ? cell(bB[i].pid, bB[i].p, "r") : `<span class="bx-p r none"></span>`}</div>`).join("")
+      + `<div class="bx-row bx-total"><span class="bx-p l"><span class="bx-nm">Bench total</span><b class="bx-v">${ptsText(bA.reduce((s, x) => s + x.p, 0))}</b></span><span class="bx-slot"></span><span class="bx-p r"><span class="bx-nm">Bench total</span><b class="bx-v">${ptsText(bB.reduce((s, x) => s + x.p, 0))}</b></span></div>`
+      : `<p class="note">No bench players.</p>`;
+    return `<article class="mb${mine ? " mine" : ""}">${mine ? `<div class="mb-tag">Your matchup</div>` : ""}
+      <div class="sb">${team(A, "l")}<span class="sb-vs">vs</span>${team(B, "r")}</div>
+      <div class="sb-bar" role="img" aria-label="${esc(S.teams.get(A.roster_id)?.name || "")} has ${share}% of the points"><i style="width:${share}%"></i></div>
+      <details${mine ? " open" : ""}><summary>Box score</summary><div class="bx">${rows}</div></details>
+      <details><summary>Bench</summary><div class="bx">${bench}</div></details>
     </article>`;
   }).join("");
 }
-

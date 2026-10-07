@@ -212,7 +212,7 @@ function showInstallTip(){
 }
 setTimeout(showInstallTip, 2500);
 
-// Phones: League Settings is a third tab under League (Standings & Simulator, Trophy Room, League Settings).
+// Phones: League Settings is an extra tab under League (after Standings, Power Rankings, Season Simulator, Trophy Room, Team Statuses).
 // It's an extra button in the tab row that only phones show; it opens the same settings page as the
 // football button beside the league name on desktop.
 const psTab = document.createElement("button");

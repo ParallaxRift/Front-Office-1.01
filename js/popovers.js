@@ -25,7 +25,7 @@ function showPop(anchor, html){
 }
 function openStatusKey(){
   closePop();
-  $("tabs").querySelector('[data-tab="standings"]').click();   // works in either mode
+  $("tabs").querySelector('[data-tab="statuses"]').click();   // works in either mode
   const key = document.querySelector(".status-key");
   if (key){ key.scrollIntoView({ behavior: "smooth", block: "center" }); key.classList.add("flash"); setTimeout(() => key.classList.remove("flash"), 1600); }
 }

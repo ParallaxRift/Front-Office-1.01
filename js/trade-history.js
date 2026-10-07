@@ -548,7 +548,7 @@ function historyInsightsHTML(rid){
 // League settings opens from the football button beside the league name (not a tab)
 function openSettingsPanel(){
   for (const t of $("tabs").children) t.setAttribute("aria-selected", "false");
-  for (const name of ["calc","finder","standings","trophy","history","feedback","scores","values","settings","strategy"]) $("panel-"+name).classList.toggle("on", name === "settings");
+  for (const p of document.querySelectorAll("#appView section.panel")) p.classList.toggle("on", p.id === "panel-settings");
   $("settingsBtn").setAttribute("aria-pressed", "true");
   store.set("tr_tab", "settings");
 }

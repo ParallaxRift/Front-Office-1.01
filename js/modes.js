@@ -112,7 +112,7 @@ function rerenderKeepingPlace(){
   if (keep.wk && [...$("weekSelect").options].some(o => o.value === keep.wk)) $("weekSelect").value = keep.wk;
   renderCalc(); renderStrategy();
   if ($("panel-finder").classList.contains("on")) renderFinder();
-  if ($("panel-standings").classList.contains("on")) renderStandings();
+  if (["standings", "power", "sim"].some(t => $("panel-" + t).classList.contains("on"))) renderStandings();
   if (scoresOpen) loadScores();
 }
 function toast(msg){

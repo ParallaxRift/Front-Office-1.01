@@ -75,11 +75,11 @@ PICKERS.forEach(makePicker);
 $("tabs").addEventListener("click", e => {
   const b = e.target.closest(".tab[data-tab]"); if (!b) return;   // (the phone-only League Settings tab has no data-tab and opens itself)
   for (const t of $("tabs").children) t.setAttribute("aria-selected", t === b);
-  for (const name of ["calc","finder","standings","trophy","history","feedback","scores","values","settings","strategy"]) $("panel-"+name).classList.toggle("on", b.dataset.tab === name);
+  for (const p of document.querySelectorAll("#appView section.panel")) p.classList.toggle("on", p.id === "panel-" + b.dataset.tab);
   if (b.dataset.tab === "scores") loadScores();
   if (b.dataset.tab === "feedback") loadFeedback();
   if (b.dataset.tab === "finder") renderFinder();
-  if (b.dataset.tab === "standings") renderStandings();
+  if (["standings", "power", "sim"].includes(b.dataset.tab)) renderStandings();
   if (b.dataset.tab === "trophy") loadTrophyRoom();
   store.set("tr_tab", b.dataset.tab);
   $("settingsBtn").setAttribute("aria-pressed", "false");
