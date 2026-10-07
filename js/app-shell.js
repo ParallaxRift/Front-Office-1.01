@@ -219,3 +219,4 @@ const psTab = document.createElement("button");
 psTab.type = "button"; psTab.className = "tab ps-settings"; psTab.dataset.group = "league"; psTab.textContent = "League Settings";
 $("tabs").appendChild(psTab);
 psTab.addEventListener("click", () => { openSettingsPanel(); syncTabbar(); window.scrollTo({ top: 0 }); });
+syncNav();   // hide it right away unless League is the open section (it was showing on the Trade tab at launch)

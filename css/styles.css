@@ -1402,15 +1402,25 @@ body:not(.has-league) .side-switch,body:not(.has-league) #miniBar{display:none!i
   .board .bplayers .bitems:empty{display:none}
   .board .bplayers .bitems:empty::after{content:none}
 }
-/* Phone Trade Finder: roster picker in a sheet (phones only) */
-.tf-open-pick{display:none}
+/* Phone Trade Finder: search to pick players to trade away, then trade ideas, then targets (phones only) */
+.tfp,.tfp-more{display:none}
 @media (max-width:600px){
-  .tf-main > .tf-pick{display:none}
-  .tf-open-pick{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;margin:0 0 14px;padding:12px 14px;border-radius:12px;border:1.5px dashed var(--field);background:var(--field-soft);color:var(--ink);font:inherit;text-align:left;cursor:pointer}
-  .tf-open-pick b{color:var(--field);font-size:15px}
-  .tf-open-pick small{color:var(--muted);font-size:12.5px}
-  .tfs-head{flex:none;padding:16px 16px 8px;background:var(--card);border-radius:18px 18px 0 0;display:flex;flex-direction:column}
-  .tfs-head b{font-family:var(--display);font-size:22px}.tfs-head small{color:var(--muted);font-size:13px}
-  .tf-sheet .tf-pick h3{display:none}
+  #panel-finder.on{display:flex;flex-direction:column;gap:12px}
+  #panel-finder .tf-main{order:1;margin:0!important}
+  #panel-finder .tf-findbox{order:2;margin:0!important}
+  #panel-finder .tf-head,#panel-finder .tf-find-main,#panel-finder .tf-main > .tf-pick{display:none!important}
+  #panel-finder .tf-find-grid{display:block}
+  .tfp{display:block;margin:0 0 14px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+  .tfp-head{display:flex;align-items:center;justify-content:space-between;margin:0 0 8px}
+  .tfp-head h3{margin:0}
+  .tfp-reset{padding:5px 12px;font-size:13px}
+  .tfp-picked{margin-top:8px}
+  .tfp-picked .tf-sending:empty{display:none}
+  .tfp-filters{margin-top:10px;font-size:14px}
+  .tfp-filters summary{cursor:pointer;font-weight:700;color:var(--field);padding:4px 0}
+  .tfp-filters .tf-filters{margin-top:6px}
+  .tfp-more:not([hidden]){display:block;width:100%;margin-top:10px}
+  #tfResults:not(.all) > article:nth-of-type(n+4){display:none}
   #tfHeading, #board{scroll-margin-top:64px}
+}
 }

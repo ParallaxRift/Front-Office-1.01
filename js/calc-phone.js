@@ -73,44 +73,63 @@ new MutationObserver(ktTeams).observe($("board"), { subtree: true, childList: tr
 ["teamA", "teamB"].forEach(id => $(id).addEventListener("change", () => setTimeout(ktTeams)));
 ktTeams();
 
-// ---------- Trade Finder on phones: pick players to trade away from a sheet ----------
-// The "Player to Trade Away" roster is long, and the trade ideas used to sit below it. On phones the
-// roster opens in a sheet instead (tap players, then Done), and the ideas show right under the button.
-const tfOpen = document.createElement("button");
-tfOpen.type = "button"; tfOpen.className = "tf-open-pick"; tfOpen.id = "tfOpenPick";
-document.querySelector("#panel-finder .tf-main").prepend(tfOpen);
-const tfSheet = document.createElement("div");
-tfSheet.className = "more-sheet pick-sheet tf-sheet"; tfSheet.id = "tfSheet"; tfSheet.hidden = true;
-tfSheet.innerHTML = `<div class="ms-backdrop" data-done></div>
-  <div class="ms-panel pk-panel" role="dialog" aria-modal="true" aria-label="Players to trade away">
-    <div class="tfs-head"><b>Players to trade away</b><small>Tap one or more of your players or picks.</small></div>
-    <div class="pk-body" id="tfsBody"></div>
-    <div class="pk-foot"><button type="button" class="btn" data-done id="tfsDone">Show trade ideas</button></div>
-  </div>`;
-document.body.appendChild(tfSheet);
-const tfPickEl = document.querySelector("#panel-finder .tf-pick");
-function tfOpenSync(){
-  const names = [...tfSend].map(id => S.assets?.get(id)?.name).filter(Boolean);
-  const label = names.length ? `<b>Trading away: ${esc(names.join(", "))}</b><small>Tap to change</small>` : `<b>+ Choose players to trade away</b><small>See what they could get you</small>`;
-  if (tfOpen.innerHTML !== label) tfOpen.innerHTML = label;
-  const done = names.length ? `Show trade ideas (${names.length})` : "Done";
-  if ($("tfsDone").textContent !== done) $("tfsDone").textContent = done;
+// ---------- Trade Finder on phones (the same search-to-add idea as the calculator) ----------
+// Top to bottom on phones:
+//   1. Players to trade away: a search box listing your roster, the players you picked, a Filters row
+//   2. Suggested trades: the first 3, then a button for up to 12 more
+//   3. Recommended players to trade for: the first 3, then a button for more
+// The filters and the "picked" list are the desktop elements themselves, moved here on phones and put
+// back when the screen gets wide again, so everything keeps working the same way.
+const tfBox = document.createElement("div");
+tfBox.className = "tfp"; tfBox.id = "tfPhone";
+tfBox.innerHTML = `<div class="tfp-head"><h3>Players to trade away</h3><button type="button" class="ghost tfp-reset" id="tfpReset">Reset</button></div>
+  <div class="kt-search"><input type="search" id="tfpQ" placeholder="Add a player or pick" autocomplete="off" aria-label="Add a player or pick to trade away"><div class="kt-drop" id="tfpDrop" hidden></div></div>
+  <div class="tfp-picked" id="tfpPicked"></div>
+  <details class="tfp-filters" id="tfpFilters"><summary>Filters</summary><div id="tfpFilterSlot"></div></details>`;
+const tfQ = tfBox.querySelector("#tfpQ"), tfDropEl = tfBox.querySelector("#tfpDrop"), tfPicked = tfBox.querySelector("#tfpPicked"), tfFilterSlot = tfBox.querySelector("#tfpFilterSlot");
+const tfMore = document.createElement("button");
+tfMore.type = "button"; tfMore.className = "ghost tf-more tfp-more"; tfMore.id = "tfResMore"; tfMore.hidden = true;
+$("tfResults").after(tfMore);
+const tfHome = { sending: [$("tfSending").parentElement, $("tfSending").nextSibling], filters: [document.querySelector(".tf-filters").parentElement, document.querySelector(".tf-filters").nextSibling] };
+function tfPlace(){
+  const phone = isPhoneView(), filters = document.querySelector(".tf-filters");
+  if (phone && !tfBox.isConnected){
+    document.querySelector("#panel-finder .tf-main").prepend(tfBox);
+    tfPicked.appendChild($("tfSending"));
+    tfFilterSlot.append(filters, $("tfPlan"));
+  } else if (!phone && tfBox.isConnected){
+    tfHome.sending[0].insertBefore($("tfSending"), tfHome.sending[1]);
+    tfHome.filters[0].insertBefore(filters, tfHome.filters[1]);
+    filters.after($("tfPlan"));
+    tfBox.remove();
+  }
 }
-function openTfSheet(){
-  $("tfsBody").replaceChildren(tfPickEl);
-  tfSheet.hidden = false; document.body.classList.add("sheet-open");
-  requestAnimationFrame(() => tfSheet.classList.add("open"));
+function tfpDrop(){
+  const me = Number($("tfTeam").value), q = normName(tfQ.value);
+  const items = teamAssets(me).filter(a => a.value > 0 && (!q || normName(a.name).includes(q))).sort((a, b) => b.value - a.value).slice(0, 60);
+  tfDropEl.innerHTML = items.map(a => `<button type="button" class="kt-opt${tfSend.has(a.id) ? " on" : ""}" data-id="${esc(a.id)}"><span class="kt-pos">${esc(a.kind === "pick" ? "PICK" : a.pos)}</span><span class="kt-nm"><b>${esc(a.name)}${a.kind === "player" ? injTag(a.pid) : ""}</b><small>${esc(a.kind === "player" ? [a.nfl, a.age ? "age " + ageText(a.age) : ""].filter(Boolean).join(", ") : a.nfl || "")}</small></span><span class="kt-v">${fmt(a.value)}</span></button>`).join("") || `<p class="kt-none">No players match.</p>`;
+  tfDropEl.hidden = false;
 }
-function closeTfSheet(scroll = true){
-  if (tfPickEl.parentElement !== $("tfsBody")) return;
-  tfOpen.after(tfPickEl);
-  document.body.classList.remove("sheet-open");
-  tfSheet.classList.remove("open"); setTimeout(() => { tfSheet.hidden = true; }, 200);
-  if (scroll && tfSend.size) $("tfHeading").scrollIntoView({ behavior: "smooth", block: "start" });
+const tfpClose = () => { tfDropEl.hidden = true; tfQ.value = ""; };
+tfQ.addEventListener("focus", tfpDrop);
+tfQ.addEventListener("input", tfpDrop);
+tfDropEl.addEventListener("pointerdown", e => e.preventDefault());
+tfDropEl.addEventListener("click", e => {
+  const o = e.target.closest("[data-id]"); if (!o) return;
+  tfTarget = null; tfSend.has(o.dataset.id) ? tfSend.delete(o.dataset.id) : tfSend.add(o.dataset.id);
+  tfpClose(); tfQ.blur(); renderFinder();
+  $("tfHeading").scrollIntoView({ behavior: "smooth", block: "start" });
+});
+document.addEventListener("pointerdown", e => { if (!tfDropEl.hidden && !e.target.closest("#tfpDrop, #tfpQ")) tfpClose(); });
+tfBox.querySelector("#tfpReset").addEventListener("click", () => $("tfReset").click());
+// Suggested trades: 3 at first, the rest behind "Show more"
+function tfMoreSync(){
+  const n = $("tfResults").querySelectorAll(":scope > article").length, open = $("tfResults").classList.contains("all");
+  tfMore.hidden = n <= 3;
+  const label = open ? "Show fewer" : `Show ${n - 3} more`;
+  if (tfMore.textContent !== label) tfMore.textContent = label;
 }
-tfOpen.addEventListener("click", openTfSheet);
-tfSheet.addEventListener("click", e => { if (e.target.closest("[data-done]")) closeTfSheet(); });
-new MutationObserver(tfOpenSync).observe($("tfSending"), { subtree: true, childList: true, characterData: true });
-new MutationObserver(() => { if (!$("panel-finder").classList.contains("on")) closeTfSheet(false); }).observe($("panel-finder"), { attributes: true, attributeFilter: ["class"] });
-window.addEventListener("resize", () => { if (!isPhoneView()) closeTfSheet(false); });
-tfOpenSync();
+new MutationObserver(() => { $("tfResults").classList.remove("all"); tfMoreSync(); }).observe($("tfResults"), { childList: true });
+tfMore.addEventListener("click", () => { $("tfResults").classList.toggle("all"); tfMoreSync(); if (!$("tfResults").classList.contains("all")) $("tfHeading").scrollIntoView({ behavior: "smooth", block: "start" }); });
+tfPlace(); tfMoreSync();
+window.matchMedia("(max-width:600px)").addEventListener("change", () => { tfPlace(); if (S.league) renderFinder(); });

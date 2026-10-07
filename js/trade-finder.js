@@ -94,6 +94,8 @@ function priceFrom(pool, v){
   return best;
 }
 const TF_RECS_SHOWN = 5;
+const tfRecsShown = () => typeof isPhoneView === "function" && isPhoneView() ? 3 : TF_RECS_SHOWN;   // phones show 3 at first
+const tfMaxIdeas = n => typeof isPhoneView === "function" && isPhoneView() ? 15 : n;              // phones: 3 shown, up to 12 more behind a button
 let tfRecTop = [], tfRecsAll = false;   // the recommended targets, and whether "Show more" is open
 function renderRecs(me){
   const C = finderContext(me), want = $("tfWant").value, partner = $("tfPartner").value;
@@ -141,14 +143,14 @@ function renderRecs(me){
     ? "Realistic targets outside the elite tier who would help your lineup, priced against your bench and picks."
     : "Young, affordable players with upside for your rebuild, priced against your non-core pieces.";
   tfRecTop = top;
-  const shown = tfRecsAll ? top : top.slice(0, TF_RECS_SHOWN);
+  const shown = tfRecsAll ? top : top.slice(0, tfRecsShown());
   $("tfRecs").innerHTML = top.length ? shown.map(r => {
     const cost = priceFrom(spare, r.a.value);
     const costTxt = cost ? `Could cost: ${cost.map(x => x.name).join(" + ")}` : "";
     return `<div class="tf-rec${tfTarget === r.a.id ? " on" : ""}">
       ${assetPhoto(r.a, "md")}<span class="tn"><b>${esc(r.a.name)}${injTag(r.a.pid)}</b><small>${esc([r.a.pos + (r.a.lgPosRank || ""), r.a.nfl, r.a.age ? "age " + ageText(r.a.age) : "", S.teams.get(r.a.owner)?.name].filter(Boolean).join(", "))}</small><span class="why">${esc(r.why)}</span>${costTxt ? `<span class="cost">${esc(costTxt)}</span>` : ""}</span>
       <span class="v">${fmt(r.a.value)}</span><button type="button" class="ghost go" data-target="${esc(r.a.id)}">Find a deal</button></div>`;
-  }).join("") + (top.length > TF_RECS_SHOWN ? `<button type="button" class="ghost tf-more" id="tfRecsMore">${tfRecsAll ? "Show fewer" : `Show ${top.length - TF_RECS_SHOWN} more`}</button>` : "")
+  }).join("") + (top.length > tfRecsShown() ? `<button type="button" class="ghost tf-more" id="tfRecsMore">${tfRecsAll ? "Show fewer" : `Show ${top.length - tfRecsShown()} more`}</button>` : "")
     : `<p class="empty">No affordable targets${want !== "fit" && want !== "PICK" ? " at that position" : ""}${partner !== "any" ? " on that team" : ""} right now. Your bench and picks may not stretch that far.</p>`;
 }
 
@@ -210,7 +212,7 @@ function findForTarget(me, target){
   const { results, C, th, T, rid } = targetPackages(me, target);
   plan.textContent = `Looking for ways to get ${target.name} from ${th.team.name}${C.dir === "win" ? " while keeping your starting lineup as strong as possible" : " without giving up your best young pieces"}.`;
   $("tfHeading").textContent = `Ways to Get ${target.name}`;
-  const top = results.slice(0, 8);
+  const top = results.slice(0, tfMaxIdeas(8));
   note.textContent = top.length ? "Packages from your roster that match their value, easiest on your lineup first." : "";
   if (!top.length){ out.innerHTML = `<p class="empty">No fair packages of up to 3 pieces found for ${esc(target.name)}. They may be worth more than your tradeable pieces.</p>`; return; }
   out.innerHTML = top.map((r, i) => {
@@ -233,7 +235,7 @@ function suggestDefault(me){
   $("tfHeading").textContent = "Suggested Trades for Your Team";
   const C = finderContext(me), cards = [];
   for (const rec of tfRecTop){
-    if (cards.length >= 3) break;
+    if (cards.length >= tfMaxIdeas(3)) break;
     const { results, th, T, rid } = targetPackages(me, rec.a, C);
     if (results.length) cards.push({ target: rec.a, r: results[0], th, T, rid });
   }
@@ -329,7 +331,7 @@ function findTrades(me, sending, V){
   // best two per team, then best overall
   results.sort((a, b) => b.score - a.score);
   const perTeam = {}, picks = [];
-  for (const r of results){ if ((perTeam[r.rid] = (perTeam[r.rid] || 0) + 1) <= 2) picks.push(r); if (picks.length >= 10) break; }
+  for (const r of results){ if ((perTeam[r.rid] = (perTeam[r.rid] || 0) + 1) <= 2) picks.push(r); if (picks.length >= tfMaxIdeas(10)) break; }
   note.textContent = picks.length
     ? `Every deal here is within about ${Math.round((1 - FAIR_LOW) * 100)}% of fair by your league's values. Best fits first.`
     : "";

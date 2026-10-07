@@ -75,11 +75,12 @@ async function openLeague(browser, viewport, opts){
           return { n: S.sendIds.size + S.getIds.size, closed: document.getElementById('ktDropB').hidden, resultBelowTeams: top('#verdict') > top('#getItems'), total: document.getElementById('ktTotB').textContent, opened: document.querySelector('#tabs .tab[aria-selected=true]').dataset.tab }; });
         check('phone: KeepTradeCut-style calculator adds from each team box, result below', kt.n === 2 && kt.closed && kt.resultBelowTeams && /Total [1-9]/.test(kt.total), JSON.stringify(kt));
         await page.evaluate(() => { S.sendIds.clear(); S.getIds.clear(); renderCalc(); });
-        // Trade Finder: pick players to trade away in a sheet; the ideas show right after
+        // Trade Finder: search to pick who to trade away; 3 ideas shown with more behind a button; 3 recommended players
         await page.evaluate(() => navTab('finder').click()); await page.waitForTimeout(300);
-        await page.tap('#tfOpenPick'); await page.waitForTimeout(350); await page.tap('#tfsBody .asset >> nth=1'); await page.tap('#tfsDone'); await page.waitForTimeout(600);
-        const tf = await page.evaluate(() => ({ ideas: document.querySelectorAll('#tfResults article').length, back: !!document.querySelector('.tf-main > .tf-pick'), label: document.getElementById('tfOpenPick').textContent }));
-        check('phone: Trade Finder roster sheet shows trade ideas', tf.ideas > 0 && tf.back && /Trading away/.test(tf.label), JSON.stringify(tf));
+        await page.tap('#tfpQ'); await page.waitForTimeout(200); await page.tap('#tfpDrop .kt-opt >> nth=1'); await page.waitForTimeout(600);
+        const tf = await page.evaluate(() => { const arts = [...document.querySelectorAll('#tfResults > article')];
+          return { ideas: arts.length, shown: arts.filter(a => a.offsetParent).length, more: document.getElementById('tfResMore').textContent, recs: document.querySelectorAll('#tfRecs .tf-rec').length, picked: !!document.querySelector('#tfpPicked .tf-chip'), strayTab: getComputedStyle(document.querySelector('.ps-settings')).display !== 'none' }; });
+        check('phone: Trade Finder search picker, 3 ideas then more, 3 targets', tf.ideas > 3 && tf.shown === 3 && /Show \d+ more/.test(tf.more) && tf.recs === 3 && tf.picked && !tf.strayTab, JSON.stringify(tf));
         await page.evaluate(() => { tfSend.clear(); renderFinder(); });
         await page.tap('#tabbar [data-go=more]'); await page.waitForTimeout(300); await page.tap('#moreSheet [data-more=getapp]'); await page.waitForTimeout(500);
         const guide = await page.evaluate(() => { const g = document.getElementById('appGuide'); return !g.hidden && g.querySelectorAll('.ag-steps:not([hidden]) li').length === 4 && g.querySelectorAll('.agd-phone:not([hidden]) .agd-f.on').length === 1; });
