@@ -82,6 +82,6 @@ $("tabs").addEventListener("click", e => {
   if (["standings", "power", "sim"].includes(b.dataset.tab)) renderStandings();
   if (b.dataset.tab === "trophy") loadTrophyRoom();
   store.set("tr_tab", b.dataset.tab);
-  $("settingsBtn").setAttribute("aria-pressed", "false");
+  $("settingsBtn").setAttribute("aria-pressed", String(b.dataset.tab === "settings"));
 });
 

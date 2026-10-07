@@ -1275,18 +1275,6 @@ body:not(.has-league) .side-switch,body:not(.has-league) #miniBar{display:none!i
   #analysisBtn{display:none!important}
   .board .brow .share-btns{margin-top:12px}
 }
-/* League Settings as a tab under League: phones only */
-.tabs .tab.ps-settings{display:none!important}
-@media (max-width:600px){
-  .tabs .tab.ps-settings:not(.off-group){display:inline-flex!important}
-  body.settings-open .tabs.single{display:flex!important}
-  body.settings-open .tabs .tab[data-group="league"]{display:inline-flex!important}
-  body.settings-open .tabs .tab.ps-settings{background:linear-gradient(135deg,#1E6B47 0%,#2FA36B 100%)!important;color:#fff!important;border-color:transparent!important;border-radius:8px!important;box-shadow:0 2px 8px rgba(30,107,71,.25)}
-}
-@media (max-width:600px){
-  body.settings-open .tabs .tab.ps-settings{display:inline-flex!important}
-  body.settings-open.has-league .tabs{position:sticky;top:0;z-index:30;background:var(--paper);margin:0 -12px!important;padding:8px 12px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;border-bottom:1px solid var(--line)!important}
-}
 /* Phones: very long Sleeper team names wrap or trim instead of pushing the page sideways */
 @media (max-width:600px){
   #sideSwitch > *{min-width:0}
@@ -1465,4 +1453,11 @@ body:not(.has-league) .side-switch,body:not(.has-league) #miniBar{display:none!i
   .sb-pts{font-size:28px}
   .bx-p .av,.bx-p img{display:none}
   .bx-row{grid-template-columns:minmax(0,1fr) 30px minmax(0,1fr);gap:4px}
+}
+/* Phones: Switch league at the top right of the league header */
+.phone-switch{display:none}
+@media (max-width:600px){
+  body.has-league .leaguebar{position:relative}
+  body.has-league .phone-switch{display:block;position:absolute;top:10px;right:0;padding:6px 11px;font-size:13px;border-radius:8px}
+  body.has-league .leaguebar .leaguehead{padding-right:118px}
 }

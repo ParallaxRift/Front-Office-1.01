@@ -33,7 +33,6 @@ moreSheet.innerHTML = `<div class="ms-backdrop" data-close></div>
       <button type="button" data-more="modes"><b>The Basics vs. Freakshow</b><small>What each view shows</small></button>
       <button type="button" data-more="getapp" class="ms-getapp"><b>Get the app</b><small>Add Front Office to your home screen</small></button>
       <button type="button" data-more="about"><b>About Front Office</b><small>How the values work</small></button>
-      <button type="button" data-more="switch"><b>Switch league</b><small>Open a different Sleeper league</small></button>
       <div class="ms-mode"><span>View</span><div class="ms-toggle" id="msMode"><button type="button" data-mode="basics">The Basics</button><button type="button" data-mode="freak">Freakshow</button></div></div>
     </div>
     <p class="ms-fine">Expert consensus rankings provided by FantasyPros. Not affiliated with Sleeper or FantasyPros. <span id="msVersion"></span></p>
@@ -68,7 +67,6 @@ function syncTabbar(){
   const open = $("groups").querySelector('.group[aria-pressed="true"]')?.dataset.group;
   const settings = $("settingsBtn").getAttribute("aria-pressed") === "true";
   const cur = settings ? "league" : open === "more" ? "more" : open || "";
-  document.body.classList.toggle("settings-open", settings);
   for (const b of tabbar.children){
     b.setAttribute("aria-current", b.dataset.go === cur ? "page" : "false");
     if (b.dataset.go !== "more"){ const gb = $("groups").querySelector(`[data-group="${b.dataset.go}"]`); b.hidden = !gb || gb.hidden; }
@@ -212,11 +210,8 @@ function showInstallTip(){
 }
 setTimeout(showInstallTip, 2500);
 
-// Phones: League Settings is an extra tab under League (after Standings, Power Rankings, Season Simulator, Trophy Room, Team Statuses).
-// It's an extra button in the tab row that only phones show; it opens the same settings page as the
-// football button beside the league name on desktop.
-const psTab = document.createElement("button");
-psTab.type = "button"; psTab.className = "tab ps-settings"; psTab.dataset.group = "league"; psTab.textContent = "League Settings";
-$("tabs").appendChild(psTab);
-psTab.addEventListener("click", () => { openSettingsPanel(); syncTabbar(); window.scrollTo({ top: 0 }); });
-syncNav();   // hide it right away unless League is the open section (it was showing on the Trade tab at launch)
+// Phones: "Switch league" sits at the top right, beside the league name (desktop keeps its own in the header)
+{ const b = document.createElement("button");
+  b.type = "button"; b.className = "ghost phone-switch"; b.id = "phoneSwitch"; b.textContent = "Switch league";
+  b.addEventListener("click", () => $("switchLeague").click());
+  $("leagueBar").appendChild(b); }

@@ -201,3 +201,9 @@ body:not(.has-league) .connect{border-bottom:0!important}
 .mb .sb-bar{background:var(--bc-get)}.mb .sb-bar i{background:var(--bc-send)}
 .mb .mb-tag{background:var(--bc-gold);color:#121B24}
 .mb .bx-v{font-family:var(--bc-num);font-weight:800;font-size:20px}
+/* Standings: evenly spaced columns. Rank is narrow, Team is wider, every other column is the same width, centered */
+#standTable{table-layout:fixed;width:100%}
+#standTable th:first-child,#standTable td:first-child{width:56px;text-align:center}
+#standTable th:nth-child(2),#standTable td:nth-child(2){width:24%}
+#standTable th:nth-child(n+3),#standTable td:nth-child(n+3){text-align:center!important}
+#standTable td:nth-child(n+3) .badge{margin:0 auto}

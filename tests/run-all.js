@@ -79,7 +79,7 @@ async function openLeague(browser, viewport, opts){
         await page.evaluate(() => navTab('finder').click()); await page.waitForTimeout(300);
         await page.tap('#tfpQ'); await page.waitForTimeout(200); await page.tap('#tfpDrop .kt-opt >> nth=1'); await page.waitForTimeout(600);
         const tf = await page.evaluate(() => { const arts = [...document.querySelectorAll('#tfResults > article')];
-          return { ideas: arts.length, shown: arts.filter(a => a.offsetParent).length, more: document.getElementById('tfResMore').textContent, recs: document.querySelectorAll('#tfRecs .tf-rec').length, picked: !!document.querySelector('#tfpPicked .tf-chip'), strayTab: getComputedStyle(document.querySelector('.ps-settings')).display !== 'none' }; });
+          return { ideas: arts.length, shown: arts.filter(a => a.offsetParent).length, more: document.getElementById('tfResMore').textContent, recs: document.querySelectorAll('#tfRecs .tf-rec').length, picked: !!document.querySelector('#tfpPicked .tf-chip'), strayTab: document.querySelector('[data-tab=settings]').offsetParent !== null }; });
         check('phone: Trade Finder search picker, 3 ideas then more, 3 targets', tf.ideas > 3 && tf.shown === 3 && /Show \d+ more/.test(tf.more) && tf.recs === 3 && tf.picked && !tf.strayTab, JSON.stringify(tf));
         await page.evaluate(() => { tfSend.clear(); renderFinder(); });
         await page.tap('#tabbar [data-go=more]'); await page.waitForTimeout(300); await page.tap('#moreSheet [data-more=getapp]'); await page.waitForTimeout(500);
