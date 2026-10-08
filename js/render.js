@@ -27,10 +27,8 @@ function renderLeague(){
   $("champSlot").replaceChildren();
   // (last year's champion used to show here; it was removed from the header on 10/6. The Trophy Room still lists every champion.)
   const tuned = S.nudge ? `, and tuned to ${S.nudge.n} of your league's trades` : "";
-  $("source").textContent = S.market.kind === "fp"
-    ? `Market values: Expert consensus from top fantasy football experts (rankings via FantasyPros), adjusted for this league's settings${tuned}.`
-    : S.market.kind === "dp"
-    ? `Market values: Expert consensus via DynastyProcess open data, adjusted for this league's settings${tuned}.`
+  $("source").textContent = S.market.kind === "fo"
+    ? `Market values: Front Office Rankings, adjusted for this league's settings${tuned}.`
     : `Market values: Estimated from Sleeper's player rankings and age curves, adjusted for this league's settings${tuned}.`;
   renderUpdated();
   const opts = [...S.teams.values()].map(t => `<option value="${t.rid}">${esc(t.name)}</option>`).join("");
@@ -227,14 +225,6 @@ function lineupImpact(rid, outIds, inAssets){
   return lineupValue(after) - lineupValue(before);
 }
 
-// "Range 7,400–8,100": where most experts would put him (shown when they disagree enough to matter)
-function valueRangeText(a){
-  if (!a || a.lo == null || a.hi == null || a.hi - a.lo < 150) return "";
-  const r = x => fmt(Math.round(x / 50) * 50);
-  return `Range ${r(a.lo)}–${r(a.hi)}`;
-}
-// How much the two sides' values could move if experts are split on the players in them
-function tradeUncertainty(assets){ return Math.sqrt(assets.reduce((t, a) => t + (a.lo != null && a.hi != null ? ((a.hi - a.lo) / 2) ** 2 : 0), 0)); }
 // The "Trade Analysis Breakdown" button beside the verdict opens the reasoning; it stays open or closed as you edit the trade
 let analysisOpen = false;
 function renderAnalysis(notes){
@@ -335,16 +325,12 @@ function renderCalc(){
   if (!hasS && !hasG){ $("verdict").textContent = "Tap players and picks to build a trade."; renderAnalysis([]); return; }
   if (!hasS || !hasG){ $("verdict").textContent = "Add something to both sides."; renderAnalysis([]); return; }
   const gap = eG - eS, pct = Math.abs(gap) / Math.max(eS, eG), call = tradeCall(gap, Math.max(eS, eG));
-  // experts' disagreement on everyone in the trade: a gap smaller than this is within the noise
-  const unsure = tradeUncertainty(sendA.concat(getA));
   const extraPct = Math.round(Math.abs(gap) / Math.max(1, Math.min(eS, eG)) * 100);   // how much more one side gets
   const themName = S.teams.get(rb)?.name || "They";
   // Bar color: blue = fair, green = you win, red = you overpay, orange = lopsided in your favor
-  const tooClose = call === "edge" && Math.abs(gap) <= unsure;
-  $("fill").classList.add(call === "fair" || tooClose ? "even" : call === "lopsided" && gap > 0 ? "lopsided" : gap > 0 ? "win" : "lose");
+  $("fill").classList.add(call === "fair" ? "even" : call === "lopsided" && gap > 0 ? "lopsided" : gap > 0 ? "win" : "lose");
   if (call === "fair") $("verdict").textContent = "Fair trade";
   else if (call === "lopsided") $("verdict").textContent = gap > 0 ? `One-sided: favors you by ${fmt(gap)}` : `One-sided: you overpay by ${fmt(-gap)}`;
-  else if (Math.abs(gap) <= unsure) $("verdict").textContent = `Too close to call: ${gap > 0 ? "you're" : "they're"} ahead by ${fmt(Math.abs(gap))}`;
   else if (gap > 0) $("verdict").textContent = `You win by ${fmt(gap)}`;
   else $("verdict").textContent = `You overpay by ${fmt(-gap)}`;
 
@@ -357,9 +343,7 @@ function renderCalc(){
     ? `${themName} gives up too much here: you get about ${extraPct}% more than you send. They're unlikely to accept, and a league with trade review might veto it.`
     : `You give up too much here: ${themName} gets about ${extraPct}% more than you. Ask for more back before sending it.`]);
   else if (call === "fair") notes.push(["Why it's fair", `The two sides are ${fmt(Math.abs(gap))} apart, inside the fair range (${fmt(FAIR_POINTS)} points, or ${Math.round(FAIR_BAND * 100)}% of the bigger side on large trades).`]);
-  else if (tooClose) notes.push(["Too close to call", `Experts disagree enough on these players (values could move about ${fmt(Math.round(unsure / 50) * 50)} either way) that neither side clearly wins.`]);
   else notes.push(["The edge", `${gap > 0 ? "You get" : themName + " gets"} about ${extraPct}% more. That's a normal negotiating gap, not one-sided.`]);
-  if (call === "lopsided" && Math.abs(gap) <= unsure) notes.push(["Expert split", "Experts are split on some of these players, so the gap could be smaller than it looks."]);
   if (me.status === "rebuild" && (getPicks || getYoung)) notes.push(["Team fit", "Picks and young players fit your rebuild."]);
   else if (me.status === "contend" && (getPicks || getYoung) && !(gap > 0)) notes.push(["Team fit", "You're contending, so trading proven players for futures could hurt this season."]);
   if (fS || fG) notes.push(["FAAB", `A full $${fmt(faabBudget())} budget counts as about half a late 2nd-round pick (${fmt(faabValue(faabBudget()))}), since FAAB is usually a throw-in, so ${[S.faab.send ? `your $${fmt(S.faab.send)} is worth ${fmt(fS)}` : "", S.faab.get ? `their $${fmt(S.faab.get)} is worth ${fmt(fG)}` : ""].filter(Boolean).join(" and ")}.`]);
@@ -459,12 +443,13 @@ $("posA").addEventListener("change", renderCalc);
 $("posB").addEventListener("change", renderCalc);
 $("teamB").addEventListener("change", renderCalc);
 
+const marketWord = () => "Front Office Rankings";
 // Green light = league tuning active, yellow = not active yet, grey = still checking
 function renderTuningLight(){
   const el = $("tuningLight"); if (!el || !S.league) return;
   const link = "";
   if (S.historyError){
-    el.innerHTML = `<span class="light off" aria-hidden="true"></span><div class="tuning-text"><b>League Tuning Is Off</b><p>Couldn't check your league's trade history, so values use expert consensus and your league settings only. Reopen the league to try again.</p>${link}</div>`;
+    el.innerHTML = `<span class="light off" aria-hidden="true"></span><div class="tuning-text"><b>League Tuning Is Off</b><p>Couldn't check your league's trade history, so values use ${marketWord()} and your league settings only. Reopen the league to try again.</p>${link}</div>`;
     return;
   }
   if (!S.history){
@@ -475,15 +460,15 @@ function renderTuningLight(){
   if (S.nudge){
     const adj = ["QB","RB","WR","TE","PICK"].map(k => ({ k, m: S.nudge[k] }))
       .map(x => `<span class="chip">${x.k === "PICK" ? "Picks" : x.k + "s"} ×${(Math.round(x.m*100)/100).toFixed(2)}</span>`).join("");
-    el.innerHTML = `<span class="light on" aria-hidden="true"></span><div class="tuning-text"><b>League Tuning Is On</b><p>These values include your league's trade habits, learned from ${S.nudge.n} trades, along with expert consensus.</p><div class="chips">${adj}</div>${link}</div>`;
+    el.innerHTML = `<span class="light on" aria-hidden="true"></span><div class="tuning-text"><b>League Tuning Is On</b><p>These values include your league's trade habits, learned from ${S.nudge.n} trades, along with ${marketWord()}.</p><div class="chips">${adj}</div>${link}</div>`;
   } else {
     const left = Math.max(0, NUDGE_MIN_TRADES - twoTeam);
     const pct = Math.min(100, Math.round(twoTeam / NUDGE_MIN_TRADES * 100));
-    el.innerHTML = `<span class="light off" aria-hidden="true"></span><div class="tuning-text"><b>League Tuning Is Off for Now: ${left} More Trade${left === 1 ? "" : "s"} to Go</b><p>Your league has ${twoTeam} of the ${NUDGE_MIN_TRADES} trades needed. Until then, values use expert consensus and your league settings only.</p><div class="tprog" role="progressbar" aria-valuemin="0" aria-valuemax="${NUDGE_MIN_TRADES}" aria-valuenow="${twoTeam}" aria-label="Trades toward league tuning"><span style="width:${pct}%"></span></div><small class="tprog-label">${twoTeam} / ${NUDGE_MIN_TRADES} trades</small>${link}</div>`;
+    el.innerHTML = `<span class="light off" aria-hidden="true"></span><div class="tuning-text"><b>League Tuning Is Off for Now: ${left} More Trade${left === 1 ? "" : "s"} to Go</b><p>Your league has ${twoTeam} of the ${NUDGE_MIN_TRADES} trades needed. Until then, values use ${marketWord()} and your league settings only.</p><div class="tprog" role="progressbar" aria-valuemin="0" aria-valuemax="${NUDGE_MIN_TRADES}" aria-valuenow="${twoTeam}" aria-label="Trades toward league tuning"><span style="width:${pct}%"></span></div><small class="tprog-label">${twoTeam} / ${NUDGE_MIN_TRADES} trades</small>${link}</div>`;
   }
 }
 
-// "Values updated 3 hours ago", from the time stamp the daily update writes into values.json
+// "Values updated 3 hours ago", from the time stamp the Rankings Desk writes when rankings are published
 function updatedAgo(iso){
   const t = Date.parse(iso || ""); if (isNaN(t)) return "";
   const m = Math.max(0, Math.round((Date.now() - t) / 60000));
@@ -504,7 +489,7 @@ let valuesLimit = VALUES_PAGE, valuesSort = { key: "value", dir: -1 };
 const valueChange = a => a.kind === "pick" || !a.market ? 0 : a.value / a.market - 1;
 const VALUE_SORTS = {
   rank: a => a.lgRank || 99999, posrank: a => a.kind === "player" && a.lgPosRank ? a.lgPosRank : 99999, name: a => normName(a.name), pos: a => a.pos + String(a.lgPosRank || 999).padStart(3, "0"),
-  age: a => a.age || 0, value: a => a.value, range: a => a.lo != null ? a.hi - a.lo : -1, market: a => a.market || 0, change: valueChange
+  age: a => a.age || 0, value: a => a.value, market: a => a.market || 0, change: valueChange
 };
 const SORT_FIRST_DIR = { rank: 1, posrank: 1, name: 1, pos: 1 };   // A to Z and #1 first; numbers biggest first
 // Rookies: first NFL season (Sleeper's years of experience is 0, or his rookie year is this season)

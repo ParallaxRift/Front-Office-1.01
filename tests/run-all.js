@@ -19,7 +19,7 @@ async function openLeague(browser, viewport, opts){
   page.errors = []; page.missing = [];
   page.on('pageerror', e => page.errors.push(e.message));
   // data/build-notes.json is optional: it only exists after build notes are saved from the site
-  const OPTIONAL = ['data/build-notes.json'];
+  const OPTIONAL = ['data/build-notes.json', 'data/my-rankings.json'];
   page.on('response', r => { const u = r.url(); if (u.startsWith(`http://localhost:${PORT}`) && r.status() >= 400 && !OPTIONAL.some(o => u.includes(o))) page.missing.push(u); });
   await setup(page, opts);
   await page.goto(`http://localhost:${PORT}/index.html`);
@@ -190,11 +190,35 @@ async function openLeague(browser, viewport, opts){
       put('t1', 'WR', 'LWR', 1); put('t2', 'WR', 'RWR', 1); put('t3', 'WR', 'SWR', 1); put('t4', 'WR', 'LWR', 2); put('t5', 'RB', 'RB', 1); put('t6', 'RB', 'KR', 1);
       const d = ['t1','t2','t3','t4','t5','t6'].map(depthChartText).join('|');
       S.sleeperPlayers = JSON.parse(keep);
-      const html = newsBlock([['2026-10-07', 'Named starter <b>', 'x', '', 'https://www.fantasypros.com/a'], ['2026-10-06', 'Hamstring', 'y', 'i', 'javascript:alert(1)'], ['2026-10-01', 'Old save', 'z']]);
       const est = returnEstimate({ injury_status: 'Questionable' }, [['2026-10-07', 'Out for the season with a torn ACL', '', '', '']]);
-      return [d, /Read on FantasyPros/.test(html) && !/javascript:/.test(html) && !/starter <b>/.test(html) && (html.match(/pc-ntag/g) || []).length === 2, !est || est.lo < 99].join(';');
+      return [d, !est || est.lo < 99].join(';');
     });
-    check('player card depth chart and news', card === 'WR1 · outside|WR2 · outside|WR3 · slot|WR4 · outside|RB1|Not on the depth chart;true;true', card);
+    check('player card depth chart', card === 'WR1 · outside|WR2 · outside|WR3 · slot|WR4 · outside|RB1|Not on the depth chart;true', card);
+
+    // Values come from Front Office Rankings: the list's #1 is the top player, and nothing from FantasyPros is loaded
+    const fo = await page.evaluate(() => {
+      const first = S.market.map && [...S.market.map.entries()].find(([, m]) => (S.cfg.superflex ? m.r2 : m.r1) === 1);
+      const top = [...S.assets.values()].filter(a => a.kind === 'player').sort((x, y) => y.base - x.base)[0];
+      const fpRequests = performance.getEntriesByType('resource').filter(r => /fantasypros|values\.json|dynastyprocess/i.test(r.name)).length;
+      return [S.market.kind, !!first && first[0].startsWith(normName(top.name)), fpRequests].join(',');
+    });
+    check('values come from Front Office Rankings only', fo === 'fo,true,0', fo);
+
+    // Publishing on the Desk reaches an open page: a changed rankings file rebuilds values in place
+    const live = await page.evaluate(async () => {
+      const d = await getRankingsFile(), fmt = S.cfg.superflex ? 'sf' : '1qb';
+      const lists = JSON.parse(JSON.stringify(d.lists)); const [a, b] = lists[fmt]; lists[fmt][0] = b; lists[fmt][1] = a;
+      const real = window.fetch;
+      window.fetch = (u, o) => String(u).includes('rankings.json') ? Promise.resolve(new Response(JSON.stringify({ ...d, updated: new Date(Date.now() + 1000).toISOString(), lists }))) : real(u, o);
+      const top = () => [...S.assets.values()].filter(x => x.kind === 'player').sort((x, y) => y.base - x.base)[0].name;
+      const before = top(); await checkRankingsUpdate(); const after = top();
+      // put the original rankings back so later checks see the normal values
+      window.fetch = (u, o) => String(u).includes('rankings.json') ? Promise.resolve(new Response(JSON.stringify({ ...d, updated: new Date(Date.now() + 2000).toISOString() }))) : real(u, o);
+      await checkRankingsUpdate();
+      window.fetch = real;
+      return [before !== after, normName(after) === normName(b.name)].join(',');
+    });
+    check('a new publish updates open pages', live === 'true,true', live);
 
     // Live Scores flips to the next week on Tuesday morning (6 a.m. Central), not Wednesday
     const flips = await page.evaluate(() => { const real = Date.now, st = { season_start_date: '2026-09-10' };
@@ -247,9 +271,9 @@ async function openLeague(browser, viewport, opts){
     // Team status counts playoff odds in season (4 weeks played in the test league)
     const st = await page.evaluate(() => ({ w: statusRecordWeight(), n: [...S.teams.values()].filter(t => t.status === 'contend').length, odds: !!S.playoffOdds }));
     check('team status blends in playoff odds after Week 3', st.odds && st.w > 0 && st.w <= 0.6 && st.n === 4, `record weight ${Math.round(st.w * 100)}%, ${st.n} contenders`);
-    // Value ranges from expert disagreement
-    const rng = await page.evaluate(() => { const ps = [...S.assets.values()].filter(a => a.kind === 'player' && a.lo != null); return { n: ps.length, ok: ps.every(a => a.lo <= a.value + 1e-6 && a.hi >= a.value - 1e-6) }; });
-    check('players have value ranges around their value', rng.n > 50 && rng.ok, `${rng.n} players with ranges`);
+    // No expert ranges or "too close to call" any more
+    const rng = await page.evaluate(() => [...S.assets.values()].filter(a => a.lo != null).length);
+    check('no value ranges (removed)', rng === 0, `${rng} players with ranges`);
     // Calculator shows the math under each total when there's a value adjustment
     await page.click('#groups [data-group=trade]'); await page.click('[data-tab=calc]');
     await page.evaluate(() => { const A = teamAssets(Number($("teamA").value)).filter(a => a.kind === 'player'), B = teamAssets(Number($("teamB").value)).filter(a => a.kind === 'player'); S.sendIds = new Set([A[0].id]); S.getIds = new Set([B[2].id, B[3].id, B[4].id]); renderCalc(); });

@@ -8,16 +8,15 @@
 // ============================================================
 let homeData = null, homeFormat = "sf";
 function homeAssets(f){
-  const key = f === "sf" ? "r2" : "r1";
-  return (homeData?.players || []).filter(p => p[key] != null && ["QB", "RB", "WR", "TE"].includes(p.pos))
-    .sort((a, b) => a[key] - b[key]).map(p => ({ name: p.name, pos: p.pos, team: p.team || "FA", value: marketCurve(p[key], 1, 1) }));
+  return (homeData?.lists?.[f] || []).filter(p => ["QB", "RB", "WR", "TE"].includes(p.pos))
+    .map((p, i) => ({ name: p.name, pos: p.pos, team: p.team || "", value: marketCurve(i + 1, 1, 1) }));
 }
 function renderHome(){
   if (!homeData) return;
   for (const b of $("homeFormat").children) b.setAttribute("aria-pressed", b.dataset.f === homeFormat);
   const list = homeAssets(homeFormat), top = list[0]?.value || 1, scale = v => v / top * 10000;
-  $("homeTop").innerHTML = list.slice(0, 10).map((a, i) => `<li><span class="hr">${i + 1}</span><span class="hn"><b>${esc(a.name)}</b><small>${esc(a.pos)} · ${esc(a.team)}</small></span><span class="hv">${fmt(scale(a.value))}</span></li>`).join("");
-  $("homeAsOf").textContent = homeData.updated ? `Expert consensus via FantasyPros, updated ${updatedAgo(homeData.updated)}.` : "";
+  $("homeTop").innerHTML = list.slice(0, 10).map((a, i) => `<li><span class="hr">${i + 1}</span><span class="hn"><b>${esc(a.name)}</b><small>${esc(a.pos)}${a.team ? " · " + esc(a.team) : ""}</small></span><span class="hv">${fmt(scale(a.value))}</span></li>`).join("");
+  $("homeAsOf").textContent = homeData.updated ? `Front Office Rankings, updated ${updatedAgo(homeData.updated)}.` : "";
   // Sample trade: a top-3 player for the two good starters that come closest to fair, graded the
   // same way the calculator grades trades (so the value adjustment shows up)
   const one = list[2];
@@ -33,12 +32,12 @@ function renderHome(){
   S.replacement = keep;
   const { two, raw2, adj, gap } = best, e1 = v1 + adj, call = tradeCall(gap, Math.max(e1, raw2));
   const verdict = call === "fair" ? "Fair trade" : call === "lopsided" ? (gap > 0 ? "One-sided: the two-player side wins big" : "One-sided: the star side wins big") : gap > 0 ? `The two-player side wins by ${fmt(gap)}` : `The star side wins by ${fmt(-gap)}`;
-  const row = a => `<div class="ht-row"><span><b>${esc(a.name)}</b><small>${esc(a.pos)} · ${esc(a.team)}</small></span><span>${fmt(scale(a.value))}</span></div>`;
+  const row = a => `<div class="ht-row"><span><b>${esc(a.name)}</b><small>${esc(a.pos)}${a.team ? " · " + esc(a.team) : ""}</small></span><span>${fmt(scale(a.value))}</span></div>`;
   $("homeTrade").innerHTML = `<div class="ht-sides">
       <div class="ht-side"><div class="ht-lbl">Team A sends</div>${row(one)}${adj ? `<div class="ht-row ht-adj"><span><b>Value adjustment</b><small>one star beats two good players</small></span><span>+${fmt(adj)}</span></div>` : ""}<div class="ht-total">${fmt(e1)}</div></div>
       <div class="ht-side"><div class="ht-lbl">Team B sends</div>${two.map(row).join("")}<div class="ht-total">${fmt(raw2)}</div></div>
     </div><p class="ht-verdict ${call === "fair" ? "fair" : ""}">${esc(verdict)}</p>`;
 }
-getValuesFile().then(d => { homeData = d; renderHome(); }).catch(() => { $("homeExtra").hidden = true; });
+getRankingsFile().then(d => { homeData = d; renderHome(); }).catch(() => { $("homeExtra").hidden = true; });
 $("homeFormat").addEventListener("click", e => { const b = e.target.closest("button[data-f]"); if (!b) return; homeFormat = b.dataset.f; renderHome(); });
 $("homeTry").addEventListener("click", () => { window.scrollTo({ top: 0, behavior: "smooth" }); setTimeout(() => $("username").focus(), 300); });

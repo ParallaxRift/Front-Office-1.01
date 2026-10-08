@@ -4,7 +4,7 @@
 // PLAYER CARDS
 // Click a player's photo anywhere (or a player row on Player Values) to open his card:
 // photo, bio and current injury come from Sleeper; career stats and past injury reports
-// come live from Sleeper (backup: data/players.json); injury history comes from FantasyPros via the daily GitHub Action.
+// come live from Sleeper (backup: data/players.json); there is no injury history.
 // ============================================================
 const NFL_TEAMS = {ARI:"Arizona Cardinals",ATL:"Atlanta Falcons",BAL:"Baltimore Ravens",BUF:"Buffalo Bills",CAR:"Carolina Panthers",CHI:"Chicago Bears",CIN:"Cincinnati Bengals",CLE:"Cleveland Browns",DAL:"Dallas Cowboys",DEN:"Denver Broncos",DET:"Detroit Lions",GB:"Green Bay Packers",HOU:"Houston Texans",IND:"Indianapolis Colts",JAX:"Jacksonville Jaguars",KC:"Kansas City Chiefs",LV:"Las Vegas Raiders",LAC:"Los Angeles Chargers",LAR:"Los Angeles Rams",LA:"Los Angeles Rams",MIA:"Miami Dolphins",MIN:"Minnesota Vikings",NE:"New England Patriots",NO:"New Orleans Saints",NYG:"New York Giants",NYJ:"New York Jets",PHI:"Philadelphia Eagles",PIT:"Pittsburgh Steelers",SF:"San Francisco 49ers",SEA:"Seattle Seahawks",TB:"Tampa Bay Buccaneers",TEN:"Tennessee Titans",WAS:"Washington Commanders"};
 const CARD_DATA = "data/players.json";
@@ -75,18 +75,6 @@ function statsTable(rec, pos, season){
   return `<div class="pc-scroll"><table><thead><tr><th>Season</th><th class="l">Team</th>${cols.map(k => `<th>${C[k][0]}</th>`).join("")}</tr></thead>
     <tbody>${body}<tr class="tot"><td>Career</td><td class="l">${yrs} season${yrs > 1 ? "s" : ""}</td>${cols.map(k => `<td>${C[k][1](tot)}</td>`).join("")}</tr></tbody></table></div>`;
 }
-function injuryTable(rec){
-  const rows = rec?.i || [];
-  if (!rows.length) return `<p class="empty">No injury report listings on record.</p>`;
-  const body = rows.map(r => {
-    const wk = r[2] === r[3] ? `Week ${r[2]}` : `Weeks ${r[2]}–${r[3]}`;
-    const listed = [r[7] ? `Injured Reserve/PUP ${r[7]}` : "", r[4] ? `Out ${r[4]}` : "", r[5] ? `Doubtful ${r[5]}` : "", r[6] ? `Questionable ${r[6]}` : ""].filter(Boolean).join(", ");
-    return `<tr><td>${r[0]}</td><td class="l">${esc(r[1])}</td><td class="l">${wk}</td><td class="l">${listed}</td></tr>`;
-  }).join("");
-  const outWeeks = rows.reduce((t, r) => t + r[4] + (r[7] || 0), 0);
-  return `<div class="pc-scroll"><table><thead><tr><th>Season</th><th class="l">Injury</th><th class="l">When</th><th class="l">Weeks listed</th></tr></thead><tbody>${body}</tbody></table></div>
-    <p class="pc-note">${rows.length} injury listing${rows.length > 1 ? "s" : ""}, ${outWeeks} week${outWeeks === 1 ? "" : "s"} missed (Out, IR or PUP). Regular season only.${(cardData?.fp_injury_seasons || []).length ? ` FantasyPros injury reports, ${cardData.fp_injury_seasons[0]}${cardData.fp_injury_seasons.length > 1 ? "–" + cardData.fp_injury_seasons.at(-1) : ""}.` : ""}</p>`;
-}
 // ---------- Current injury: details + Front Office's return estimate ----------
 // Typical NFL time missed, in weeks [fewest, most], by injury. First match wins, so specific injuries come first.
 const INJURY_TIMES = [
@@ -130,7 +118,7 @@ function returnEstimate(sp, news, fpNow){
   const prob = fpNow && fpNow.prob !== "" && fpNow.prob != null ? Number(fpNow.prob) : NaN;
   if (st === "Questionable" && !isNaN(prob)){
     lo = 0; hi = prob >= 0.5 ? 0 : 1;
-    why.push(`FantasyPros gives him a ${Math.round(prob * 100)}% chance to play this week`);
+    why.push(`Injury reports give him a ${Math.round(prob * 100)}% chance to play this week`);
   }
   else if (st === "Questionable"){ lo = 0; hi = Math.min(hi, 1); why.push("Questionable players usually play or miss one game"); }
   else if (st === "Doubtful"){ lo = 1; hi = Math.min(Math.max(hi, 1), 2); why.push("Doubtful players usually miss this week"); }
@@ -153,7 +141,7 @@ function returnEstimate(sp, news, fpNow){
       sub = !inSeason ? "" : w1 === w2 ? `Likely back Week ${w1}` : `Likely back between Week ${w1} and ${w2 > 18 ? "the end of the season" : "Week " + w2}`;
     }
   }
-  const conf = why[0]?.startsWith("Reports") ? "Based on reported timeline" : why.some(w => w.startsWith("FantasyPros gives")) ? "Based on FantasyPros' odds" : "Rough estimate";
+  const conf = why[0]?.startsWith("Reports") ? "Based on reported timeline" : why.some(w => w.startsWith("Injury reports give")) ? "Based on reported odds" : "Rough estimate";
   return { head, sub, why: why.join("; ") + ".", conf, lo, hi };
 }
 // Will an injured player help a fantasy lineup again this season? Uses the same return estimate as the
@@ -186,25 +174,18 @@ function currentStatus(sp, rec, news){
   const PRAC = { dnp: "Did not practice", limit: "Limited", limited: "Limited", full: "Full" };
   const pr = x => PRAC[String(x).toLowerCase()] || x;
   const practice = fp?.prac?.length ? fp.prac.map(pr).join(" → ") : [sp.practice_participation, sp.practice_description].filter(Boolean).join(": ");
-  const chance = fp && fp.prob !== "" && fp.prob != null && !isNaN(Number(fp.prob)) ? `${Math.round(Number(fp.prob) * 100)}%` : "";
-  const part = (sp.injury_body_part || "").toLowerCase();
-  const past = part ? (rec?.i || []).filter(r => r[0] < (Number(S.nflState?.season) || 9999) && r[1].toLowerCase().includes(part)).length : 0;
-  const thisSeason = (rec?.i || []).filter(r => r[0] === (Number(S.nflState?.season) || 0)).reduce((t, r) => t + r[4] + (r[7] || 0), 0);
+  // Our own estimate from the designation (NFL teams only give the designation, not odds)
+  const chance = { Questionable: "About 75% (our estimate)", Doubtful: "About 25% (our estimate)", Out: "Won't play this week", IR: "Out (injured reserve)", PUP: "Out (PUP list)", NFI: "Out (NFI list)", Sus: "Suspended" }[st] || "";
   const rows = [
-    ["Designation", label], ["Details", sp.injury_notes], ["Chance of playing", chance], ["Team report", fp?.note],
+    ["Designation", label], ["Details", sp.injury_notes], ["Chance of playing", chance],
     ["Since", sp.injury_start_date ? `${dateText(sp.injury_start_date)}${days != null ? ` (${days === 0 ? "today" : days === 1 ? "1 day ago" : days + " days ago"})` : ""}` : ""],
-    ["Practice this week", practice], ["Missed this season", thisSeason ? `${thisSeason} week${thisSeason > 1 ? "s" : ""}` : ""],
-    ["History", past ? `Listed with a ${sp.injury_body_part.toLowerCase()} injury in ${past} earlier season${past > 1 ? "s" : ""}` : ""]
+    ["Practice this week", practice]
   ].filter(r => r[1]);
   const est = returnEstimate(sp, news, fp);
   return `<div class="pc-status ${cls}"><b>${esc(label)}${sp.injury_body_part ? " · " + esc(sp.injury_body_part) : ""}</b>
     <dl class="pc-inj">${rows.slice(1).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl>
     ${est ? `<div class="pc-est"><small>Estimated time out</small><b>${esc(est.head)}</b>${est.sub ? `<span>${esc(est.sub)}</span>` : ""}<p>${esc(est.conf)}: ${esc(est.why)} This is Front Office's estimate, not a team report.</p></div>` : ""}
   </div>`;
-}
-function newsBlock(news){
-  if (!news?.length) return `<p class="empty">No news in the last few weeks.</p>`;
-  return `<div class="pc-news">${news.slice(0, 4).map(n => `<article>${isInjuryNews(n) ? `<em class="pc-ntag">Injury</em>` : ""}<b>${esc(n[1])}</b>${n[2] ? `<p>${esc(n[2])}</p>` : ""}<time>${esc(dateText(n[0]))}${/^https:\/\//.test(n[4] || "") ? ` · <a href="${esc(n[4])}" target="_blank" rel="noopener">Read on FantasyPros</a>` : ""}</time></article>`).join("")}</div>`;
 }
 // Where he sits on his NFL team's depth chart: RB1, WR3, QB2… (Sleeper splits receivers into left, right and slot)
 const DEPTH_GROUP = { LWR: "WR", RWR: "WR", SWR: "WR", WR: "WR", QB: "QB", RB: "RB", TE: "TE" };
@@ -244,10 +225,8 @@ async function openPlayerCard(pid){
     <div class="pc-body">
       <dl class="pc-facts">${facts.map(([k, v]) => `<div${k === "Fantasy team" || k === "College" ? ' class="wide"' : ""}><dt>${esc(k)}</dt><dd>${k === "Fantasy team" && a?.owner != null ? `<span class="pc-ft">${teamPhoto(a.owner, "sm")}${esc(v)}</span>` : esc(v)}</dd></div>`).join("")}</dl>
       <h3>Current Status</h3><div id="pcNow">${currentStatus(sp)}</div>
-      <h3>Latest News</h3><div id="pcNews"><p class="pc-loading">Loading news…</p></div>
       <h3>Career Stats</h3><div id="pcStats"><p class="pc-loading">Loading stats…</p></div>
-      <h3>Injury History</h3><div id="pcInj"><p class="pc-loading">Loading injury history…</p></div>
-      <p class="pc-note">Current status and career stats from Sleeper. News and injury history from FantasyPros, updated daily. Regular season only. Fantasy points use standard full-PPR scoring.</p>
+      <p class="pc-note">Current status and career stats from Sleeper. Regular season only. Fantasy points use standard full-PPR scoring.</p>
     </div></div>`;
   $("pcard").hidden = false; document.body.style.overflow = "hidden";
   $("pcard").querySelector(".pc-close").focus();
@@ -262,9 +241,6 @@ async function openPlayerCard(pid){
   const season = liveSeasonYear();
   $("pcStats").innerHTML = data || live.ok ? statsTable(rec, pos, season) : `<p class="empty">Stats aren't available right now. Try again in a minute.</p>`;
   $("pcNow").innerHTML = currentStatus(sp, { ...rec, c: rec0?.c }, rec0?.n || []);
-  $("pcNews").innerHTML = data ? newsBlock(rec0?.n || []) : `<p class="empty">News isn't available right now. Try again in a minute.</p>`;
-  $("pcInj").innerHTML = !data ? `<p class="empty">Injury history isn't available right now. Try again in a minute.</p>`
-    : !(data.fp_injury_seasons || []).length ? `<p class="empty">Injury history from FantasyPros will appear after the next daily update.</p>` : injuryTable(rec);
 }
 function closePlayerCard(){ $("pcard").hidden = true; $("pcard").innerHTML = ""; document.body.style.overflow = ""; }
 // Capture phase, so tapping a photo inside a roster row opens the card instead of adding him to a trade

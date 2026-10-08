@@ -353,7 +353,7 @@
     <p style="margin:0 0 10px;font-size:14px;color:var(--muted)">Tap any player to open his player card. On other tabs, tap a player's photo. <span id="valuesUpdated"></span></p>
     <div class="tablewrap" id="valuesWrap">
       <table id="valuesTable">
-        <thead><tr><th class="rk sortable" data-sort="rank" aria-sort="none"><span class="lbl-full">Overall Ranking</span><span class="lbl-short" aria-hidden="true">Ovr Rank</span></th><th class="rk sortable" data-sort="posrank" aria-sort="none"><span class="lbl-full">Position Ranking</span><span class="lbl-short" aria-hidden="true">Pos Rank</span></th><th class="sortable" data-sort="name" aria-sort="none">Player</th><th class="sortable hide-sm" data-sort="pos" aria-sort="none">Pos</th><th class="n sortable" data-sort="age" aria-sort="none">Age</th><th class="hide-sm">League team</th><th class="n sortable" data-sort="value" aria-sort="descending" title="This League: The player's value in your league after all of Front Office's adjustments. This is the number the calculator uses.">This league<button type="button" class="info-btn" data-info="col-league" aria-label="What does This league mean?">?</button></th><th class="n hide-sm sortable" data-sort="market" aria-sort="none" title="Market: The same player's value from the generic rankings, before any league adjustments. It shows what he'd be worth in a generic league as a single value.">Market<button type="button" class="info-btn" data-info="col-market" aria-label="What does Market mean?">?</button></th><th class="n sortable" data-sort="change" aria-sort="none" title="Change: The % difference between your league's values after all logic is applied and the singular generic market value. It stays blank when the difference is under 1%.">Change<button type="button" class="info-btn" data-info="col-change" aria-label="What does Change mean?">?</button></th></tr></thead>
+        <thead><tr><th class="rk sortable" data-sort="rank" aria-sort="none"><span class="lbl-full">Overall Ranking</span><span class="lbl-short" aria-hidden="true">Ovr Rank</span></th><th class="rk sortable" data-sort="posrank" aria-sort="none"><span class="lbl-full">Position Ranking</span><span class="lbl-short" aria-hidden="true">Pos Rank</span></th><th class="sortable" data-sort="name" aria-sort="none">Player</th><th class="sortable hide-sm" data-sort="pos" aria-sort="none">Pos</th><th class="n sortable" data-sort="age" aria-sort="none">Age</th><th class="hide-sm">League team</th><th class="n sortable" data-sort="value" aria-sort="descending" title="This League: The player's value in your league after all of Front Office's adjustments. This is the number the calculator uses.">This league<button type="button" class="info-btn" data-info="col-league" aria-label="What does This league mean?">?</button></th><th class="n hide-sm sortable" data-sort="market" aria-sort="none" title="Market: The same player's value from Front Office Rankings, before any league adjustments. It shows what he'd be worth in a generic league as a single value.">Market<button type="button" class="info-btn" data-info="col-market" aria-label="What does Market mean?">?</button></th><th class="n sortable" data-sort="change" aria-sort="none" title="Change: The % difference between your league's values after all logic is applied and the singular generic market value. It stays blank when the difference is under 1%.">Change<button type="button" class="info-btn" data-info="col-change" aria-label="What does Change mean?">?</button></th></tr></thead>
         <tbody id="valuesBody"></tbody>
       </table>
     </div>
@@ -393,7 +393,7 @@
     <li><b>Rankings:</b> every player and draft pick ranked for your league's format, lineup and scoring, with filters for position, rookies and injured players, and your own players highlighted.</li>
     <li><b>League tuning:</b> values learn from the trades your league actually makes, so they reflect how your league trades.</li>
     <li><b>Draft picks:</b> each pick is valued by where it's likely to land and the strength of its draft class.</li>
-    <li><b>Kept current:</b> values, depth charts and injury news refresh several times a day.</li>
+    <li><b>Kept current:</b> rankings are updated every week, and depth charts and injuries refresh several times a day.</li>
   </ul>
 
   <h2>Trade Tools</h2>
@@ -406,7 +406,7 @@
   <h2>Your Team</h2>
   <ul>
     <li><b>My Team:</b> a game plan for contending or rebuilding, a position-by-position report card, buy and sell lists, and your best trade partners.</li>
-    <li><b>Player cards:</b> tap any player for his depth chart spot, latest news, current injury status with an estimated return, career stats and injury history.</li>
+    <li><b>Player cards:</b> tap any player for his depth chart spot, current injury status with an estimated return, and career stats.</li>
   </ul>
 
   <h2>Your League</h2>
@@ -418,7 +418,7 @@
   </ul>
 
   <h2>Credits</h2>
-  <p>Expert consensus rankings provided by FantasyPros, with DynastyProcess open data for players the experts don't rank. League data from Sleeper. Values are estimates, not guarantees. Not affiliated with Sleeper, FantasyPros, or DynastyProcess.</p>
+  <p>Rankings by Front Office. League data from Sleeper. Values are estimates, not guarantees. Not affiliated with Sleeper.</p>
   <p>© 2026 Front Office. All rights reserved. <a href="#terms">Terms of Use</a> · <a href="#privacy">Privacy</a></p>
   <a class="back" href="#">Back to Front Office</a>
 </article>
@@ -444,7 +444,7 @@
   </ul>
 
   <h2>Third-Party Data and Services</h2>
-  <p>Front Office uses data from FantasyPros, DynastyProcess, and Sleeper, and links to other sites. Those services have their own terms, and we don't control them or guarantee their accuracy or availability. Front Office isn't affiliated with or endorsed by Sleeper, FantasyPros, or DynastyProcess. All team names, player names, and trademarks belong to their owners.</p>
+  <p>Front Office uses league and player data from Sleeper, and links to other sites. Those services have their own terms, and we don't control them or guarantee their accuracy or availability. Front Office isn't affiliated with or endorsed by Sleeper. All team names, player names, and trademarks belong to their owners.</p>
 
   <h2>Feedback</h2>
   <p>Feedback you post is shown publicly on the feedback board. Don't post anything private or offensive. We may hide or remove any post, and we may use ideas you share to improve Front Office without owing you anything.</p>
@@ -565,16 +565,16 @@
 </svg><span>Front Office</span></a>
   <nav><a href="#">Home</a><a href="#about">About</a><a href="#modes">The Basics vs. Freakshow</a><a href="#beta">Sleeper Leagues in Beta</a><a href="#terms">Terms</a><a href="#privacy">Privacy</a><a href="#" id="footFeedback" hidden>Feedback &amp; Build Notes</a></nav>
   <span class="ver" id="footVersion"></span><span class="ver" id="footUpdated"></span>
-  <p>© 2026 Front Office. All rights reserved. Expert consensus rankings provided by FantasyPros. <a href="#about">Credits</a></p>
+  <p>© 2026 Front Office. All rights reserved. League data from Sleeper. <a href="#about">Credits</a></p>
 </footer>
 </div>
 
-<script src="js/core.js?v=20261007r"></script>
+<script src="js/core.js?v=20261008a"></script>
 <script src="js/league-load.js?v=20261008l"></script>
 <script src="js/draft-classes.js?v=20261007t"></script>
-<script src="js/values-engine.js?v=20261008c"></script>
-<script src="js/render.js?v=20261008i"></script>
-<script src="js/player-cards.js?v=20261008d"></script>
+<script src="js/values-engine.js?v=20261008q"></script>
+<script src="js/render.js?v=20261008l"></script>
+<script src="js/player-cards.js?v=20261008f"></script>
 <script src="js/settings-tab.js?v=20261007a"></script>
 <script src="js/strategy.js?v=20261007g"></script>
 <script src="js/live-scores.js?v=20261007n"></script>
@@ -586,14 +586,14 @@
 <script src="js/calc-browse.js?v=20261007a"></script>
 <script src="js/calc-minibar.js?v=20261007a"></script>
 <script src="js/trophy.js?v=20261007a"></script>
-<script src="js/popovers.js?v=20261008v"></script>
+<script src="js/popovers.js?v=20261008w"></script>
 <script src="js/trade-finder.js?v=20261007m"></script>
 <script src="js/pickers.js?v=20261007p"></script>
 <script src="js/nav.js?v=20261008r"></script>
-<script src="js/app-shell.js?v=20261008z"></script>
+<script src="js/app-shell.js?v=20261008w"></script>
 <script src="js/calc-phone.js?v=20261007m"></script>
 <script src="js/about.js?v=20261008c"></script>
-<script src="js/share.js?v=20261007a"></script>
-<script src="js/home.js?v=20261007a"></script>
+<script src="js/share.js?v=20261008a"></script>
+<script src="js/home.js?v=20261008a"></script>
 </body>
 </html>

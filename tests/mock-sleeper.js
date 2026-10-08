@@ -29,6 +29,12 @@ function transactions(w){
     return { type: 'trade', status: 'complete', transaction_id: `${w}-${i}`, created: Date.now() - (w * 30 + i) * 864e5, roster_ids: [a, c], adds: { [x]: a, [y]: c }, drops: { [x]: c, [y]: a }, draft_picks: [] }; });
 }
 
+const skill = Object.entries(players).filter(([, p]) => ['QB', 'RB', 'WR', 'TE'].includes(p.position) && p.team)
+  .sort(([, a], [, b]) => (a.search_rank || 1e9) - (b.search_rank || 1e9)).map(([id, p]) => ({ id, name: p.full_name || `${p.first_name} ${p.last_name}`, pos: p.position }));
+const sfList = skill.slice(0, 400);
+const oneList = [...sfList.filter(p => p.pos !== 'QB').slice(0, 30), ...sfList.filter(p => p.pos === 'QB').slice(0, 10), ...sfList.filter(p => p.pos !== 'QB').slice(30), ...sfList.filter(p => p.pos === 'QB').slice(10)].slice(0, 400);
+const rankings = { updated: new Date().toISOString(), lists: { sf: sfList, '1qb': oneList } };
+
 async function setup(page, { withHistory = true } = {}){
   await page.route('**/*', route => {
     const u = route.request().url();
@@ -36,6 +42,8 @@ async function setup(page, { withHistory = true } = {}){
     // The test league uses made-up player IDs, so it must not pick up the real saved player list
     if (u.includes('/data/sleeper-players.json')) return route.fulfill({ status: 404, body: '' });
     if (u.startsWith('http://localhost:')) return route.continue();
+    // Front Office Rankings from the Rankings Desk: the fixture players in Sleeper's order (1QB list puts QBs lower)
+    if (u.includes('rankings.json')) return j(rankings);
     if (u.includes('/user/tester')) return j({ user_id: 'u3', display_name: 'Tester' });
     if (u.includes('/state/nfl')) return j({ season: '2026', league_season: '2026', season_type: 'regular', week: 5, display_week: 5 });
     if (u.includes('/leagues/nfl/')) return j([league]);

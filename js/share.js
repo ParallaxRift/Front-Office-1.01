@@ -96,7 +96,7 @@ function drawTradeImage(){
     .replace(/^You win/, `${nameA} wins`).replace(/^You overpay/, `${nameA} overpays`)
     .replace("you're ahead", `${nameA} is ahead`).replace("they're ahead", `${nameB} is ahead`);
   x.fillText(neutral, W / 2, vy + 33);
-  x.fillStyle = "#93A2AC"; x.font = `500 15px ${F}`; x.fillText("Values customized for this league's scoring and trades. Rankings data via FantasyPros.", W / 2, H - 16);
+  x.fillStyle = "#93A2AC"; x.font = `500 15px ${F}`; x.fillText("Values customized for this league's scoring and trades. Front Office Rankings.", W / 2, H - 16);
   return c;
 }
 $("shareImage").addEventListener("click", async () => {

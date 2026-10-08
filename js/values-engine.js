@@ -2,8 +2,8 @@
 // Part of the site; loaded in order by index.html. All files share one global scope.
 // ============================================================
 // STEP 3: MARKET (BASE) VALUES
-// Uses DynastyProcess open data if reachable; otherwise estimates
-// from Sleeper's own player rankings and ages.
+// Front Office Rankings from the Rankings Desk; if they can't be reached,
+// an estimate from Sleeper's own player rankings and ages.
 // ============================================================
 function parseCSV(text){
   const rows=[]; let row=[], cell="", q=false;
@@ -21,50 +21,95 @@ function parseCSV(text){
 const normName = n => (n||"").toLowerCase().replace(/[.'’`]/g,"").replace(/-/g," ")
   .replace(/\b(jr|sr|ii|iii|iv|v)\b/g,"").replace(/[^a-z ]/g,"").replace(/\s+/g," ").trim();
 
-// 1st choice: data/values.json, written daily by the GitHub Action from FantasyPros.
-// It only exists when the site is hosted (GitHub Pages), not when opened as a local file.
-const FP_VALUES = "data/values.json";
-let fpDataPromise = null;
-function getValuesFile(){
-  if (!fpDataPromise) fpDataPromise = fetch(FP_VALUES, { cache: "no-store" })
-    .then(r => { if (!r.ok) throw new Error("values.json " + r.status); return r.json(); })
-    .catch(e => { fpDataPromise = null; throw e; });
-  return fpDataPromise;
+// ---------- Market values: Front Office Rankings ----------
+// The rankings come from the private Rankings Desk (a separate site), which publishes two ranked
+// lists, Superflex and 1QB, to RANKINGS_URL. Front Office reads only that file: each listed
+// player's rank becomes his market value on the curve. Players below the lists follow in Sleeper's
+// own player order. If the file can't be reached, values fall back to a Sleeper-based estimate.
+const RANKINGS_URL = "https://parallaxrift.github.io/The-Desk---Rankings/rankings.json";
+let rankingsPromise = null;   // (checkRankingsUpdate below swaps in a newer file when one is published)
+function getRankingsFile(){
+  if (!rankingsPromise) rankingsPromise = fetch(RANKINGS_URL, { cache: "no-store" })
+    .then(r => { if (!r.ok) throw new Error("rankings " + r.status); return r.json(); })
+    .catch(e => { rankingsPromise = null; throw e; });
+  return rankingsPromise;
 }
-// "87 of the country's top fantasy football experts", or a safe fallback if the count is unknown
-function expertPhrase(n){ return n > 0 ? `${n} of the country's top fantasy football experts` : "the country's top fantasy football experts"; }
-async function loadFantasyPros(){
-  const data = await getValuesFile();
-  const map = new Map();
-  for (const p of data.players || []){
-    const key = normName(p.name) + "|" + String(p.pos||"").toUpperCase();
-    if (!map.has(key)) map.set(key, { v1: +p.value_1qb || 0, v2: +p.value_2qb || 0, r1: p.r1 != null ? +p.r1 : null, r2: p.r2 != null ? +p.r2 : null, sd1: p.sd1 != null ? +p.sd1 : null, sd2: p.sd2 != null ? +p.sd2 : null, pj: Array.isArray(p.pj) ? p.pj : null, backup: p.source === "dynastyprocess" });
-  }
-  if (map.size < 100) throw new Error("too few players");
-  return { kind: "fp", map, updated: data.updated, mixed: !!data.filled_from_dynastyprocess,
-           experts: { oneqb: +data.experts_1qb || 0, sf: +data.experts_sf || 0 } };
-}
-async function loadMarket(){
-  try { return await loadFantasyPros(); } catch(e){ console.info("FantasyPros values not available, trying DynastyProcess", e.message); }
-  try {
-    const r = await fetch(MARKET_CSV);
-    if (!r.ok) throw new Error("csv " + r.status);
-    const rows = parseCSV(await r.text());
-    const h = rows[0].map(x => x.trim().toLowerCase());
-    const iName=h.indexOf("player"), iPos=h.indexOf("pos"), i1=h.indexOf("value_1qb"), i2=h.indexOf("value_2qb");
-    if ([iName,iPos,i1,i2].includes(-1)) throw new Error("unexpected columns");
-    const map = new Map();
-    for (const row of rows.slice(1)){
-      if (!row[iName]) continue;
-      const key = normName(row[iName]) + "|" + (row[iPos]||"").toUpperCase();
-      if (!map.has(key)) map.set(key, { v1: +row[i1]||0, v2: +row[i2]||0 });
+async function loadRankings(){
+  const data = await getRankingsFile();
+  const map = new Map(), get = key => { if (!map.has(key)) map.set(key, { r1: null, r2: null, sd1: null, sd2: null, pj: null, listed: false }); return map.get(key); };
+  let counts = 0;
+  for (const [fmt, rk] of [["sf", "r2"], ["1qb", "r1"]]){
+    const list = data?.lists?.[fmt];
+    if (!Array.isArray(list) || list.length < 50) throw new Error("rankings list too short: " + fmt);
+    const seen = new Set();
+    list.forEach(p => {
+      const key = normName(p.name) + "|" + String(p.pos || "").toUpperCase();
+      if (seen.has(key)) return; seen.add(key);
+      const m = get(key); m[rk] = seen.size; m.listed = true;
+    });
+    // everyone else on an NFL roster follows the list in Sleeper's player order
+    const rest = Object.values(S.sleeperPlayers || {})
+      .filter(p => ["QB", "RB", "WR", "TE"].includes(p.position) && p.team && p.search_rank)
+      .sort((x, y) => x.search_rank - y.search_rank);
+    let n = seen.size;
+    for (const p of rest){
+      const key = normName(p.full_name || `${p.first_name || ""} ${p.last_name || ""}`) + "|" + p.position;
+      if (seen.has(key)) continue; seen.add(key);
+      const m = get(key); n++; m[rk] = n;
     }
-    if (map.size < 100) throw new Error("too few rows");
-    return { kind: "dp", map };
-  } catch(e){
-    console.warn("Market CSV unavailable, using Sleeper estimate", e);
-    return { kind: "sleeper", map: null };
+    counts = Math.max(counts, list.length);
   }
+  // Season projections published from the Desk (yours or the Sleeper-stats estimate); Sleeper stats if missing
+  const PF = ["py", "ptd", "int", "ry", "rtd", "rec", "recy", "rectd", "fl"], fields = data.proj_fields || PF;
+  if (data.proj && Object.keys(data.proj).length > 50){
+    const order = PF.map(f => fields.indexOf(f));
+    for (const [key, v] of Object.entries(data.proj)){ const m = map.get(key); if (m && Array.isArray(v)) m.pj = order.map(i => i >= 0 ? Number(v[i]) || 0 : 0); }
+  } else await attachProjections(map);
+  return { kind: "fo", map, updated: data.updated, listed: counts };
+}
+// Season projections for the scoring fit, from each player's own Sleeper stats (data/players.json):
+// this season per game, blended with last season while games are few, scaled to 17 games
+async function attachProjections(map){
+  const cards = await loadCardData().catch(() => null), P = cards?.players || {};
+  const byKey = new Map();
+  for (const [pid, sp] of Object.entries(S.sleeperPlayers || {})){
+    if (!["QB", "RB", "WR", "TE"].includes(sp.position)) continue;
+    byKey.set(normName(sp.full_name || `${sp.first_name || ""} ${sp.last_name || ""}`) + "|" + sp.position, pid);
+  }
+  const season = Math.max(0, ...Object.values(P).flatMap(p => (p.s || []).map(r => r[0])));
+  const IDX = [5, 6, 7, 9, 10, 12, 13, 14, 15];   // pass yds, pass TD, INT, rush yds, rush TD, rec, rec yds, rec TD, fumbles lost
+  for (const [key, m] of map){
+    const rows = P[byKey.get(key)]?.s || [];
+    const now = rows.find(r => r[0] === season), prev = rows.find(r => r[0] === season - 1);
+    const pg = r => r && r[2] ? IDX.map(i => (r[i] || 0) / r[2]) : null, a = pg(now), b = pg(prev);
+    if (!a && !b) continue;
+    const w = a && b ? now[2] / (now[2] + 4) : a ? 1 : 0;
+    m.pj = IDX.map((_, j) => 17 * ((a ? a[j] : 0) * w + (b ? b[j] : 0) * (1 - w)));
+  }
+}
+// Publishing on the Desk reaches open pages too: every 5 minutes (and when the page comes back into
+// view) Front Office checks the rankings file, and if it changed, rebuilds every value in place.
+const RANKINGS_CHECK_MS = 5 * 60000;
+let rankingsChecking = false;
+async function checkRankingsUpdate(){
+  if (rankingsChecking || !S.league || S.market?.kind !== "fo" || document.hidden) return;
+  rankingsChecking = true;
+  try {
+    const r = await fetch(RANKINGS_URL, { cache: "no-store" });
+    const d = r.ok ? await r.json() : null;
+    if (d?.updated && d.updated !== S.market.updated){
+      rankingsPromise = Promise.resolve(d);
+      const m = await loadRankings();
+      S.market = m; buildValues(); rerenderKeepingPlace(); renderUpdated();
+    }
+  } catch(e){ console.info("Rankings check skipped", e.message); }
+  finally { rankingsChecking = false; }
+}
+setInterval(checkRankingsUpdate, RANKINGS_CHECK_MS);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) checkRankingsUpdate(); });
+async function loadMarket(){
+  try { return await loadRankings(); } catch(e){ console.warn("Front Office Rankings unavailable, using a Sleeper estimate", e.message); }
+  return { kind: "sleeper", map: null };
 }
 
 function ageFactor(pos, age){
@@ -160,7 +205,7 @@ function marketCurve(rank, B = S.curveB || 1, T = S.curveT || 1){
   return at * Math.pow(curveVal(rank, B) / at, T);
 }
 // ---------- League scoring from projections ----------
-// Each player's FantasyPros season projection is scored twice: under THIS league's rules and lineup,
+// Each player's season projection (from his own Sleeper stats) is scored twice: under THIS league's rules and lineup,
 // and under a standard 12-team full-PPR league (with Superflex if this league has it, since the
 // market list already prices that in). Comparing his value over a replacement-level player in each
 // gives a scoring factor: a 90-catch TE gains from TE premium, a blocking TE barely moves, a rushing
@@ -212,7 +257,7 @@ function statusRecordWeight(){
   return Math.min(STATUS_RECORD_MAX, Math.max(0, ((S.weeksPlayed || 0) - STATUS_RECORD_START) * 0.1));   // Week 4: 10%, Week 9 on: 60%
 }
 // ---------- Strength of the age and role adjustments ----------
-// FantasyPros' experts already rank older players lower and update ranks when starters change,
+// The rankings already mark older players down and move when starters change,
 // so these apply at reduced strength to avoid counting the same thing twice. Role: half strength.
 // Age: a quarter of the full table by default (Pat cut it 50% from half strength), and then tested
 // against the league's own trades, which can move it from no age discount (x0) up to double (x2,
@@ -272,7 +317,7 @@ function roleTextBase(a){
   return "";
 }
 // ---------- Depth-chart floor (players the expert rankings don't cover) ----------
-// FantasyPros ranks about 400 players. A starter or first backup it doesn't rank (a QB who just took over,
+// Front Office Rankings cover the top 400. A starter or first backup below the list (a QB who just took over,
 // a TE2) would otherwise be worth next to nothing, so anyone listed 1st or 2nd at his position on his NFL
 // team's depth chart is valued at least like the player at these market ranks [Superflex, 1QB]:
 const DEPTH_FLOOR_RANKS = {
@@ -304,11 +349,11 @@ function buildValues(){
     if (S.market.kind !== "sleeper"){
       const m = S.market.map.get(normName(name) + "|" + pos);
       if (m){
-        expert = !m.backup;                          // ranked by FantasyPros (not only the backup list)
+        expert = !!m.listed;                         // on Front Office Rankings (not just following in Sleeper's order)
         rank = cfg.superflex ? m.r2 : m.r1;
-        base = rank != null ? marketCurve(rank) : (cfg.superflex ? m.v2 : m.v1);   // average expert rank -> value
+        base = rank != null ? marketCurve(rank) : 0;   // rank -> value
         pj = m.pj;
-        sd = cfg.superflex ? m.sd2 : m.sd1;          // how much the experts disagree (spread of their ranks)
+        sd = cfg.superflex ? m.sd2 : m.sd1;          // how sure the rank is (our own band)
       }
     } else {
       const rk = p.search_rank;
@@ -339,7 +384,7 @@ function buildValues(){
   const rules = [];
   const r2 = x => Math.round(x*100)/100;
   // League scoring from projections replaces the flat setting multipliers when projections are available
-  const SF = S.market.kind === "fp" ? scoringFactors(list, cfg) : null;
+  const SF = S.market.kind === "fo" ? scoringFactors(list, cfg) : null;
   S.scoringFromProjections = !!SF;
   if (S.market.kind === "sleeper" && cfg.superflex) rules.push({m:"×1.3–2.2", t:"Superflex boosts QBs", d:"QBs ranked 13–24 gain the most because they become starters."});
   if (S.market.kind !== "sleeper" && cfg.superflex) rules.push({m:"SF", t:"Superflex market values used", d:"QBs start from Superflex market values, which already price in the second QB slot."});
@@ -371,14 +416,14 @@ function buildValues(){
     rules.push({ m: "League", t: `Your league's trade habits (${S.nudge.n} trades)`,
       d: parts.length ? parts.join(", ") + ". A light adjustment based on how your league has actually traded." : "Your league trades close to market value, so no adjustment was needed." });
   }
-  rules.push({ m: "Role", t: "Starters and handcuffs", d: "From NFL depth charts, on smooth slopes by market rank. Starting QBs: +1.5% (QB12 and better) rising to +4% at QB24 and +7.5% at QB36 and lower. Starting RBs: 0 at RB16 and better, rising to +3% at RB24 and lower. Each team's RB2 (the handcuff) +1.5%. Half-strength, because expert rankings already react to depth chart changes." });
+  rules.push({ m: "Role", t: "Starters and handcuffs", d: "From NFL depth charts, on smooth slopes by market rank. Starting QBs: +1.5% (QB12 and better) rising to +4% at QB24 and +7.5% at QB36 and lower. Starting RBs: 0 at RB16 and better, rising to +3% at RB24 and lower. Each team's RB2 (the handcuff) +1.5%. Half-strength, because the rankings already react to depth chart changes." });
   { const st = S.ageStrength ?? 1, pc = (pos, age) => ((1 - ageDiscount(pos, age)) * AGE_STRENGTH * st * 100).toFixed(1).replace(/\.0$/, "");
     const at = age => `RB −${pc("RB", age)}%, WR −${pc("WR", age)}%, TE −${pc("TE", age)}%, QB −${pc("QB", age)}%`;
-    const fit = S.ageFit, why = !fit ? "A light default, because expert rankings already mark older players down. With 15+ trades it's tested against how your league actually trades."
-      : st > 1.05 ? `Your league discounts older players more than the experts do, so the age adjustment is at ${Math.round(st * 100)}% of the default (from ${fit.n} trades; it moves further as more trades come in).`
-      : st < 0.95 ? `Your league trades older players closer to expert value, so the age adjustment is at ${Math.round(st * 100)}% of the default (from ${fit.n} trades).`
+    const fit = S.ageFit, why = !fit ? "A light default, because the rankings already mark older players down. With 15+ trades it's tested against how your league actually trades."
+      : st > 1.05 ? `Your league discounts older players more than the rankings do, so the age adjustment is at ${Math.round(st * 100)}% of the default (from ${fit.n} trades; it moves further as more trades come in).`
+      : st < 0.95 ? `Your league trades older players closer to their ranking value, so the age adjustment is at ${Math.round(st * 100)}% of the default (from ${fit.n} trades).`
       : `Your league's ${fit.n} trades are consistent with the default.`;
-    rules.push({ m: "Age", t: st < 0.005 ? "Players 29 and older (no extra discount)" : "Players 29 and older", d: st < 0.005 ? "Your league trades older players at expert value, so there's no extra age discount. " + why : `Value drops each year from 29 to 33, then holds. At 29: ${at(29)}. At 31: ${at(31)}. At 33 and older: ${at(33)}. ` + why }); }
+    rules.push({ m: "Age", t: st < 0.005 ? "Players 29 and older (no extra discount)" : "Players 29 and older", d: st < 0.005 ? "Your league trades older players at ranking value, so there's no extra age discount. " + why : `Value drops each year from 29 to 33, then holds. At 29: ${at(29)}. At 31: ${at(31)}. At 33 and older: ${at(33)}. ` + why }); }
   S.rules = rules;
   for (const a of list){
     let m = S.nudge ? (S.nudge[a.pos] || 1) : 1;
@@ -422,7 +467,6 @@ function buildValues(){
   // with all of this league's adjustments applied the same way. Players experts agree on get a narrow range.
   for (const a of list){
     a.lo = a.hi = null;
-    if (a.mRank != null && a.sd > 0){ const c = marketCurve(a.mRank); a.lo = a.value * marketCurve(a.mRank + a.sd) / c; a.hi = a.value * marketCurve(Math.max(1, a.mRank - a.sd)) / c; }
   }
   // Waiver-level value: roughly the player every team could pick up for free
   const byValue = list.map(a => a.value).sort((a, b) => b - a);

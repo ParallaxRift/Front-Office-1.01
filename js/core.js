@@ -4,7 +4,6 @@
 // SETTINGS YOU CAN TWEAK
 // ============================================================
 const API = "https://api.sleeper.app/v1";
-const MARKET_CSV = "https://raw.githubusercontent.com/dynastyprocess/data/master/files/values-players.csv";
 const STUD_EXPONENT = 1.3;   // higher = one great player beats several good ones by more
 const FAIR_BAND = 0.05;      // within 5% counts as fair (matters for big trades)
 const FAIR_POINTS = 600;     // a gap of 600 or less always counts as fair (was 1,500 until 10/7)

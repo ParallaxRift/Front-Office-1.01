@@ -35,7 +35,7 @@ moreSheet.innerHTML = `<div class="ms-backdrop" data-close></div>
       <button type="button" data-more="getapp" class="ms-getapp"><b>Get the app</b><small>Add Front Office to your home screen</small></button>
       <div class="ms-mode"><span>View</span><div class="ms-toggle" id="msMode"><button type="button" data-mode="basics">The Basics</button><button type="button" data-mode="freak">Freakshow</button></div></div>
     </div>
-    <p class="ms-fine">Expert consensus rankings provided by FantasyPros. Not affiliated with Sleeper or FantasyPros. <span id="msVersion"></span></p>
+    <p class="ms-fine">League data from Sleeper. Not affiliated with Sleeper. <span id="msVersion"></span></p>
   </div>`;
 document.body.appendChild(moreSheet);
 const openMore = () => { syncModeButtons(); $("msVersion").textContent = [$("footVersion")?.textContent, $("footUpdated")?.textContent].filter(Boolean).join(" · "); moreSheet.hidden = false; requestAnimationFrame(() => moreSheet.classList.add("open")); };

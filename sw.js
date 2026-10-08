@@ -3,7 +3,7 @@
 //   release changes their ?v= number in index.html, so a new release always loads fresh files.
 // - The page itself and the data files (values, player cards) always try the network first, so
 //   values are never stale; the saved copy is only used when the phone is offline.
-// - Sleeper, FantasyPros and other outside requests are not touched.
+// - Sleeper and other outside requests are not touched.
 const CACHE = "front-office-v2";
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", e => e.waitUntil(
