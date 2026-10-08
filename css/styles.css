@@ -1412,7 +1412,6 @@ body:not(.has-league) .side-switch,body:not(.has-league) #miniBar{display:none!i
   #tfResults:not(.all) > article:nth-of-type(n+4){display:none}
   #tfHeading, #board{scroll-margin-top:64px}
 }
-}
 /* ===== Live Scores: matchup scoreboards with a side-by-side box score ===== */
 #matchups{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;align-items:start}
 .mb{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}

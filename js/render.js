@@ -287,7 +287,7 @@ function renderCalc(){
     .map(a => {
       const sub = a.kind === "player" ? [esc(a.nfl), a.age ? "age " + ageText(a.age) : "", rankHTML(a)].filter(Boolean).join(", ") : esc(a.nfl);
       return `<div class="bitem">
-        <button type="button" class="bi-link" data-show="${esc(a.id)}" title="${a.kind === "player" ? "Open " + esc(a.name) + "'s player card" : "See " + esc(a.name) + " in Player Values"}">
+        <button type="button" class="bi-link" data-show="${esc(a.id)}" title="${a.kind === "player" ? "Open " + esc(a.name) + "'s player card" : "See " + esc(a.name) + " in Rankings"}">
           ${assetPhoto(a, "trade")}<span class="bi-text"><b>${esc(a.name)}${injTag(a.pid)}</b><small>${sub}</small></span></button>
         <span class="bi-val">${fmt(a.value)}</span>
         <button type="button" class="bi-x" data-side="${side}" data-id="${esc(a.id)}" aria-label="Remove ${esc(a.name)} from the trade">✕</button></div>`;
@@ -437,7 +437,7 @@ $("board").addEventListener("click", e => {
   if (!l || !l.dataset.show) return;
   const a = S.assets.get(l.dataset.show);
   if (a && a.kind === "player") openPlayerCard(a.pid);    // players open their player card
-  else showInValues(l.dataset.show);                      // picks still jump to Player Values
+  else showInValues(l.dataset.show);                      // picks still jump to Rankings
 });
 // Jump to a player's (or pick's) row in League Values and highlight it
 function showInValues(id){

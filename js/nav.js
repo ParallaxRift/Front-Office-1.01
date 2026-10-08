@@ -2,7 +2,7 @@
 // Part of the site; loaded in order by index.html. All files share one global scope.
 // ============================================================
 // SECTIONS
-// The tabs are grouped into four sections: Trade Tools, Player Values, My Team and League Locker.
+// The tabs are grouped into four sections: Trade Tools, Rankings, My Team and League Locker.
 // Trade Tools always opens on the Trade Calculator; League Locker reopens the tab you last used there.
 // The section bar picks a section; the row under it (only when a section has more
 // than one tab) picks the tab inside it. The tab buttons themselves are unchanged,
@@ -11,7 +11,7 @@
 // ============================================================
 const NAV_GROUPS = [
   { id: "trade",  label: "Trade Tools",   tabs: ["calc", "finder", "history"], always: "calc" },
-  { id: "values", label: "Player Values", tabs: ["values"] },
+  { id: "values", label: "Rankings", tabs: ["values"] },
   { id: "team",   label: "My Team",       tabs: ["strategy"] },
   { id: "league", label: "League Locker", tabs: ["standings", "power", "sim", "trophy", "statuses", "settings"] },
   { id: "scores", label: "Live Scores",   tabs: ["scores"] },

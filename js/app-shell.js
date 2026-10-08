@@ -16,7 +16,7 @@ const TB_ICONS = {
   scores: '<rect x="3" y="4" width="18" height="14" rx="2.5"/><path d="M12 4v14M8 21h8"/><path d="M6.5 9.5h2M7.5 8.5v2M15.5 9.5h2M15.5 12.5h2"/>',
   more:   '<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>'
 };
-const TB_ITEMS = [["trade", "Trade"], ["values", "Values"], ["team", "My Team"], ["league", "League"], ["scores", "Scores"], ["more", "More"]];
+const TB_ITEMS = [["trade", "Trade"], ["values", "Rankings"], ["team", "My Team"], ["league", "League"], ["scores", "Scores"], ["more", "More"]];
 const tabbar = document.createElement("nav");
 tabbar.className = "tabbar"; tabbar.id = "tabbar"; tabbar.setAttribute("aria-label", "Main");
 tabbar.innerHTML = TB_ITEMS.map(([k, label]) => `<button type="button" data-go="${k}" aria-current="false"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${TB_ICONS[k]}</svg><span>${label}</span></button>`).join("");
@@ -31,7 +31,7 @@ moreSheet.innerHTML = `<div class="ms-backdrop" data-close></div>
     <div class="ms-list">
       <button type="button" data-more="feedback"><b>Feedback &amp; Build Notes</b><small>Report a bug, suggest an idea, see what's new</small></button>
       <button type="button" data-more="modes"><b>The Basics vs. Freakshow</b><small>What each view shows</small></button>
-      <button type="button" data-more="about"><b>About Front Office</b><small>What Front Office does, and credits</small></button>
+      <button type="button" data-more="about"><b>About Front Office</b><small>What Front Office does, credits, terms and privacy</small></button>
       <button type="button" data-more="getapp" class="ms-getapp"><b>Get the app</b><small>Add Front Office to your home screen</small></button>
       <div class="ms-mode"><span>View</span><div class="ms-toggle" id="msMode"><button type="button" data-mode="basics">The Basics</button><button type="button" data-mode="freak">Freakshow</button></div></div>
     </div>
