@@ -1,12 +1,12 @@
-# Runs the daily updates once a day, and any time you press "Run workflow".
-#  1. FantasyPros values      -> data/values.json
-#  2. Player card stats (Sleeper) + injury reports (FantasyPros) -> data/players.json
+# Runs 3 times a day, and any time you press "Run workflow".
+#  Player list and career stats, both from Sleeper -> data/players.json and data/sleeper-players.json
+# Market values are NOT made here: Front Office reads them from the Rankings Desk's published file.
 name: Update values
 
 on:
   schedule:
-    - cron: "0 11 * * *"   # every day at 11:00 UTC (6 or 7 AM Eastern): values, stats, injuries, news
-    - cron: "0 17 * * *"   # midday refresh, mostly for fresh injury news (noon Eastern)
+    - cron: "0 11 * * *"   # every day at 11:00 UTC (6 or 7 AM Eastern)
+    - cron: "0 17 * * *"   # midday refresh (noon Eastern)
     - cron: "0 23 * * *"   # evening refresh, after practice reports come out (6 or 7 PM Eastern)
   workflow_dispatch:        # adds a "Run workflow" button on the Actions tab
 
@@ -25,32 +25,20 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Download FantasyPros rankings and build values
-        env:
-          FANTASYPROS_API_KEY: ${{ secrets.FANTASYPROS_API_KEY }}
-        run: python scripts/update_values.py
-
-      - name: Download career stats and injury history for player cards
-        continue-on-error: true   # if this fails, values still save
-        env:
-          FANTASYPROS_API_KEY: ${{ secrets.FANTASYPROS_API_KEY }}
+      - name: Download Sleeper players and stats
         run: python scripts/update_players.py
 
       - name: Save the new data files
         run: |
           git config user.name "front-office-bot"
           git config user.email "front-office-bot@users.noreply.github.com"
-          git add data/values.json
-          [ -f data/rank-history.json ] && git add data/rank-history.json
-          [ -d data/history ] && git add data/history
-          [ -f data/values-status.json ] && git add data/values-status.json
+          # One-time cleanup: the old FantasyPros files and script are removed from Front Office
+          git rm -r -q --ignore-unmatch data/values.json data/values-status.json data/rank-history.json data/history data/fp-injuries data/fp-status.json scripts/update_values.py
           [ -f data/players.json ] && git add data/players.json
           [ -f data/sleeper-players.json ] && git add data/sleeper-players.json
-          [ -d data/fp-injuries ] && git add data/fp-injuries
           [ -d data/season-stats ] && git add data/season-stats
-          [ -f data/fp-status.json ] && git add data/fp-status.json
           if git diff --cached --quiet; then
-            echo "Data unchanged today."
+            echo "Data unchanged."
           else
             git commit -m "Daily data update"
             git pull --rebase -X theirs origin main
