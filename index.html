@@ -383,106 +383,6 @@
   </section>
 </div><!-- /appView -->
 
-<article id="lockView" class="about lock" hidden>
-  <a class="back" href="#">Back to Front Office</a>
-  <h1>About Front Office</h1>
-  <p class="intro">This page is password protected.</p>
-  <form id="lockForm" class="lock-form">
-    <label for="lockPw">Password</label>
-    <div class="inputgroup"><input id="lockPw" type="password" autocomplete="current-password" required><button class="btn" type="submit">Unlock</button></div>
-    <p class="status" id="lockStatus" role="status" aria-live="polite"></p>
-  </form>
-</article>
-
-<article id="aboutView" class="about" hidden>
-  <a class="back" href="#">Back to Front Office</a>
-  <h1>How Front Office Works</h1>
-  <p class="intro">Most trade value charts give every league the same numbers. Front Office starts from the dynasty market, rebuilds those values around your league's rules, and gives every team its own read on what to do next.</p>
-
-  <h2>Where the Values Start</h2>
-  <p>Every player begins with a <b>market value</b> on a 0–10,000 scale, built from <b>expert consensus</b>: the combined dynasty rankings of the country's top fantasy football analysts. Front Office uses each player's <b>average expert rank</b> (not just his spot in the list), so a near-tie between two players stays a near-tie and a real drop-off between tiers shows up as a bigger gap in value. That average is smoothed over the last 3 days so one day's shuffle doesn't jolt values. Ranks become values on a smooth curve: rank 1 is about 10,000, rank 50 about 5,400 and rank 100 about 2,900.</p>
-  <p>Players the experts don't rank, such as deep bench and taxi-squad players, are filled in from DynastyProcess open data. They continue the ranking past the last expert-ranked player, in DynastyProcess's order, so there's no cliff where everyone gets the same value. If neither source can be reached, Front Office falls back to an estimate built from Sleeper's own player rankings.</p>
-
-  <h2>How Values Are Customized for Your League</h2>
-  <ol class="steps">
-    <li><b>Read your league from Sleeper.</b> Team count, starting lineup, scoring, bench, IR and taxi spots, rosters, and traded picks all come straight from your league. Nothing is typed in by hand.</li>
-    <li><b>Score every player under your rules.</b> Each player's season projection is scored under your league's scoring and lineup, and compared with a standard league (below).</li>
-    <li><b>Apply age and role.</b> Older players lose a little value; starting QBs, low-ranked starting RBs and handcuff RBs gain a little.</li>
-    <li><b>Tune to your league's trades.</b> With 15 or more trades, the value curve and each position are nudged toward how your managers actually trade (explained below).</li>
-    <li><b>Rescale to 10,000.</b> Values are scaled so a typical #1 player lands at 10,000, using the top five players so one player's swing doesn't move everyone.</li>
-    <li><b>Value the draft picks</b> from your league's own player values (explained below).</li>
-  </ol>
-  <div class="tablewrap">
-    <table>
-      <thead><tr><th>Adjustment</th><th>How it works</th><th>Who it affects</th></tr></thead>
-      <tbody>
-        <tr><td>Superflex or 2QB</td><td>Superflex market rankings, which already price in the second QB slot</td><td>Quarterbacks</td></tr>
-        <tr><td>Your scoring and lineup</td><td>Season projections scored under your rules vs a standard league, by value over a replacement-level player. Applied at half strength, between ×0.75 and ×1.35</td><td>Everyone, by how they score: TE premium helps high-catch TEs, 6-point passing TDs help QBs who throw for scores, bigger leagues and more flex spots raise depth players</td></tr>
-        <tr><td>Starting QB on his NFL team</td><td>A smooth slope by market rank: +1.5% at QB12 and better, +4% at QB24, +7.5% at QB36 and lower</td><td>Depth chart QB1s</td></tr>
-        <tr><td>Starting RB / handcuff RB</td><td>Starters: 0 at RB16 and better, rising smoothly to +3% at RB24 and lower. The RB2: +1.5%</td><td>Depth chart RB1s and RB2s</td></tr>
-        <tr><td>Player is 29 or older</td><td>By default, at 29: RB −2.2%, WR −1.2%, TE −1.3%, QB −0.5%. At 31: RB −6%, WR −3.3%, TE −3.7%, QB −1.1%. At 33 and older: RB −8.4%, WR −4.6%, TE −5.7%, QB −2%. Tested against your league's trades: anywhere from no discount to double these, as the evidence builds</td><td>Older players at every position</td></tr>
-        <tr><td>Your league's trade habits (15+ trades)</td><td>The value curve's shape, plus up to ×0.925 to ×1.075 per position, learned from your trades (recent trades count more)</td><td>Every player and pick</td></tr>
-        <tr><td>Limit</td><td>All adjustments together stay within ×0.65 to ×1.5 of market value</td><td>Everyone</td></tr>
-      </tbody>
-    </table>
-  </div>
-  <p class="small">Role counts at half strength and age at a quarter because expert rankings already react to depth chart changes and mark older players down. The age discount is then tested against your league's real trades: if your managers dump veterans faster than the experts, it grows (up to double); if they pay expert value for vets, it shrinks (down to none). If projections aren't available, Front Office falls back to simple multipliers for TE premium, PPR, passing TDs, league size, flex spots and starting WRs. The League Settings tab lists the adjustments applied to your league, and an accuracy check showing how closely these values match your league's real trades.</p>
-
-  <h2>How Draft Picks Are Valued</h2>
-  <p>A pick is worth the value of the player it usually turns into. A projected 1.01 is valued like your league's 30th-best player, each later first like a player about four spots lower (so a 1.12 is about the 73rd), and second-rounders and later about five spots lower per pick. Picks a year further out are worth 6% less for each year. Because this uses your league's own player values, picks rise in Superflex and TE-premium leagues along with the players they become.</p>
-  <p>During the season, next year's picks are valued from the <b>Season Simulator</b>: the rest of the season and the playoffs are played out 3,000 times, and each team's pick is valued as the average over every slot it landed in (non-playoff teams pick first, worst record first; then playoff teams by how early they were knocked out; the champion picks last). The pick shows its likely range, like "simulated: likely 1.02–1.06". Outside the season, the weakest roster is projected to pick first. Next year's picks get a specific slot, like 1.04. Picks two years out are only half-projected and labeled Early, Mid, or Late, and picks three years out are treated as middle-of-the-round. Next year's picks gain value as the draft gets close (up to +4% in the weeks before it, down to −10% when it's far off), and each year further out loses 8% for uncertainty. Traded picks show on the team that owns them now.</p>
-
-  <h2>What's Different for Each Team</h2>
-  <p>Within a league, every manager sees the <b>same player values</b>, so trades are judged on one consistent scale. What changes from team to team is the context around those values:</p>
-  <ul>
-    <li><b>Picks</b> are valued by the original owner's projected finish, so a pick from a weak team is worth more than one from a strong team.</li>
-    <li><b>Team status:</b> the top third of the league by roster strength are labeled contenders, the bottom third rebuilding, and the rest middle.</li>
-    <li><b>Team Strategy</b> ranks each team's starters and depth at every position, its roster age, and its pick haul against the league, then suggests a plan, specific trade targets, players to sell, and the best trade partners.</li>
-    <li><b>The trade calculator</b> adds hints based on your situation, like noting when picks and young players fit a rebuild.</li>
-  </ul>
-
-  <h2>Your League's Trade History</h2>
-  <p>Front Office reads every completed trade from the current season and up to three earlier seasons, following Sleeper's links between seasons. The Trade History tab lists each deal and grades it with today's values, so you can see who won and how each trade has aged. Picks still to be made show their projected slot, and picks that were already used show the player they became.</p>
-
-  <h2 id="tuning">How Your League's Trades Tune Values</h2>
-  <p>Every league has its own habits. Some overpay for running backs, some hoard rookie picks. Once your league has enough trading history, Front Office learns those habits and adjusts values to match, without letting them override the expert market.</p>
-  <ol class="steps">
-    <li><b>Collect the trades.</b> Every completed trade from the last four seasons is included, from simple two-team swaps to 3- and 4-team deals. Recent trades count more: a trade from a year ago counts half as much as one from this week.</li>
-    <li><b>Fit the value curve.</b> Front Office tries different curve shapes, from one that pays a bigger premium for elite players to one that keeps more value in depth, and leans toward whichever makes your league's trades balance best.</li>
-    <li><b>Break each trade down by team and position.</b> For every team in the trade, Front Office adds up the market value it received and the value it gave up at each position: QB, RB, WR, TE, and draft picks. In a 3- or 4-team trade, each team is measured against what it personally sent out, not against one other team.</li>
-    <li><b>Find what balances your league's trades.</b> If managers in your league agreed to a trade, they considered it fair. Front Office finds the set of multipliers, one per position, that makes your league's trades come out most even. For example, if your managers keep giving up extra market value to land running backs, running backs get a multiplier above 1.</li>
-    <li><b>Keep it in check.</b> Each position's multiplier is capped between 0.75 and 1.25, and the math pulls every position back toward 1 unless the trades clearly point the other way, so a single unusual trade can't swing values.</li>
-    <li><b>Blend it in gently.</b> Your league's evidence counts more as it builds up: about 20% at 15 trades, 33% at 30, 56% at 75 and 71% at 150, counting recent and balanced trades fully. One-sided trades count less (one 35% out of balance counts half), so a few bad deals can't distort values. Each position stays within ±7.5% no matter what. Expert consensus always makes up the rest. In practice, no position moves more than about 7.5%.</li>
-    <li><b>Rebuild the values.</b> Every player and pick is recalculated with the adjustment, then rescaled so a typical #1 player is still 10,000.</li>
-    <li><b>Check the result.</b> League Settings shows how far apart the two sides of your league's real trades come out using Front Office values vs plain market values, so you can see whether the tuning helps.</li>
-  </ol>
-  <p>The tuning only switches on once your league has at least <b>15 trades</b> of any size. When it's active, the line under your league name says how many trades it's based on, and the League Settings tab shows the exact adjustment for each position. Because there are no records of past market values, trades are measured against today's values, so the tuning reflects your league's long-run tendencies rather than any single moment.</p>
-  <p>Team Strategy uses the same history to show each team's trade record by today's values, their most frequent trade partner, managers who have traded away several of their own picks, and managers who tend to come out behind.</p>
-
-  <h2>How Trades Are Scored</h2>
-  <p>Several lesser pieces never add up to one difference-maker, so the calculator adds a <b>value adjustment</b>. No player's value is ever reduced. Instead, the side giving up fewer, better pieces gets a bonus added to its total, shown as its own line under that side's players. The bonus is the difference worked out like this:</p>
-  <ul>
-    <li><b>Each side's best piece counts in full.</b></li>
-    <li><b>Every extra piece is discounted</b> by how far it falls below the best piece it's being traded <i>for</i> (the other side's best). A piece half as valuable counts about 80%, a quarter as valuable about 66%, and a tenth about 55%.</li>
-    <li><b>Stars pull further ahead.</b> When a side is getting one of the top players in your league, its own depth pieces are discounted a little more, since true difference-makers are the hardest thing to replace.</li>
-    <li><b>Extra roster spots cost value.</b> If a side receives more pieces than it sends, each extra spot costs about one waiver-level player, charged against its smallest pieces. A piece can never cost more than it's worth, so adding a throw-in never makes a side worse.</li>
-    <li><b>Adding never subtracts.</b> Adding a player or pick to one side can never lower that side's adjusted total.</li>
-    <li><b>Market value only.</b> The grade uses league market values, the same for every team. How a trade fits a particular roster is shown separately as <b>lineup impact</b> (how much each team's starting lineup changes), and never changes the grade.</li>
-  </ul>
-  <p>Under the adjustment, the calculator names an approximate balancing piece: a player on the other roster with a market value near the adjustment. It's a practical idea of what could close the gap, not an exact match, since position and roster fit still matter. With 15+ trades that have two or more pieces on a side, how strongly extra pieces are discounted is fit to your league's own trades. Tap the <b>?</b> next to "Value adjustment" for a quick explanation.</p>
-  <p>For example, an early first-round pick worth about 6,000 traded for three veterans worth 2,000, 1,800, and 1,500 looks even on raw totals (6,000 vs. 5,300), but after the adjustment the three veterans count for well under half of the pick. The raw totals are still shown under each side's number, and a note explains the adjustment whenever it makes a real difference. A trade is called fair when the two sides are within 1,500 of each other (or within 5% on very big trades). When one side gets more than 15% extra, the calculator calls it one-sided and says who is giving up too much, since that trade is unlikely to be accepted and may be vetoed. When the gap is smaller than how much experts disagree about the players involved, it says the trade is too close to call. Each player's card also shows his value range: where most experts would put him. FAAB can be added to either side: FAAB is usually a throw-in, so a league's full FAAB budget counts as about half of a late 2nd-round pick, and smaller amounts proportionally. Copy link makes a link that reopens the exact trade for anyone, and Save image makes a picture of it to share. The same adjustment is used in Trade Finder and when grading Trade History.</p>
-
-  <h2>When Values Update</h2>
-  <p>Nothing is stored on a Front Office server. Each time you open a league, it pulls your league fresh from Sleeper and loads the latest market values, so roster moves, trades, and pick swaps show up as soon as you reload. Market values refresh automatically once a day, each morning, and the date of the last update is shown under your league name. On game days, Live Scores refreshes every minute for the current week.</p>
-
-  <h2>Your Privacy</h2>
-  <p>Front Office only needs your public Sleeper username, never a password. Your username and last-opened league are remembered in your own browser so you don't have to retype them, and they aren't sent anywhere else.</p>
-
-  <h2>Fine Print</h2>
-  <p class="small">Values are estimates to help you think through trades, not guarantees. Expert consensus rankings are provided by FantasyPros and used here for personal, non-commercial purposes, with DynastyProcess open data for players the experts don't rank. League data comes from Sleeper's public API. Front Office isn't affiliated with Sleeper, FantasyPros, or DynastyProcess.</p>
-  <a class="back" href="#">Back to Front Office</a>
-</article>
-
 <article id="modesView" class="about" hidden>
   <a class="back" href="#">Back to Front Office</a>
   <h1>The Basics vs. Freakshow</h1>
@@ -562,9 +462,9 @@
   <path d="M44 25v14" stroke="#D99A1E" stroke-width="2.3" stroke-linecap="round"/>
   <path d="M40.8 28h6.4M40.8 32h6.4M40.8 36h6.4" stroke="#D99A1E" stroke-width="2" stroke-linecap="round"/>
 </svg><span>Front Office</span></a>
-  <nav><a href="#">Home</a><a href="#about">About</a><a href="#modes">The Basics vs. Freakshow</a><a href="#beta">Sleeper Leagues in Beta</a><a href="#" id="footFeedback" hidden>Feedback &amp; Build Notes</a></nav>
+  <nav><a href="#">Home</a><a href="#modes">The Basics vs. Freakshow</a><a href="#beta">Sleeper Leagues in Beta</a><a href="#" id="footFeedback" hidden>Feedback &amp; Build Notes</a></nav>
   <span class="ver" id="footVersion"></span><span class="ver" id="footUpdated"></span>
-  <p>Expert consensus rankings provided by FantasyPros. Not affiliated with Sleeper or FantasyPros.</p>
+  <p>Expert consensus rankings provided by FantasyPros, with DynastyProcess open data for players the experts don't rank. League data from Sleeper. Values are estimates, not guarantees. Not affiliated with Sleeper, FantasyPros, or DynastyProcess.</p>
 </footer>
 </div>
 
@@ -572,8 +472,8 @@
 <script src="js/league-load.js?v=20261007k"></script>
 <script src="js/draft-classes.js?v=20261007t"></script>
 <script src="js/values-engine.js?v=20261008c"></script>
-<script src="js/render.js?v=20261008b"></script>
-<script src="js/player-cards.js?v=20261008b"></script>
+<script src="js/render.js?v=20261008c"></script>
+<script src="js/player-cards.js?v=20261008c"></script>
 <script src="js/settings-tab.js?v=20261007a"></script>
 <script src="js/strategy.js?v=20261007g"></script>
 <script src="js/live-scores.js?v=20261007n"></script>
@@ -589,9 +489,9 @@
 <script src="js/trade-finder.js?v=20261007m"></script>
 <script src="js/pickers.js?v=20261007p"></script>
 <script src="js/nav.js?v=20261007p"></script>
-<script src="js/app-shell.js?v=20261007q"></script>
+<script src="js/app-shell.js?v=20261008x"></script>
 <script src="js/calc-phone.js?v=20261007m"></script>
-<script src="js/about.js?v=20261007a"></script>
+<script src="js/about.js?v=20261008a"></script>
 <script src="js/share.js?v=20261007a"></script>
 <script src="js/home.js?v=20261007a"></script>
 </body>

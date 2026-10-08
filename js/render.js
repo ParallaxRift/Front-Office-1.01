@@ -462,7 +462,7 @@ $("teamB").addEventListener("change", renderCalc);
 // Green light = league tuning active, yellow = not active yet, grey = still checking
 function renderTuningLight(){
   const el = $("tuningLight"); if (!el || !S.league) return;
-  const link = `<a class="tlink" href="#tuning">How tuning works</a>`;
+  const link = "";
   if (S.historyError){
     el.innerHTML = `<span class="light off" aria-hidden="true"></span><div class="tuning-text"><b>League Tuning Is Off</b><p>Couldn't check your league's trade history, so values use expert consensus and your league settings only. Reopen the league to try again.</p>${link}</div>`;
     return;
