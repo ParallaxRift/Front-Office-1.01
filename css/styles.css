@@ -1473,3 +1473,4 @@ body:not(.has-league) .side-switch,body:not(.has-league) #miniBar{display:none!i
 /* Rankings: the two rank columns hug their content and sit centered */
 #valuesTable th.rk,#valuesTable td.rk{text-align:center;width:1%;white-space:nowrap;padding-left:10px;padding-right:10px;font-variant-numeric:tabular-nums}
 @media (max-width:600px){#valuesTable thead th.rk{white-space:normal;padding-left:4px;padding-right:4px}#valuesTable td.rk{padding-left:4px;padding-right:4px}}
+@media (max-width:600px){#standTable{min-width:0}#standTable td,#standTable th{padding:5px 5px}}

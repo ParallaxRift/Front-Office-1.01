@@ -5,6 +5,11 @@
 // Wins, losses, points for/against and max points come from Sleeper's
 // roster settings. "Power" is Front Office's roster-strength rank.
 // ============================================================
+// Chance to win it all, from the season simulator (background run on league load, or the latest Simulator run)
+function titleOddsText(rid){
+  const p = S.titleOdds?.odds.get(rid); if (p == null) return "–";
+  const v = p * 100; return v >= 99.5 && p < 1 ? ">99%" : v > 0 && v < 0.5 ? "<1%" : Math.round(v) + "%";
+}
 function renderStandings(){
   if (!S.league) return;
   const pts = (w, d) => (Number(w) || 0) + (Number(d) || 0) / 100;
@@ -17,13 +22,14 @@ function renderStandings(){
   }).sort((a, b) => (b.w + b.ti / 2) - (a.w + a.ti / 2) || b.pf - a.pf);
   const playoff = Number(S.league.settings?.playoff_teams) || 0;
   const anyMax = rows.some(r => r.max > 0);
-  $("standTable").innerHTML = `<thead><tr><th class="n">#</th><th>Team</th><th class="n">Record</th><th class="n hide-sm">Win %</th><th class="n">Points for</th><th class="n hide-sm">Points against</th>${anyMax ? `<th class="n hide-sm">Max points</th>` : ""}<th class="hide-sm">Streak</th><th class="n hide-sm">Power</th><th>Status</th></tr></thead>
+  $("standTable").innerHTML = `<thead><tr><th class="n">#</th><th>Team</th><th class="n">Record</th><th class="n hide-sm">Win %</th><th class="n" title="Chance to win the championship, from the season simulator as of today">Title odds</th><th class="n hide-sm">Points for</th><th class="n hide-sm">Points against</th>${anyMax ? `<th class="n hide-sm">Max points</th>` : ""}<th class="hide-sm">Streak</th><th class="n hide-sm">Power</th><th>Status</th></tr></thead>
     <tbody>${rows.map((r, i) => `<tr class="${r.rid === S.myRid ? "me" : ""}${playoff && i === playoff - 1 ? " cut" : ""}">
       <td class="n rk">${i + 1}</td>
       <td><span class="teamcell">${teamPhoto(r.rid, "sm")}<span><b>${esc(r.t?.name || "Team " + r.rid)}</b>${r.t?.manager && r.t.manager !== r.t.name ? `<br><small style="color:var(--muted)">${esc(r.t.manager)}</small>` : ""}</span></span></td>
       <td class="n rec">${r.w}-${r.l}${r.ti ? "-" + r.ti : ""}</td>
       <td class="n hide-sm">${r.gp ? Math.round((r.w + r.ti / 2) / r.gp * 1000) / 10 + "%" : "–"}</td>
-      <td class="n">${r.pf.toFixed(2)}</td><td class="n hide-sm">${r.pa.toFixed(2)}</td>
+      <td class="n"><b>${titleOddsText(r.rid)}</b></td>
+      <td class="n hide-sm">${r.pf.toFixed(2)}</td><td class="n hide-sm">${r.pa.toFixed(2)}</td>
       ${anyMax ? `<td class="n hide-sm">${r.max ? r.max.toFixed(2) : "–"}</td>` : ""}
       <td class="hide-sm">${r.streak ? `<span class="strk ${/w/i.test(r.streak) ? "w" : "l"}">${esc(r.streak)}</span>` : "–"}</td>
       <td class="n hide-sm">${ordinal(r.power)}</td>
@@ -49,7 +55,8 @@ function renderStandings(){
         <td><span class="badge ${badgeClass[t.status]}">${statusText[t.status]}</span></td></tr>`;
     }).join("")}</tbody>`;
   const WORDS = ["zero","one","two","three","four","five","six","seven","eight","nine","ten","eleven","twelve","thirteen","fourteen","fifteen","sixteen"];
-  $("standNote").textContent = `${playoff ? `The green line marks the playoff cutoff at the top ${WORDS[playoff] || playoff} teams, with ties broken by Points For. ` : "Ties are broken by Points For. "}Power is Front Office’s measure of pure roster strength based on player values — it does not factor in wins or record.`;
+  const oddsNote = S.titleOdds ? ` Title odds are as of ${S.titleOdds.at.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}, from ${S.titleOdds.runs.toLocaleString()} simulated seasons.` : S.nflState?.season_type === "regular" ? " Title odds appear once the season simulator finishes." : " Title odds are available during the regular season.";
+  $("standNote").textContent = `${playoff ? `The green line marks the playoff cutoff at the top ${WORDS[playoff] || playoff} teams, with ties broken by Points For. ` : "Ties are broken by Points For. "}Power is Front Office’s measure of pure roster strength based on player values — it does not factor in wins or record.${oddsNote}`;
 }
 
 // ============================================================
@@ -217,6 +224,7 @@ async function updatePickOdds(){
     const M = buildSim(D), R = runSim(M, PICK_SIM_RUNS, true);
     S.pickOdds = new Map([...R.out].map(([rid, o]) => [rid, o.slots.map(c => c / PICK_SIM_RUNS)]));
     S.playoffOdds = new Map([...R.out].map(([rid, o]) => [rid, o.playoffs / PICK_SIM_RUNS]));   // also used for team status
+    S.titleOdds = { odds: new Map([...R.out].map(([rid, o]) => [rid, o.champ / PICK_SIM_RUNS])), at: new Date(), runs: PICK_SIM_RUNS };   // Standings: chance to win it all
     S.weeksPlayed = D.done;
     buildValues();
     rerenderKeepingPlace();
@@ -235,6 +243,7 @@ async function simulateSeason(){
     await new Promise(r => setTimeout(r, 30));
     if (D.done >= D.lastReg){ out.innerHTML = `<p class="empty">The regular season is over, so there's nothing left to simulate. Check the Trophy Room for playoff results.</p>`; return; }
     const M = buildSim(D), R = runSim(M);
+    S.titleOdds = { odds: new Map([...R.out].map(([rid, o]) => [rid, o.champ / SIM_RUNS])), at: new Date(), runs: SIM_RUNS };
     // One full season played out, game by game. This is what changes on every click; the 10,000-season odds barely move.
     const one = runSim(M, 1, false, true).last;
     const oneRec = r => { const c = M.rec.get(r), w = one.W.get(r).w, tot = c.w + c.l + c.t + one.gamesLeft; return `${Math.round(w)}-${Math.round(tot - w)}`; };
@@ -258,11 +267,11 @@ async function simulateSeason(){
       <div class="sim-champ">${teamPhoto(one.champ, "lg")}<div><small>This simulation's champion</small><b>${nm(one.champ)}</b><span>${one.champ === champ.r ? "Also the most likely champion" : `Most likely champion: ${nm(champ.r)}`}, ${pct(champ.o.champ)} of ${SIM_RUNS.toLocaleString()} seasons</span></div></div>
       ${mine && mine.r !== champ.r ? `<p class="note" style="margin:8px 0 0">Your team, <b>${nm(mine.r)}</b>: projected ${recTxt(mine.w, mine.l)}, makes the playoffs ${pct(mine.o.playoffs)} of the time, wins it all ${pct(mine.o.champ)}.</p>` : ""}
       <h4 class="sim-h">Projected Final Standings</h4>
-      <div class="tablewrap"><table class="stand sim-table"><thead><tr><th class="n">#</th><th>Team</th><th class="n hide-sm">Now</th><th class="n">Projected</th><th class="n">This sim</th><th class="n">Playoffs</th><th class="n hide-sm">Bye</th><th class="n hide-sm">Final</th><th class="n">Title</th></tr></thead>
+      <div class="tablewrap"><table class="stand sim-table"><thead><tr><th class="n">#</th><th>Team</th><th class="n hide-sm">Now</th><th class="n">Projected</th><th class="n">This sim</th><th class="n">Playoffs</th><th class="n hide-sm">Final</th><th class="n">Title</th></tr></thead>
       <tbody>${rows.map((x, i) => `<tr class="${x.r === S.myRid ? "me" : ""}${i === R.nPO - 1 ? " cut" : ""}"><td class="n rk">${i + 1}</td>
         <td><span class="teamcell">${teamPhoto(x.r, "sm")}<b>${nm(x.r)}</b></span></td>
         <td class="n hide-sm">${x.cur.w}-${x.cur.l}${x.cur.t ? "-" + x.cur.t : ""}</td><td class="n rec">${recTxt(x.w, x.l)}</td><td class="n">${oneRec(x.r)}</td>
-        <td class="n">${pct(x.o.playoffs)}</td><td class="n hide-sm">${R.nPO === 6 ? pct(x.o.bye) : "–"}</td><td class="n hide-sm">${pct(x.o.final)}</td><td class="n"><b>${pct(x.o.champ)}</b></td></tr>`).join("")}</tbody></table></div>
+        <td class="n">${pct(x.o.playoffs)}</td><td class="n hide-sm">${pct(x.o.final)}</td><td class="n"><b>${pct(x.o.champ)}</b></td></tr>`).join("")}</tbody></table></div>
       <h4 class="sim-h">This Simulation's Playoffs</h4>
       <div class="sim-bracket">${rounds.map(rd => `<div class="sim-round">${rd.map(g => g.html).join("")}</div>`).join("")}</div>
       <p class="note">Simulated ${M.sched.length} remaining week${M.sched.length === 1 ? "" : "s"} (through Week ${D.lastReg}) and a ${R.nPO}-team playoff starting Week ${D.firstPlayoff}${M.median ? ", with a win or loss against the league median each week" : ""}. Projections use each player's scoring this season (last 3 weeks count extra), league values, and current injuries with Front Office's estimated return dates. Bye weeks and future trades aren't included. Projected records and percentages average ${SIM_RUNS.toLocaleString()} simulated seasons, so they only move a point or two between clicks. The champion, the This sim column, and the playoffs show one of those seasons played out game by game, so they change every time you simulate.</p>`;
