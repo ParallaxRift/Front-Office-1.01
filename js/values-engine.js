@@ -29,7 +29,7 @@ const normName = n => (n||"").toLowerCase().replace(/[.'’`]/g,"").replace(/-/g
 const RANKINGS_URL = "https://parallaxrift.github.io/The-Desk---Rankings/rankings.json";
 let rankingsPromise = null;   // (checkRankingsUpdate below swaps in a newer file when one is published)
 function getRankingsFile(){
-  if (!rankingsPromise) rankingsPromise = fetch(RANKINGS_URL, { cache: "no-store" })
+  if (!rankingsPromise) rankingsPromise = fetch(RANKINGS_URL + "?t=" + Date.now(), { cache: "no-store" })   // ?t= skips GitHub's 10-minute cache
     .then(r => { if (!r.ok) throw new Error("rankings " + r.status); return r.json(); })
     .catch(e => { rankingsPromise = null; throw e; });
   return rankingsPromise;
@@ -87,15 +87,15 @@ async function attachProjections(map){
     m.pj = IDX.map((_, j) => 17 * ((a ? a[j] : 0) * w + (b ? b[j] : 0) * (1 - w)));
   }
 }
-// Publishing on the Desk reaches open pages too: every 5 minutes (and when the page comes back into
+// Publishing on the Desk reaches open pages too: every 2 minutes (and when the page comes back into
 // view) Front Office checks the rankings file, and if it changed, rebuilds every value in place.
-const RANKINGS_CHECK_MS = 5 * 60000;
+const RANKINGS_CHECK_MS = 2 * 60000;
 let rankingsChecking = false;
 async function checkRankingsUpdate(){
-  if (rankingsChecking || !S.league || S.market?.kind !== "fo" || document.hidden) return;
+  if (rankingsChecking || !S.league || !S.market || document.hidden) return;   // also recovers if the first load fell back to Sleeper
   rankingsChecking = true;
   try {
-    const r = await fetch(RANKINGS_URL, { cache: "no-store" });
+    const r = await fetch(RANKINGS_URL + "?t=" + Date.now(), { cache: "no-store" });
     const d = r.ok ? await r.json() : null;
     if (d?.updated && d.updated !== S.market.updated){
       rankingsPromise = Promise.resolve(d);
