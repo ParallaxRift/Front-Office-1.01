@@ -510,22 +510,25 @@ const SORT_FIRST_DIR = { rank: 1, name: 1, pos: 1 };   // A to Z and #1 first; n
 // Rookies: first NFL season (Sleeper's years of experience is 0, or his rookie year is this season)
 const isRookie = a => { if (a.kind !== "player") return false; const sp = S.sleeperPlayers?.[a.pid] || {};
   return sp.years_exp === 0 || Number(sp.metadata?.rookie_year) === Number(S.nflState?.season || S.season); };
-// IR: on the NFL's injured reserve, or the similar PUP and non-football injury lists
-const onIR = a => a.kind === "player" && ["IR", "PUP", "NFI"].includes(S.sleeperPlayers?.[a.pid]?.injury_status);
+// My Players: every player and pick on your team
+const isMine = a => S.myRid != null && a.owner === S.myRid;
 function renderValues(){
   renderTuningLight(); renderUpdated();
   $("valueClear").hidden = !$("valueSearch").value;
   const q = normName($("valueSearch").value), pos = S.posFilter, rosteredOnly = $("rosteredOnly").checked;
   const key = VALUE_SORTS[valuesSort.key] || VALUE_SORTS.value, dir = valuesSort.dir;
   const all = [...S.assets.values()]
-    .filter(a => pos === "ALL" ? a.kind === "player" : pos === "PICK" ? a.kind === "pick" : pos === "ROOKIE" ? isRookie(a) : pos === "IR" ? onIR(a) : a.pos === pos)
+    .filter(a => pos === "ALL" ? a.kind === "player" : pos === "PICK" ? a.kind === "pick" : pos === "ROOKIE" ? isRookie(a) : pos === "MINE" ? isMine(a) : a.pos === pos)
     .filter(a => !rosteredOnly || a.owner != null)
     .filter(a => !q || normName(a.name).includes(q))
     .sort((a, b) => { const x = key(a), y = key(b); return (x < y ? -1 : x > y ? 1 : 0) * dir || b.value - a.value; });
   if (S.valuesHL){ const k = all.findIndex(a => a.id === S.valuesHL); if (k >= valuesLimit) valuesLimit = Math.ceil((k + 1) / VALUES_PAGE) * VALUES_PAGE; }
-  const rows = all.slice(0, valuesLimit);
+  const rows = pos === "MINE" ? all : all.slice(0, valuesLimit);   // your whole team on one page
   for (const th of $("valuesTable").querySelectorAll("th[data-sort]")) th.setAttribute("aria-sort", th.dataset.sort === valuesSort.key ? (dir > 0 ? "ascending" : "descending") : "none");
-  $("valuesCount").textContent = all.length ? `Showing ${rows.length} of ${all.length}` : "";
+  const mineTotal = pos === "MINE" ? all.reduce((t, a) => t + a.value, 0) : 0;
+  $("valuesCount").textContent = !all.length ? "" : pos === "MINE"
+    ? `${all.filter(a => a.kind === "player").length} players and ${all.filter(a => a.kind === "pick").length} picks · total value ${fmt(Math.round(mineTotal))}`
+    : `Showing ${rows.length} of ${all.length}`;
   $("valuesMore").hidden = rows.length >= all.length;
   $("valuesMore").textContent = `Show ${Math.min(VALUES_PAGE, all.length - rows.length)} more`;
   $("valuesBody").innerHTML = rows.map((a,i) => {
@@ -535,7 +538,7 @@ function renderValues(){
     const chTxt = a.kind === "pick" || Math.abs(ch) < 1 ? "" : `<span class="${ch>0?"up":"down"}">${ch>0?"+":""}${Math.round(ch)}%</span>`;
     return `<tr data-id="${esc(a.id)}"${a.kind === "player" ? ' tabindex="0"' : ""}${(() => { const c = [a.id === S.valuesHL ? "hl" : "", a.owner != null && a.owner === S.myRid ? "mine" : ""].filter(Boolean).join(" "); return c ? ` class="${c}"` : ""; })()}><td class="n">${a.kind === "player" && a.lgRank ? a.lgRank : i+1}</td><td><span class="teamcell">${assetPhoto(a, true)}${esc(a.name)}${injTag(a.pid)}</span></td><td>${esc(a.pos)}</td><td class="n">${esc(ageText(a.age))}</td>
       <td class="hide-sm">${teamHTML}</td><td class="n big">${fmt(a.value)}</td><td class="n hide-sm range-cell">${a.depthFloor ? "Depth chart value" : valueRangeText(a).replace("Range ", "") || (a.kind === "player" && a.lo != null ? "Experts agree" : "")}</td><td class="n hide-sm">${a.kind==="pick"?"":fmt(a.market)}</td><td class="n">${chTxt}</td></tr>`;
-  }).join("") || `<tr><td colspan="9" class="empty">No players match. Try a different search or filter.</td></tr>`;
+  }).join("") || `<tr><td colspan="9" class="empty">${pos === "MINE" && S.myRid == null ? "Choose your team in the league header to see your players." : "No players match. Try a different search or filter."}</td></tr>`;
 }
 $("valueSearch").addEventListener("input", () => { valuesLimit = VALUES_PAGE; renderValues(); });
 $("valuesMore").addEventListener("click", () => { valuesLimit += VALUES_PAGE; renderValues(); });

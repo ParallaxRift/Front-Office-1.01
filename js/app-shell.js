@@ -31,6 +31,7 @@ moreSheet.innerHTML = `<div class="ms-backdrop" data-close></div>
     <div class="ms-list">
       <button type="button" data-more="feedback"><b>Feedback &amp; Build Notes</b><small>Report a bug, suggest an idea, see what's new</small></button>
       <button type="button" data-more="modes"><b>The Basics vs. Freakshow</b><small>What each view shows</small></button>
+      <button type="button" data-more="about"><b>About Front Office</b><small>What Front Office does, and credits</small></button>
       <button type="button" data-more="getapp" class="ms-getapp"><b>Get the app</b><small>Add Front Office to your home screen</small></button>
       <div class="ms-mode"><span>View</span><div class="ms-toggle" id="msMode"><button type="button" data-mode="basics">The Basics</button><button type="button" data-mode="freak">Freakshow</button></div></div>
     </div>
@@ -47,6 +48,7 @@ moreSheet.addEventListener("click", e => {
   if (go === "feedback") $("groups").querySelector('[data-group="more"]')?.click();
   else if (go === "getapp") return openAppGuide();
   else if (go === "modes") location.hash = "#modes";
+  else if (go === "about") location.hash = "#about";
   else if (go === "switch") $("switchLeague").click();
   window.scrollTo({ top: 0 });
 });

@@ -213,16 +213,16 @@ async function openLeague(browser, viewport, opts){
     await page.click('th[data-sort=age]');
     const ages = await page.$$eval('#valuesBody tr', x => x.slice(0, 20).map(r => parseFloat(r.cells[3].textContent) || 0));
     check('sorting by a column works', ages.every((v, i) => !i || v <= ages[i - 1]), ages.slice(0, 3).join(', '));
-    // Rookies and IR filters: mark two players, then each filter shows exactly its player
+    // Rookies filter shows exactly the marked player; My Players shows every player and pick on your team
     const flt = await page.evaluate(async () => {
       const ps = [...S.assets.values()].filter(a => a.kind === 'player' && a.owner != null).slice(5, 7), [r, i] = ps.map(a => S.sleeperPlayers[a.pid]);
-      const keep = [r.years_exp, i.injury_status]; r.years_exp = 0; i.injury_status = 'IR';
+      const keep = [r.years_exp]; r.years_exp = 0;
       const names = async f => { document.querySelector(`#posFilter [data-pos=${f}]`).click(); await new Promise(z => setTimeout(z, 50)); return [...document.querySelectorAll('#valuesBody tr')].map(t => t.textContent); };
-      const rk = await names('ROOKIE'), ir = await names('IR');
-      r.years_exp = keep[0]; i.injury_status = keep[1]; document.querySelector('#posFilter [data-pos=ALL]').click();
-      return [rk.length === 1 && rk[0].includes(ps[0].name), ir.length === 1 && ir[0].includes(ps[1].name)].join(',');
+      const rk = await names('ROOKIE'), mine = await names('MINE'), cnt = document.getElementById('valuesCount').textContent, want = [...S.assets.values()].filter(a => a.owner === S.myRid).length;
+      r.years_exp = keep[0]; document.querySelector('#posFilter [data-pos=ALL]').click();
+      return [rk.length === 1 && rk[0].includes(ps[0].name), S.myRid != null && want > 0 && mine.length === want && /total value/.test(cnt)].join(',');
     });
-    check('Player Values: Rookies and IR filters', flt === 'true,true', flt);
+    check('Player Values: Rookies and My Players filters', flt === 'true,true', flt);
     // Trade Finder starts with suggestions
     await page.click('#groups [data-group=trade]'); await page.click('[data-tab=finder]'); await page.waitForTimeout(400);
     const sugg = await page.$$eval('#tfResults .tf-card', x => x.length), recs = await page.$$eval('#tfRecs .tf-rec', x => x.length);

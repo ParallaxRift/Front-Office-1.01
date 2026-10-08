@@ -345,7 +345,7 @@
         <button aria-pressed="false" data-pos="TE">TE</button>
         <button aria-pressed="false" data-pos="PICK">Picks</button>
         <button aria-pressed="false" data-pos="ROOKIE" title="First-year players">Rookies</button>
-        <button aria-pressed="false" data-pos="IR" title="Players on the NFL's injured reserve (also PUP and non-football injury lists)">IR</button>
+        <button aria-pressed="false" data-pos="MINE" title="Every player and pick on your team, with their values">My Players</button>
       </div>
       <div class="vsearch"><input type="search" id="valueSearch" placeholder="Search players" aria-label="Search players"><button type="button" class="clear-f" id="valueClear" title="Clear the search and show everyone" aria-label="Clear search" hidden>✕</button></div>
       <label style="font-size:14px;display:flex;gap:6px;align-items:center"><input type="checkbox" id="rosteredOnly" checked> Only rostered in this league</label>
@@ -382,6 +382,45 @@
     <div id="strategy"></div>
   </section>
 </div><!-- /appView -->
+
+<article id="aboutView" class="about" hidden>
+  <a class="back" href="#">Back to Front Office</a>
+  <h1>About Front Office</h1>
+  <p class="intro">Front Office is a dynasty fantasy football trade calculator built around your league. Sign in with your Sleeper username and every value, grade and suggestion is fitted to your league's rules, rosters and history, not a one-size-fits-all chart.</p>
+
+  <h2>Values Built for Your League</h2>
+  <ul>
+    <li><b>Player Values:</b> every player and draft pick ranked for your league's format, lineup and scoring, with filters for position, rookies and injured players, and your own players highlighted.</li>
+    <li><b>League tuning:</b> values learn from the trades your league actually makes, so they reflect how your league trades.</li>
+    <li><b>Draft picks:</b> each pick is valued by where it's likely to land and the strength of its draft class.</li>
+    <li><b>Kept current:</b> values, depth charts and injury news refresh several times a day.</li>
+  </ul>
+
+  <h2>Trade Tools</h2>
+  <ul>
+    <li><b>Trade Calculator:</b> build any trade between two teams and see who wins, how close it is, and what would even it out. Share it with a link or an image.</li>
+    <li><b>Trade Finder:</b> pick a player to move and get fair offers that fit your team, or find realistic targets and what it would take to land them.</li>
+    <li><b>Trade History:</b> every trade in your league graded with today's values, plus each team's trade record.</li>
+  </ul>
+
+  <h2>Your Team</h2>
+  <ul>
+    <li><b>My Team:</b> a game plan for contending or rebuilding, a position-by-position report card, buy and sell lists, and your best trade partners.</li>
+    <li><b>Player cards:</b> tap any player for his depth chart spot, latest news, current injury status with an estimated return, career stats and injury history.</li>
+  </ul>
+
+  <h2>Your League</h2>
+  <ul>
+    <li><b>League Locker:</b> standings, power rankings, a season simulator with playoff and title odds, the Trophy Room of past champions, team statuses and league settings.</li>
+    <li><b>Live Scores:</b> every matchup with box scores, refreshing on game days.</li>
+    <li><b>Two views:</b> The Basics for a quick trade check, or Freakshow for every tool. <a href="#modes">See what each shows</a>.</li>
+    <li><b>On your phone:</b> add Front Office to your home screen and use it like an app.</li>
+  </ul>
+
+  <h2>Credits</h2>
+  <p>Expert consensus rankings provided by FantasyPros, with DynastyProcess open data for players the experts don't rank. League data from Sleeper. Values are estimates, not guarantees. Not affiliated with Sleeper, FantasyPros, or DynastyProcess.</p>
+  <a class="back" href="#">Back to Front Office</a>
+</article>
 
 <article id="modesView" class="about" hidden>
   <a class="back" href="#">Back to Front Office</a>
@@ -462,9 +501,9 @@
   <path d="M44 25v14" stroke="#D99A1E" stroke-width="2.3" stroke-linecap="round"/>
   <path d="M40.8 28h6.4M40.8 32h6.4M40.8 36h6.4" stroke="#D99A1E" stroke-width="2" stroke-linecap="round"/>
 </svg><span>Front Office</span></a>
-  <nav><a href="#">Home</a><a href="#modes">The Basics vs. Freakshow</a><a href="#beta">Sleeper Leagues in Beta</a><a href="#" id="footFeedback" hidden>Feedback &amp; Build Notes</a></nav>
+  <nav><a href="#">Home</a><a href="#about">About</a><a href="#modes">The Basics vs. Freakshow</a><a href="#beta">Sleeper Leagues in Beta</a><a href="#" id="footFeedback" hidden>Feedback &amp; Build Notes</a></nav>
   <span class="ver" id="footVersion"></span><span class="ver" id="footUpdated"></span>
-  <p>Expert consensus rankings provided by FantasyPros, with DynastyProcess open data for players the experts don't rank. League data from Sleeper. Values are estimates, not guarantees. Not affiliated with Sleeper, FantasyPros, or DynastyProcess.</p>
+  <p>Expert consensus rankings provided by FantasyPros. <a href="#about">Credits</a></p>
 </footer>
 </div>
 
@@ -472,7 +511,7 @@
 <script src="js/league-load.js?v=20261007k"></script>
 <script src="js/draft-classes.js?v=20261007t"></script>
 <script src="js/values-engine.js?v=20261008c"></script>
-<script src="js/render.js?v=20261008c"></script>
+<script src="js/render.js?v=20261008d"></script>
 <script src="js/player-cards.js?v=20261008c"></script>
 <script src="js/settings-tab.js?v=20261007a"></script>
 <script src="js/strategy.js?v=20261007g"></script>
@@ -489,9 +528,9 @@
 <script src="js/trade-finder.js?v=20261007m"></script>
 <script src="js/pickers.js?v=20261007p"></script>
 <script src="js/nav.js?v=20261007p"></script>
-<script src="js/app-shell.js?v=20261008x"></script>
+<script src="js/app-shell.js?v=20261008y"></script>
 <script src="js/calc-phone.js?v=20261007m"></script>
-<script src="js/about.js?v=20261008a"></script>
+<script src="js/about.js?v=20261008b"></script>
 <script src="js/share.js?v=20261007a"></script>
 <script src="js/home.js?v=20261007a"></script>
 </body>

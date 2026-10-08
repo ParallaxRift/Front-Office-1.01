@@ -1,13 +1,13 @@
 // Front Office: page routing (runs last)
 // Part of the site; loaded in order by index.html. All files share one global scope.
 // ============================================================
-// PAGE ROUTING: #modes and #beta open their own pages; anything else shows the app
+// PAGE ROUTING: #about, #modes and #beta open their own pages; anything else shows the app
 // ============================================================
 function route(){
   let page = location.hash.slice(1);
-  // The About page was removed; old links to it (#about, #tuning) open the app
-  if (page === "about" || page === "tuning"){ history.replaceState(null, "", location.pathname + location.search); page = ""; }
-  const pages = { beta: ["betaView", "Sleeper Leagues in Beta | Front Office"], modes: ["modesView", "The Basics vs. Freakshow | Front Office"] };
+  if (page === "tuning") page = "about";          // older links to the tuning section
+  const pages = { about: ["aboutView", "About Front Office"], beta: ["betaView", "Sleeper Leagues in Beta | Front Office"], modes: ["modesView", "The Basics vs. Freakshow | Front Office"] };
+  $("aboutView").hidden = page !== "about";
   $("betaView").hidden = page !== "beta";
   $("modesView").hidden = page !== "modes";
   $("appView").hidden = !!pages[page];
