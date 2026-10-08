@@ -1,0 +1,82 @@
+# ============================================================
+# Front Office: publish the website (compressed)
+#
+# Builds the public website from the files in this repository:
+#   - copies only what the site needs (no scripts, tests or notes)
+#   - compresses the code so it's small and hard to read or copy
+#   - runs the site checks on the compressed copy (not for data-only updates)
+#   - publishes it to GitHub Pages
+#
+# Runs whenever site files are uploaded, after every "Update values" run,
+# and by hand from the Actions tab ("Run workflow").
+#
+# ONE-TIME SETUP: Settings -> Pages -> "Build and deployment" -> Source:
+# choose "GitHub Actions". Until then this workflow fails harmlessly and
+# the site keeps showing the readable files.
+# ============================================================
+name: Publish site
+
+on:
+  push:
+    branches: [main]
+  workflow_run:
+    workflows: ["Update values"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - name: Get the repository files
+        uses: actions/checkout@v4
+        with:
+          ref: main          # the newest files, including data the update just saved
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Build the compressed site
+        run: |
+          mkdir _site
+          cp -r index.html manifest.json sw.js icons css js data _site/
+          cd _site
+          for f in js/*.js sw.js css/*.css; do
+            npx --yes esbuild@0.25.0 "$f" --minify --log-level=warning --outfile="$f" --allow-overwrite
+          done
+          echo "Compressed site size:" && du -sh .
+
+      - name: Check the compressed site
+        if: github.event_name != 'workflow_run'
+        run: |
+          cp -r tests _site/tests
+          cd _site/tests
+          npm install --no-audit --no-fund
+          npx playwright install --with-deps chromium
+          npm test
+          cd .. && rm -rf tests
+
+      - name: Package the site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Publish to GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v4
