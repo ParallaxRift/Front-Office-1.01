@@ -1,9 +1,9 @@
 {
- "checked": "2026-10-08T13:10:39+00:00",
+ "checked": "2026-10-08T17:37:37+00:00",
  "rankings": {
   "1QB": {
    "status": 200,
-   "players": 457,
+   "players": 461,
    "fields": [
     "cbs_player_id",
     "player_age",
@@ -36,7 +36,7 @@
   },
   "Superflex": {
    "status": 200,
-   "players": 389,
+   "players": 394,
    "fields": [
     "cbs_player_id",
     "player_age",

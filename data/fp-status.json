@@ -1,7 +1,7 @@
 {
- "checked": "2026-10-08T13:11:01+00:00",
+ "checked": "2026-10-08T17:38:00+00:00",
  "key_present": true,
- "calls": 3,
+ "calls": 4,
  "rate_limited": 0,
  "injuries": [
   {
@@ -13,10 +13,16 @@
  ],
  "news": [
   {
-   "url": "https://api.fantasypros.com/public/v2/json/nfl/news?category=injury&limit=500",
+   "url": "https://api.fantasypros.com/public/v2/json/nfl/news?limit=200",
    "status": 200,
-   "records": 18,
-   "sample": "{\"id\": 612807, \"created\": \"2026-10-08 07:28:28\", \"created_formated\": \"Thu, Oct 8th 7:28am UTC\", \"author\": \"Ari Koslow\", \"player_id\": 24904, \"team_id\": \"SEA\", \"title\": \"Irv Charles designated to return to practice \", \"sport_id\": \"NFL\", \"categories\": [\"Commentary\", \"News\", \"Injury\"], \"link\": \"https://"
+   "records": 25,
+   "sample": "{\"id\": 612817, \"created\": \"2026-10-08 17:36:20\", \"created_formated\": \"Thu, Oct 8th 5:36pm UTC\", \"author\": \"Ari Koslow\", \"player_id\": 18466, \"team_id\": \"WAS\", \"title\": \"Terry McLaurin (hamstring) not seen practicing Thursday \", \"sport_id\": \"NFL\", \"categories\": [\"Commentary\", \"News\", \"Injury\"], \"link\""
+  },
+  {
+   "url": "https://api.fantasypros.com/public/v2/json/nfl/news?category=injury&limit=200",
+   "status": 200,
+   "records": 17,
+   "sample": "{\"id\": 612817, \"created\": \"2026-10-08 17:36:20\", \"created_formated\": \"Thu, Oct 8th 5:36pm UTC\", \"author\": \"Ari Koslow\", \"player_id\": 18466, \"team_id\": \"WAS\", \"title\": \"Terry McLaurin (hamstring) not seen practicing Thursday \", \"sport_id\": \"NFL\", \"categories\": [\"Commentary\", \"News\", \"Injury\"], \"link\""
   }
  ],
  "seasons": {
@@ -26,6 +32,6 @@
  "injury_seasons_saved": [
   2026
  ],
- "players_with_this_week": 148,
- "news_matched": 11
+ "players_with_this_week": 150,
+ "news_matched": 15
 }
