@@ -1,6 +1,7 @@
 # Runs 3 times a day, and any time you press "Run workflow".
 #  Player list, career stats, usage trends and depth chart moves, all from Sleeper
 #  -> data/players.json, data/sleeper-players.json and data/depth-history.json
+#  Also saves a snapshot of the Front Office Rankings each time they change -> data/value-history.json
 # Market values are NOT made here: Front Office reads them from the Rankings Desk's published file.
 name: Update values
 
@@ -39,6 +40,7 @@ jobs:
           [ -f data/sleeper-players.json ] && git add data/sleeper-players.json
           [ -d data/season-stats ] && git add data/season-stats
           [ -f data/depth-history.json ] && git add data/depth-history.json
+          [ -f data/value-history.json ] && git add data/value-history.json
           if git diff --cached --quiet; then
             echo "Data unchanged."
           else
