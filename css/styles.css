@@ -1479,3 +1479,16 @@ body:not(.has-league) .side-switch,body:not(.has-league) #miniBar{display:none!i
 .trend.up{color:#1E6B47;background:#E3F1EA}.trend.down{color:#B42318;background:#FDECEA}
 /* Usage table on player cards */
 .pc-use .up{color:#1E8A52;font-weight:700}.pc-use .down{color:#C0362C;font-weight:700}
+/* Player card: value history chart */
+.vh-top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+.vh-sum{margin:0;font-size:14px;color:var(--muted)}
+.vh-sum .up{color:var(--field)}.vh-sum .down{color:var(--loss)}
+.vh-range{display:flex;gap:4px}
+.vh-range button{border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:999px;padding:3px 10px;font:600 12px var(--body);cursor:pointer}
+.vh-range button[aria-pressed=true]{background:var(--ink);color:var(--card);border-color:var(--ink)}
+.vh-chart{display:block;width:100%;height:auto;font:12px var(--body)}
+.vh-chart text{fill:var(--muted)}
+.vh-grid{stroke:var(--line);stroke-width:1}
+.vh-line{fill:none;stroke:var(--field);stroke-width:2.5;stroke-linejoin:round}
+.vh-dot{fill:var(--card);stroke:var(--field);stroke-width:2}
+.vh-now{fill:var(--field);stroke:var(--card);stroke-width:2}

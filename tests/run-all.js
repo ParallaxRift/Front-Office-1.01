@@ -19,7 +19,7 @@ async function openLeague(browser, viewport, opts){
   page.errors = []; page.missing = [];
   page.on('pageerror', e => page.errors.push(e.message));
   // data/build-notes.json is optional: it only exists after build notes are saved from the site
-  const OPTIONAL = ['data/build-notes.json', 'data/my-rankings.json'];
+  const OPTIONAL = ['data/build-notes.json', 'data/my-rankings.json', 'data/value-history.json'];
   page.on('response', r => { const u = r.url(); if (u.startsWith(`http://localhost:${PORT}`) && r.status() >= 400 && !OPTIONAL.some(o => u.includes(o))) page.missing.push(u); });
   await setup(page, opts);
   await page.goto(`http://localhost:${PORT}/index.html`);

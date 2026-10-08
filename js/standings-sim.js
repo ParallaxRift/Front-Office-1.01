@@ -10,6 +10,16 @@ function titleOddsText(rid){
   const p = S.titleOdds?.odds.get(rid); if (p == null) return "–";
   const v = p * 100; return v >= 99.5 && p < 1 ? ">99%" : v > 0 && v < 0.5 ? "<1%" : Math.round(v) + "%";
 }
+// Standings sort: which column, and 1 = low to high, -1 = high to low
+let standSort = { key: "place", dir: 1 };
+const STAND_FIRST_DIR = { place: 1, name: 1, rec: 1, power: 1, stat: 1 };   // everything else starts with the highest first
+const STATUS_ORDER = { contend: 0, middle: 1, rebuild: 2 };
+$("standTable").addEventListener("click", e => {
+  const th = e.target.closest("th[data-sort]"); if (!th) return;
+  const k = th.dataset.sort;
+  standSort = standSort.key === k ? { key: k, dir: -standSort.dir } : { key: k, dir: STAND_FIRST_DIR[k] || -1 };
+  renderStandings();
+});
 function renderStandings(){
   if (!S.league) return;
   const pts = (w, d) => (Number(w) || 0) + (Number(d) || 0) / 100;
@@ -22,12 +32,20 @@ function renderStandings(){
   }).sort((a, b) => (b.w + b.ti / 2) - (a.w + a.ti / 2) || b.pf - a.pf);
   const playoff = Number(S.league.settings?.playoff_teams) || 0;
   const anyMax = rows.some(r => r.max > 0);
-  $("standTable").innerHTML = `<thead><tr><th class="n">#</th><th>Team</th><th class="n">Record</th><th class="n hide-sm">Win %</th><th class="n" title="Chance to win the championship, from the season simulator as of today">Title odds</th><th class="n hide-sm">Points for</th><th class="n hide-sm">Points against</th>${anyMax ? `<th class="n hide-sm">Max points</th>` : ""}<th class="hide-sm">Streak</th><th class="n hide-sm">Power</th><th>Status</th></tr></thead>
-    <tbody>${rows.map((r, i) => `<tr class="${r.rid === S.myRid ? "me" : ""}${playoff && i === playoff - 1 ? " cut" : ""}">
-      <td class="n rk">${i + 1}</td>
+  rows.forEach((r, i) => { r.place = i + 1; r.pct = r.gp ? (r.w + r.ti / 2) / r.gp : -1; r.odds = S.titleOdds?.odds.get(r.rid) ?? -1;
+    const m = /^(\d+)\s*([wl])/i.exec(r.streak || ""); r.strk = m ? (m[2].toLowerCase() === "w" ? 1 : -1) * Number(m[1]) : 0;
+    r.stat = r.t ? (STATUS_ORDER[r.t.status] ?? 9) : 9; });
+  // Click a column heading to sort by it; click again to flip. "#" (or Record) is the league's own order.
+  const sk = standSort.key, sd = standSort.dir, ranked = sk === "place";
+  const val = { place: r => r.place, name: r => (r.t?.name || "").toLowerCase(), rec: r => r.place, pct: r => r.pct, odds: r => r.odds, pf: r => r.pf, pa: r => r.pa, max: r => r.max, strk: r => r.strk, power: r => r.power, stat: r => r.stat }[sk] || (r => r.place);
+  const shown = [...rows].sort((a, b) => { const x = val(a), y = val(b); return (typeof x === "string" ? x.localeCompare(y, undefined, { numeric: true }) : x < y ? -1 : x > y ? 1 : 0) * sd || a.place - b.place; });
+  const H = (k, label, cls = "", extra = "") => `<th class="sortable ${cls}" data-sort="${k}" aria-sort="${sk === k && !(ranked && sd > 0) ? (sd > 0 ? "ascending" : "descending") : "none"}" ${extra}>${label}</th>`;
+  $("standTable").innerHTML = `<thead><tr>${H("place", "#", "n")}${H("name", "Team")}${H("rec", "Record", "n")}${H("pct", "Win %", "n hide-sm")}${H("odds", "Title odds", "n", `title="Chance to win the championship, from the season simulator as of today"`)}${H("pf", "Points for", "n hide-sm")}${H("pa", "Points against", "n hide-sm")}${anyMax ? H("max", "Max points", "n hide-sm") : ""}${H("strk", "Streak", "hide-sm")}${H("power", "Power", "n hide-sm")}${H("stat", "Status")}</tr></thead>
+    <tbody>${shown.map(r => `<tr class="${r.rid === S.myRid ? "me" : ""}${ranked && sd > 0 && playoff && r.place === playoff ? " cut" : ""}">
+      <td class="n rk">${r.place}</td>
       <td><span class="teamcell">${teamPhoto(r.rid, "sm")}<span><b>${esc(r.t?.name || "Team " + r.rid)}</b>${r.t?.manager && r.t.manager !== r.t.name ? `<br><small style="color:var(--muted)">${esc(r.t.manager)}</small>` : ""}</span></span></td>
       <td class="n rec">${r.w}-${r.l}${r.ti ? "-" + r.ti : ""}</td>
-      <td class="n hide-sm">${r.gp ? Math.round((r.w + r.ti / 2) / r.gp * 1000) / 10 + "%" : "–"}</td>
+      <td class="n hide-sm">${r.gp ? Math.round(r.pct * 1000) / 10 + "%" : "–"}</td>
       <td class="n"><b>${titleOddsText(r.rid)}</b></td>
       <td class="n hide-sm">${r.pf.toFixed(2)}</td><td class="n hide-sm">${r.pa.toFixed(2)}</td>
       ${anyMax ? `<td class="n hide-sm">${r.max ? r.max.toFixed(2) : "–"}</td>` : ""}
@@ -56,7 +74,7 @@ function renderStandings(){
     }).join("")}</tbody>`;
   const WORDS = ["zero","one","two","three","four","five","six","seven","eight","nine","ten","eleven","twelve","thirteen","fourteen","fifteen","sixteen"];
   const oddsNote = S.titleOdds ? ` Title odds are as of ${S.titleOdds.at.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}, from ${S.titleOdds.runs.toLocaleString()} simulated seasons.` : S.nflState?.season_type === "regular" ? " Title odds appear once the season simulator finishes." : " Title odds are available during the regular season.";
-  $("standNote").textContent = `${playoff ? `The green line marks the playoff cutoff at the top ${WORDS[playoff] || playoff} teams, with ties broken by Points For. ` : "Ties are broken by Points For. "}Power is Front Office’s measure of pure roster strength based on player values — it does not factor in wins or record.${oddsNote}`;
+  $("standNote").textContent = `${playoff ? `The green line marks the playoff cutoff at the top ${WORDS[playoff] || playoff} teams, with ties broken by Points For. ` : "Ties are broken by Points For. "}Power is Front Office’s measure of pure roster strength based on player values — it does not factor in wins or record.${oddsNote} Click any column heading to sort by it; click again to flip the order.`;
 }
 
 // ============================================================

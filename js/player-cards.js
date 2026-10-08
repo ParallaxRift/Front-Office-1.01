@@ -225,6 +225,59 @@ function usageBlock(u){
     <tr><td class="l">Touches per game</td><td>${tpg != null ? tpg.toFixed(1) : "–"}</td><td></td></tr>
   </tbody></table></div><p class="pc-note">Arrows show a change of 5 points or more vs. his season. From Sleeper's weekly stats.</p>`;
 }
+// ---------- Value history ----------
+// data/value-history.json holds every player's spot on the Front Office Rankings each day they changed
+// (saved by the data update). Each spot is turned into a value the same way today's value is, with
+// this league's adjustments, so the last point matches the value at the top of the card.
+const VALUE_HISTORY = "data/value-history.json";
+let vhLoad = null;
+function loadValueHistory(){
+  if (!vhLoad) vhLoad = fetch(VALUE_HISTORY + "?v=" + Math.floor(Date.now() / 6e5), { cache: "no-store" })
+    .then(r => r.ok ? r.json() : null).catch(() => null).then(d => { if (!d) vhLoad = null; return d; });
+  return vhLoad;
+}
+const VH_RANGES = [["3m", "3 months", 92], ["1y", "1 year", 366], ["all", "All", 1e9]];
+let vhRange = "all";
+function valueHistoryPoints(a, vh){
+  if (!a || a.kind !== "player" || !vh?.dates?.length) return [];
+  const ranks = vh[S.cfg?.superflex ? "sf" : "1qb"]?.[normName(a.name) + "|" + a.pos] || [];
+  const adj = a.base ? a.value / a.base : 1;               // this league's adjustments, as they stand today
+  const pts = vh.dates.map((d, i) => ({ t: Date.parse(d + "T12:00:00"), r: ranks[i] || 0 }))
+    .filter(p => p.r > 0).map(p => ({ t: p.t, v: Math.round(marketCurve(p.r) * adj), r: p.r }));
+  const today = new Date(); today.setHours(12, 0, 0, 0);
+  const last = pts[pts.length - 1];
+  if (last && new Date(last.t).toDateString() === today.toDateString()) pts.pop();
+  pts.push({ t: today.getTime(), v: Math.round(a.value), r: a.mRank, now: true });
+  return pts;
+}
+function valueHistoryBlock(a, vh){
+  if (!a || a.kind !== "player") return "";
+  const all = valueHistoryPoints(a, vh), days = VH_RANGES.find(x => x[0] === vhRange)[2];
+  const from = Date.now() - days * 864e5, pts = all.filter((p, i) => p.t >= from || i === all.length - 1);
+  const since = vh?.dates?.[0] ? dateText(vh.dates[0]) : dateText(new Date().toISOString().slice(0, 10));
+  if (all.length < 2) return `<p class="empty">Value history is just getting started. Front Office saves a snapshot every time the rankings change (the first was ${esc(since)}), so his chart fills in from there. Today: <b>${fmt(Math.round(a.value))}</b>.</p>`;
+  if (pts.length < 2) pts.splice(0, pts.length, ...all.slice(-2));
+  const phone = matchMedia("(max-width:600px)").matches, W = phone ? 340 : 600, H = phone ? 190 : 170, L = 52, R = 10, T = 14, B = 26;
+  const t0 = pts[0].t, t1 = pts[pts.length - 1].t, vs = pts.map(p => p.v);
+  let lo = Math.min(...vs), hi = Math.max(...vs); const pad = Math.max(50, (hi - lo) * 0.12); lo = Math.max(0, lo - pad); hi += pad;
+  const x = t => L + (t1 === t0 ? 0 : (t - t0) / (t1 - t0)) * (W - L - R), y = v => T + (1 - (v - lo) / (hi - lo)) * (H - T - B);
+  // a step line: his value holds until the rankings next change
+  let d = `M${x(pts[0].t).toFixed(1)},${y(pts[0].v).toFixed(1)}`;
+  for (let i = 1; i < pts.length; i++) d += `H${x(pts[i].t).toFixed(1)}V${y(pts[i].v).toFixed(1)}`;
+  const first = pts[0], now = pts[pts.length - 1], ch = now.v - first.v, pc = first.v ? Math.round(ch / first.v * 100) : 0;
+  const peak = pts.reduce((m, p) => p.v > m.v ? p : m, pts[0]), low = pts.reduce((m, p) => p.v < m.v ? p : m, pts[0]);
+  const ticks = [hi - pad, (hi + lo) / 2, lo + pad].map(v => `<line x1="${L}" x2="${W - R}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}" class="vh-grid"/><text x="${L - 8}" y="${(y(v) + 4).toFixed(1)}" text-anchor="end">${fmt(Math.round(v / 10) * 10)}</text>`).join("");
+  const dots = pts.map(p => `<circle cx="${x(p.t).toFixed(1)}" cy="${y(p.v).toFixed(1)}" r="${p.now ? 4.5 : 3}" class="${p.now ? "vh-now" : "vh-dot"}"><title>${esc(p.now ? "Today" : dateText(new Date(p.t).toISOString().slice(0, 10)))}: ${fmt(p.v)}${p.r ? ` (#${p.r} on the rankings)` : ""}</title></circle>`).join("");
+  const dl = t => new Date(t).toLocaleDateString([], { month: "short", day: "numeric", year: t1 - t0 > 300 * 864e5 ? "numeric" : undefined });
+  return `<div class="vh">
+    <div class="vh-top"><p class="vh-sum">${ch === 0 ? "No change" : `<b class="${ch > 0 ? "up" : "down"}">${ch > 0 ? "▲ Up" : "▼ Down"} ${fmt(Math.abs(ch))}${pc ? ` (${ch > 0 ? "+" : ""}${pc}%)` : ""}</b>`} since ${esc(dl(first.t))}${peak.v > now.v ? ` · peak ${fmt(peak.v)} on ${esc(dl(peak.t))}` : ""}${low.v < now.v && low !== first ? ` · low ${fmt(low.v)}` : ""}</p>
+      ${all.length > 2 && all[0].t < Date.now() - 92 * 864e5 ? `<div class="vh-range" role="group" aria-label="Time range">${VH_RANGES.map(([k, l]) => `<button type="button" data-vh="${k}" aria-pressed="${vhRange === k}">${l}</button>`).join("")}</div>` : ""}</div>
+    <svg class="vh-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Value over time: ${fmt(first.v)} on ${esc(dl(first.t))}, ${fmt(now.v)} today">
+      ${ticks}<path d="${d}" class="vh-line"/>${dots}
+      <text x="${L}" y="${H - 6}" class="vh-x">${esc(dl(t0))}</text><text x="${W - R}" y="${H - 6}" text-anchor="end" class="vh-x">Today</text>
+    </svg></div>
+    <p class="pc-note">His value in your league each time the Front Office Rankings changed, using your league's settings as they are today. ${matchMedia("(hover:none)").matches ? "Tap" : "Hover over"} a dot for the date and value.</p>`;
+}
 async function openPlayerCard(pid){
   const sp = S.sleeperPlayers?.[pid] || {}, a = S.assets?.get("p:" + pid);
   const name = a?.name || sp.full_name || `${sp.first_name || ""} ${sp.last_name || ""}`.trim() || "Player";
@@ -247,6 +300,7 @@ async function openPlayerCard(pid){
     </header>
     <div class="pc-body">
       <dl class="pc-facts">${facts.map(([k, v]) => `<div${k === "Fantasy team" || k === "College" ? ' class="wide"' : ""}><dt>${esc(k)}</dt><dd>${k === "Fantasy team" && a?.owner != null ? `<span class="pc-ft">${teamPhoto(a.owner, "sm")}${esc(v)}</span>` : esc(v)}</dd></div>`).join("")}</dl>
+      ${a ? `<h3>Value History</h3><div id="pcHist"><p class="pc-loading">Loading value history…</p></div>` : ""}
       <h3>Current Status</h3><div id="pcNow">${currentStatus(sp)}</div>
       <h3>Usage</h3><div id="pcUse"><p class="pc-loading">Loading usage…</p></div>
       <h3>Career Stats</h3><div id="pcStats"><p class="pc-loading">Loading stats…</p></div>
@@ -254,6 +308,7 @@ async function openPlayerCard(pid){
     </div></div>`;
   $("pcard").hidden = false; document.body.style.overflow = "hidden";
   $("pcard").querySelector(".pc-close").focus();
+  if (a) loadValueHistory().then(vh => { const box = $("pcHist"); if (box && !$("pcard").hidden){ box.innerHTML = valueHistoryBlock(a, vh); box.dataset.pid = pid; } });
   const [data, live] = await Promise.all([loadCardData(), liveCareer(pid, sp)]);
   if ($("pcard").hidden) return;
   const rec0 = data ? cardRecord(pid) : null;
@@ -274,6 +329,11 @@ document.addEventListener("click", e => {
   const ph = e.target.closest(".av.pl[data-pid]");
   if (ph && !e.target.closest("#pcard")){ e.preventDefault(); e.stopPropagation(); openPlayerCard(ph.dataset.pid); }
 }, true);
+$("pcard").addEventListener("click", async e => {
+  const b = e.target.closest("[data-vh]"); if (!b) return;
+  vhRange = b.dataset.vh; const box = $("pcHist"), a = S.assets?.get("p:" + box?.dataset.pid);
+  if (box && a) box.innerHTML = valueHistoryBlock(a, await loadValueHistory());
+});
 $("pcard").addEventListener("click", e => { if (e.target === $("pcard") || e.target.closest(".pc-close")) closePlayerCard(); });
 document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("pcard").hidden) closePlayerCard(); });
 $("valuesBody").addEventListener("keydown", e => {

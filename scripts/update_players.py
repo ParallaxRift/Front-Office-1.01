@@ -10,6 +10,7 @@
 # ============================================================
 import json
 import os
+import re
 import time
 import urllib.error
 import urllib.request
@@ -229,3 +230,62 @@ os.makedirs(os.path.dirname(OUTPUT), exist_ok=True)
 with open(OUTPUT, "w", encoding="utf-8") as f:
     json.dump(out, f, separators=(",", ":"))
 print(f"Saved {len(players)} players to data/players.json ({os.path.getsize(OUTPUT) // 1024} KB)")
+
+# ---------- 5) Value history: one snapshot of the Front Office Rankings per update ----------
+# Reads the public rankings file the Rankings Desk publishes (Pat's own two lists) and keeps every
+# player's spot in data/value-history.json, one entry per day the rankings change, so the player
+# card can chart how his value has moved. A failure here never stops the rest of the update.
+RANKINGS_URL = "https://parallaxrift.github.io/The-Desk---Rankings/rankings.json"
+VALUE_HISTORY = os.path.join(HERE, "..", "data", "value-history.json")
+HISTORY_MAX = 260                 # about 5 years of weekly updates
+
+
+def name_key(name, pos):
+    """Same as the website's normName(name) + "|" + pos, so the two always match."""
+    n = (name or "").lower()
+    n = re.sub(r"[.'’`]", "", n).replace("-", " ")
+    n = re.sub(r"\b(jr|sr|ii|iii|iv|v)\b", "", n)
+    n = re.sub(r"[^a-z ]", "", n)
+    return re.sub(r"\s+", " ", n).strip() + "|" + str(pos or "").upper()
+
+
+try:
+    rk = get_json(RANKINGS_URL + "?t=" + str(int(time.time())))
+    try:
+        with open(VALUE_HISTORY, encoding="utf-8") as f:
+            vh = json.load(f)
+    except (OSError, ValueError):
+        vh = {}
+    vh.setdefault("dates", []); vh.setdefault("published", []); vh.setdefault("sf", {}); vh.setdefault("1qb", {})
+    published = str(rk.get("updated") or "")
+    if published and published not in vh["published"]:
+        day = published[:10]
+        if vh["dates"] and vh["dates"][-1] == day:          # published again the same day: the newest list wins
+            i = len(vh["dates"]) - 1; vh["published"][i] = published
+        else:
+            vh["dates"].append(day); vh["published"].append(published); i = len(vh["dates"]) - 1
+        for fmt in ("sf", "1qb"):
+            spots, seen = {}, set()
+            for p in (rk.get("lists") or {}).get(fmt) or []:
+                k = name_key(p.get("name"), p.get("pos"))
+                if k in seen:
+                    continue
+                seen.add(k); spots[k] = len(seen)
+            table = vh[fmt]
+            for k in set(table) | set(spots):
+                row = table.setdefault(k, [])
+                row.extend([0] * (i + 1 - len(row)))          # 0 = not on the list that day
+                row[i] = spots.get(k, 0)
+                del row[i + 1:]
+        # keep the newest snapshots only, and drop players who are on none of them
+        cut = max(0, len(vh["dates"]) - HISTORY_MAX)
+        vh["dates"], vh["published"] = vh["dates"][cut:], vh["published"][cut:]
+        for fmt in ("sf", "1qb"):
+            vh[fmt] = {k: r[cut:] for k, r in vh[fmt].items() if any(r[cut:])}
+        with open(VALUE_HISTORY, "w", encoding="utf-8") as f:
+            json.dump(vh, f, separators=(",", ":"))
+        print(f"[history] saved the rankings published {published} ({len(vh['dates'])} snapshots)")
+    else:
+        print("[history] rankings unchanged since the last snapshot")
+except Exception as e:
+    print(f"[history] skipped: {e}")
