@@ -211,7 +211,7 @@ async function openPlayerCard(pid){
   const owner = a?.owner != null ? S.teams.get(a.owner)?.name : "Free agent";
   const facts = [
     ["Age", a?.age ? ageText(a.age) : sp.age], ["Height", heightText(sp.height)], ["Weight", sp.weight ? sp.weight + " lb" : ""],
-    ["College", sp.college], ["Experience", expText(sp.years_exp)], ["Role", a ? roleText(a) : ""], ["Expert range", a && a.lo != null ? (valueRangeText(a).replace("Range ", "") || "Experts agree") : ""], ["Fantasy team", owner]
+    ["College", sp.college], ["Experience", expText(sp.years_exp)], ["Role", a ? roleText(a) : ""], ["Expert range", a?.depthFloor ? "Not ranked by experts; valued by his depth chart spot" : a && a.lo != null ? (valueRangeText(a).replace("Range ", "") || "Experts agree") : ""], ["Fantasy team", owner]
   ].filter(f => f[1] !== undefined && f[1] !== null && f[1] !== "");
   $("pcard").innerHTML = `<div class="pc" role="dialog" aria-modal="true" aria-labelledby="pcName">
     <button type="button" class="pc-close" aria-label="Close player card">×</button>

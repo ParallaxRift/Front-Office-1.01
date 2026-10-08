@@ -38,7 +38,7 @@ async function loadFantasyPros(){
   const map = new Map();
   for (const p of data.players || []){
     const key = normName(p.name) + "|" + String(p.pos||"").toUpperCase();
-    if (!map.has(key)) map.set(key, { v1: +p.value_1qb || 0, v2: +p.value_2qb || 0, r1: p.r1 != null ? +p.r1 : null, r2: p.r2 != null ? +p.r2 : null, sd1: p.sd1 != null ? +p.sd1 : null, sd2: p.sd2 != null ? +p.sd2 : null, pj: Array.isArray(p.pj) ? p.pj : null });
+    if (!map.has(key)) map.set(key, { v1: +p.value_1qb || 0, v2: +p.value_2qb || 0, r1: p.r1 != null ? +p.r1 : null, r2: p.r2 != null ? +p.r2 : null, sd1: p.sd1 != null ? +p.sd1 : null, sd2: p.sd2 != null ? +p.sd2 : null, pj: Array.isArray(p.pj) ? p.pj : null, backup: p.source === "dynastyprocess" });
   }
   if (map.size < 100) throw new Error("too few players");
   return { kind: "fp", map, updated: data.updated, mixed: !!data.filled_from_dynastyprocess,
@@ -267,6 +267,21 @@ function roleText(a){
   if (a.pos === "RB" && a.depthOrder === 2) return "Handcuff RB";
   return "";
 }
+// ---------- Depth-chart floor (players the expert rankings don't cover) ----------
+// FantasyPros ranks about 400 players. A starter or first backup it doesn't rank (a QB who just took over,
+// a TE2) would otherwise be worth next to nothing, so anyone listed 1st or 2nd at his position on his NFL
+// team's depth chart is valued at least like the player at these market ranks [Superflex, 1QB]:
+const DEPTH_FLOOR_RANKS = {
+  QB: [[150, 270], [260, 400]],   // starting QB, backup QB
+  RB: [[200, 200], [300, 300]],   // starting RB, RB2
+  WR: [[250, 250], [330, 330]],   // starting WR (any of the 3 spots), backup
+  TE: [[260, 260], [360, 360]]    // starting TE, TE2
+};
+function depthFloor(pos, dpos, order, sf){
+  const ok = dpos === pos || (pos === "WR" && /WR$/.test(dpos || ""));
+  const r = ok && order >= 1 && order <= 2 ? DEPTH_FLOOR_RANKS[pos]?.[order - 1] : null;
+  return r ? marketCurve(sf ? r[0] : r[1]) : 0;
+}
 function buildValues(){
   const cfg = S.cfg, P = S.sleeperPlayers, assets = new Map();
   const owner = new Map();
@@ -280,10 +295,11 @@ function buildValues(){
     const rostered = owner.has(pid);
     if (!rostered && !p.team) continue;
     const name = p.full_name || `${p.first_name||""} ${p.last_name||""}`.trim();
-    let base = 0, rank = null, pj = null, sd = null;
+    let base = 0, rank = null, pj = null, sd = null, expert = false;
     if (S.market.kind !== "sleeper"){
       const m = S.market.map.get(normName(name) + "|" + pos);
       if (m){
+        expert = !m.backup;                          // ranked by FantasyPros (not only the backup list)
         rank = cfg.superflex ? m.r2 : m.r1;
         base = rank != null ? marketCurve(rank) : (cfg.superflex ? m.v2 : m.v1);   // average expert rank -> value
         pj = m.pj;
@@ -293,8 +309,13 @@ function buildValues(){
       const rk = p.search_rank;
       if (rk && rk < 2000) base = 10000 * Math.exp(-0.011*(rk-1)) * ageFactor(pos, p.age);
     }
+    let floored = false;
+    if (S.market.kind !== "sleeper" && p.team && !expert){   // never overrides an expert ranking
+      const fl = depthFloor(pos, p.depth_chart_position, Number(p.depth_chart_order), cfg.superflex);
+      if (fl > base){ base = fl; floored = true; }
+    }
     if (!base && !rostered) continue;
-    list.push({ id:"p:"+pid, pid, kind:"player", name, pos, nfl:p.team||"FA", age:exactAge(p), base, mRank: rank, sd, pj, owner: owner.get(pid), depthPos: p.team ? p.depth_chart_position : null, depthOrder: p.team ? Number(p.depth_chart_order) || null : null });
+    list.push({ depthFloor: floored, id:"p:"+pid, pid, kind:"player", name, pos, nfl:p.team||"FA", age:exactAge(p), base, mRank: rank, sd, pj, owner: owner.get(pid), depthPos: p.team ? p.depth_chart_position : null, depthOrder: p.team ? Number(p.depth_chart_order) || null : null });
   }
 
   // rank by base, overall and per position

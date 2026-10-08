@@ -157,6 +157,19 @@ async function openLeague(browser, viewport, opts){
     });
     check('feedback: only Official rows get the crown', crowns === 'Sam:-:Other,Dev:crown:Update,Pat:-:Other', crowns);
 
+    // Depth-chart floor: an unranked starting QB gets a real value; a 3rd-stringer doesn't; experts' ranks are never overridden
+    const floor = await page.evaluate(() => {
+      const keep = { ...S.sleeperPlayers };
+      Object.assign(S.sleeperPlayers, { zz1: { player_id: 'zz1', full_name: 'Test Starter', position: 'QB', team: 'BAL', depth_chart_position: 'QB', depth_chart_order: 1, age: 28 },
+        zz3: { player_id: 'zz3', full_name: 'Test Third', position: 'WR', team: 'CLE', depth_chart_position: 'SWR', depth_chart_order: 3, age: 26 } });
+      const ranked = [...S.assets.values()].find(a => a.kind === 'player' && a.mRank != null); const before = ranked.value;
+      buildValues();
+      const qb = S.assets.get('p:zz1'), wr = S.assets.get('p:zz3'), same = Math.abs(S.assets.get(ranked.id).value - before) < 1;
+      delete S.sleeperPlayers.zz1; delete S.sleeperPlayers.zz3; buildValues();
+      return [qb && qb.value > 500 && qb.depthFloor, !wr, same].join(',');
+    });
+    check('depth-chart floor for unranked starters', floor === 'true,true,true', floor);
+
     // Live Scores flips to the next week on Tuesday morning (6 a.m. Central), not Wednesday
     const flips = await page.evaluate(() => { const real = Date.now, st = { season_start_date: '2026-09-10' };
       const at = iso => { Date.now = () => new Date(iso).getTime(); const w = flipWeek(st); Date.now = real; return w; };
