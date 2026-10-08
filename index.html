@@ -429,7 +429,7 @@
   <p class="small">Role counts at half strength and age at a quarter because expert rankings already react to depth chart changes and mark older players down. The age discount is then tested against your league's real trades: if your managers dump veterans faster than the experts, it grows (up to double); if they pay expert value for vets, it shrinks (down to none). If projections aren't available, Front Office falls back to simple multipliers for TE premium, PPR, passing TDs, league size, flex spots and starting WRs. The League Settings tab lists the adjustments applied to your league, and an accuracy check showing how closely these values match your league's real trades.</p>
 
   <h2>How Draft Picks Are Valued</h2>
-  <p>A pick is worth the value of the player it usually turns into. A projected 1.01 is valued like your league's 30th-best player, and each pick after that like a player about five spots lower. Because this uses your league's own player values, picks rise in Superflex and TE-premium leagues along with the players they become.</p>
+  <p>A pick is worth the value of the player it usually turns into. A projected 1.01 is valued like your league's 30th-best player, each later first like a player about four spots lower (so a 1.12 is about the 73rd), and second-rounders and later about five spots lower per pick. Picks a year further out are worth 6% less for each year. Because this uses your league's own player values, picks rise in Superflex and TE-premium leagues along with the players they become.</p>
   <p>During the season, next year's picks are valued from the <b>Season Simulator</b>: the rest of the season and the playoffs are played out 3,000 times, and each team's pick is valued as the average over every slot it landed in (non-playoff teams pick first, worst record first; then playoff teams by how early they were knocked out; the champion picks last). The pick shows its likely range, like "simulated: likely 1.02–1.06". Outside the season, the weakest roster is projected to pick first. Next year's picks get a specific slot, like 1.04. Picks two years out are only half-projected and labeled Early, Mid, or Late, and picks three years out are treated as middle-of-the-round. Next year's picks gain value as the draft gets close (up to +4% in the weeks before it, down to −10% when it's far off), and each year further out loses 8% for uncertainty. Traded picks show on the team that owns them now.</p>
 
   <h2>What's Different for Each Team</h2>
@@ -570,7 +570,8 @@
 
 <script src="js/core.js?v=20261007r"></script>
 <script src="js/league-load.js?v=20261007k"></script>
-<script src="js/values-engine.js?v=20261007a"></script>
+<script src="js/draft-classes.js?v=20261007t"></script>
+<script src="js/values-engine.js?v=20261007t"></script>
 <script src="js/render.js?v=20261007r"></script>
 <script src="js/player-cards.js?v=20261007g"></script>
 <script src="js/settings-tab.js?v=20261007a"></script>

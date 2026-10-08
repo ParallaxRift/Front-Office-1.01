@@ -224,23 +224,25 @@ const ageMul = (a, s = S.ageStrength ?? 1) => 1 - (1 - ageDiscount(a.pos, a.age)
 const ADJ_MIN = 0.65, ADJ_MAX = 1.5;
 // ---------- Draft picks ----------
 // A pick is worth the league value of the player it typically turns into: a projected 1.01 is valued
-// like your league's ~30th-best player, and each pick after that like a player about 5 spots lower.
+// like your league's ~30th-best player, each later first like a player about 4 spots lower (so 1.12 is
+// about the 73rd), and from the second round on about 5 spots lower per pick.
 // Because it uses this league's own player values, picks rise in Superflex and TE-premium leagues
 // along with the players they become. Picks are worth more as the draft gets close (+4% in the
-// weeks before it, -10% at most 10+ months out), and 8% less for each extra year away.
-const PICK_RANK_1 = 29.5, PICK_RANK_STEP = 4.8;
+// weeks before it, -5% at most in the fall), and 6% less for each extra year away.
+// (Raised 10/7: late and future firsts were priced below the market. Before: 4.8 spots per first, -10%, 8% a year.)
+const PICK_RANK_1 = 29.5, PICK_RANK_STEP = 4.8, PICK_RANK_STEP_R1 = 3.95, PICK_YEAR_KEEP = 0.94;
 function draftTiming(){
   const now = new Date(), draft = new Date(now.getFullYear(), 4, 1);   // rookie drafts are mostly early May
   if (now > draft) draft.setFullYear(draft.getFullYear() + 1);
   const months = (draft - now) / (30.4 * 864e5);
-  return Math.min(1.04, Math.max(0.9, 1.04 - 0.014 * months));
+  return Math.min(1.04, Math.max(0.95, 1.04 - 0.014 * months));
 }
 function pickValue(p12, yearsOut){
   const vals = S.playerCurve || [];
-  const r = PICK_RANK_1 + PICK_RANK_STEP * (p12 - 1), i = Math.floor(r - 1), f = r - 1 - i;
+  const r = PICK_RANK_1 + (p12 <= 12 ? PICK_RANK_STEP_R1 : PICK_RANK_STEP) * (p12 - 1), i = Math.floor(r - 1), f = r - 1 - i;
   const at = k => vals[Math.min(vals.length - 1, Math.max(0, k))] ?? 0;
   const v = vals.length ? at(i) + (at(i + 1) - at(i)) * f : 7000 * Math.exp(-0.06 * (p12 - 1));
-  return v * Math.pow(0.92, yearsOut) * (yearsOut === 0 ? (S.pickTiming ?? 1) : 1) * (S.nudge ? S.nudge.PICK : 1);
+  return v * Math.pow(PICK_YEAR_KEEP, yearsOut) * (yearsOut === 0 ? (S.pickTiming ?? 1) : 1) * (S.nudge ? S.nudge.PICK : 1);
 }
 // ---------- Depth chart role (from Sleeper's NFL depth charts, updated as teams change starters) ----------
 // A starting QB gets a boost, most for lower-ranked QBs whose value depends on the job (a top QB's
@@ -445,17 +447,18 @@ function buildValues(){
     let slot = yi===0 ? t.slot : yi===1 ? (t.slot+mid)/2 : mid, value, range = "";
     if (odds && odds.some(x => x > 0)){
       // the average value over every slot this pick landed in across the simulated seasons
-      value = odds.reduce((sum, p, k) => sum + p * pickValue(p12of(k + 1), 0), 0);
+      value = odds.reduce((sum, p, k) => sum + p * pickValue(p12of(k + 1), 0) * classFactor(s, p12of(k + 1)), 0);   // includes draft class strength
       slot = odds.reduce((sum, p, k) => sum + p * (k + 1), 0);
       let c = 0, lo = 1, hi = cfg.teams;
       for (let k = 0; k < odds.length; k++){ c += odds[k]; if (c >= 0.1){ lo = k + 1; break; } }
       c = 0; for (let k = 0; k < odds.length; k++){ c += odds[k]; if (c >= 0.9){ hi = k + 1; break; } }
       range = lo === hi ? "" : `simulated: likely ${rd}.${String(lo).padStart(2, "0")}–${rd}.${String(hi).padStart(2, "0")}`;
-    } else value = pickValue(p12of(slot), yi);
+    } else value = pickValue(p12of(slot), yi) * classFactor(s, p12of(slot));
     let label;
     if (yi===0) label = `${s} ${rd}.${String(Math.round(slot)).padStart(2,"0")}`;   // e.g. "2027 1.08"
     else { const tier = slot <= cfg.teams/3 ? "Early" : slot > cfg.teams*2/3 ? "Late" : "Mid"; label = yi===1 ? `${s} ${tier} ${ord(rd)}` : `${s} ${ord(rd)}`; }
-    const via = own !== orig ? `from ${t.name}${range ? ", " + range : ""}` : (yi===0 ? (range || "projected slot") : "own pick");
+    const cls = rd <= 2 ? classLabel(s) : "";
+    const via = (own !== orig ? `from ${t.name}${range ? ", " + range : ""}` : (yi===0 ? (range || "projected slot") : "own pick")) + (cls ? `, ${cls.toLowerCase()}` : "");
     assets.set("k:"+key, { id:"k:"+key, kind:"pick", name: label, pos:"PICK", nfl: via, value, market: value, owner: own, round: rd, season: s });
   }
 
