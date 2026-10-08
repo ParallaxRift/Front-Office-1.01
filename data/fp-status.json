@@ -1,5 +1,5 @@
 {
- "checked": "2026-10-08T02:26:09+00:00",
+ "checked": "2026-10-08T13:11:01+00:00",
  "key_present": true,
  "calls": 3,
  "rate_limited": 0,
@@ -15,8 +15,8 @@
   {
    "url": "https://api.fantasypros.com/public/v2/json/nfl/news?category=injury&limit=500",
    "status": 200,
-   "records": 25,
-   "sample": "{\"id\": 612765, \"created\": \"2026-10-07 23:43:13\", \"created_formated\": \"Wed, Oct 7th 11:43pm UTC\", \"author\": \"Ari Koslow\", \"player_id\": 23609, \"team_id\": \"DEN\", \"title\": \"Pat Surtain II (ankle) does not practice Wednesday \", \"sport_id\": \"NFL\", \"categories\": [\"Commentary\", \"News\", \"Injury\"], \"link\": \"h"
+   "records": 18,
+   "sample": "{\"id\": 612807, \"created\": \"2026-10-08 07:28:28\", \"created_formated\": \"Thu, Oct 8th 7:28am UTC\", \"author\": \"Ari Koslow\", \"player_id\": 24904, \"team_id\": \"SEA\", \"title\": \"Irv Charles designated to return to practice \", \"sport_id\": \"NFL\", \"categories\": [\"Commentary\", \"News\", \"Injury\"], \"link\": \"https://"
   }
  ],
  "seasons": {
@@ -27,5 +27,5 @@
   2026
  ],
  "players_with_this_week": 148,
- "news_matched": 12
+ "news_matched": 11
 }
