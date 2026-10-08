@@ -211,7 +211,7 @@ async function openLeague(browser, viewport, opts){
     await page.click('#valuesMore'); const secondPage = await page.$$eval('#valuesBody tr', x => x.length);
     check('Player Values shows 50 rows, then 50 more', firstPage === 50 && secondPage === 100, `${firstPage} then ${secondPage}`);
     await page.click('th[data-sort=age]');
-    const ages = await page.$$eval('#valuesBody tr', x => x.slice(0, 20).map(r => parseFloat(r.cells[3].textContent) || 0));
+    const ages = await page.$$eval('#valuesBody tr', x => x.slice(0, 20).map(r => parseFloat(r.cells[4].textContent) || 0));
     check('sorting by a column works', ages.every((v, i) => !i || v <= ages[i - 1]), ages.slice(0, 3).join(', '));
     // Rookies filter shows exactly the marked player; My Players shows every player and pick on your team
     const flt = await page.evaluate(async () => {

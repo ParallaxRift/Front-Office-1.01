@@ -51,10 +51,9 @@ document.addEventListener("keydown", e => { if (e.key === "Escape") closePop(); 
 window.addEventListener("scroll", () => { if (popEl && Math.abs(window.scrollY - popScrollY) > 40) closePop(); }, { passive: true });
 
 const COLUMN_INFO = {
-  "col-league": ["This League", "The player's value in your league after all of Front Office's adjustments: scoring, lineup, trade habits, age and starter role. This is the number the calculator uses."],
-  "col-range": ["Expert Range", "Where most experts would put him: his value one spread of expert rankings up and down, with your league's adjustments applied. A wide range means experts disagree; no range means they mostly agree."],
-  "col-market": ["Market", "The same player's value from the plain rankings, before any league adjustments. It shows what he'd be worth in a generic league."],
-  "col-change": ["Change", "How far your league's value is from the market value. It stays blank when the difference is under 1%, so small moves don't clutter the table."]
+  "col-league": ["This League", "The player's value in your league after all of Front Office's adjustments. This is the number the calculator uses."],
+  "col-market": ["Market", "The same player's value from the generic rankings, before any league adjustments. It shows what he'd be worth in a generic league as a single value."],
+  "col-change": ["Change", "The % difference between your league's values after all logic is applied and the singular generic market value. It stays blank when the difference is under 1%."]
 };
 const ADJUST_INFO_HTML = `<h4>What Is the Value Adjustment?</h4>
   <p>A fantasy roster has limited spots and limited starters, so one difference-maker is worth more than the same total value spread across several lesser players. Front Office adds a bonus to the side giving up the best piece, so a pile of depth can't "equal" a star.</p>

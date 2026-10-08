@@ -475,7 +475,7 @@ function renderTuningLight(){
   if (S.nudge){
     const adj = ["QB","RB","WR","TE","PICK"].map(k => ({ k, m: S.nudge[k] }))
       .map(x => `<span class="chip">${x.k === "PICK" ? "Picks" : x.k + "s"} ×${(Math.round(x.m*100)/100).toFixed(2)}</span>`).join("");
-    el.innerHTML = `<span class="light on" aria-hidden="true"></span><div class="tuning-text"><b>League Tuning Is On</b><p>These values include your league's trade habits, learned from ${S.nudge.n} trades. Your league's own evidence counts for ${Math.round((S.nudge.weight || 0) * 100)}% so far and grows as you trade; expert consensus makes up the rest.</p><div class="chips">${adj}</div>${link}</div>`;
+    el.innerHTML = `<span class="light on" aria-hidden="true"></span><div class="tuning-text"><b>League Tuning Is On</b><p>These values include your league's trade habits, learned from ${S.nudge.n} trades, along with expert consensus.</p><div class="chips">${adj}</div>${link}</div>`;
   } else {
     const left = Math.max(0, NUDGE_MIN_TRADES - twoTeam);
     const pct = Math.min(100, Math.round(twoTeam / NUDGE_MIN_TRADES * 100));
@@ -503,10 +503,10 @@ const VALUES_PAGE = 50;
 let valuesLimit = VALUES_PAGE, valuesSort = { key: "value", dir: -1 };
 const valueChange = a => a.kind === "pick" || !a.market ? 0 : a.value / a.market - 1;
 const VALUE_SORTS = {
-  rank: a => a.lgRank || 99999, name: a => normName(a.name), pos: a => a.pos + String(a.lgPosRank || 999).padStart(3, "0"),
+  rank: a => a.lgRank || 99999, posrank: a => a.kind === "player" && a.lgPosRank ? a.lgPosRank : 99999, name: a => normName(a.name), pos: a => a.pos + String(a.lgPosRank || 999).padStart(3, "0"),
   age: a => a.age || 0, value: a => a.value, range: a => a.lo != null ? a.hi - a.lo : -1, market: a => a.market || 0, change: valueChange
 };
-const SORT_FIRST_DIR = { rank: 1, name: 1, pos: 1 };   // A to Z and #1 first; numbers biggest first
+const SORT_FIRST_DIR = { rank: 1, posrank: 1, name: 1, pos: 1 };   // A to Z and #1 first; numbers biggest first
 // Rookies: first NFL season (Sleeper's years of experience is 0, or his rookie year is this season)
 const isRookie = a => { if (a.kind !== "player") return false; const sp = S.sleeperPlayers?.[a.pid] || {};
   return sp.years_exp === 0 || Number(sp.metadata?.rookie_year) === Number(S.nflState?.season || S.season); };
@@ -536,8 +536,8 @@ function renderValues(){
     const teamHTML = a.owner != null ? `<span class="teamcell">${teamPhoto(a.owner, true)}${esc(team)}</span>` : "Free agent";
     const ch = a.market ? (a.value/a.market - 1) * 100 : 0;
     const chTxt = a.kind === "pick" || Math.abs(ch) < 1 ? "" : `<span class="${ch>0?"up":"down"}">${ch>0?"+":""}${Math.round(ch)}%</span>`;
-    return `<tr data-id="${esc(a.id)}"${a.kind === "player" ? ' tabindex="0"' : ""}${(() => { const c = [a.id === S.valuesHL ? "hl" : "", a.owner != null && a.owner === S.myRid ? "mine" : ""].filter(Boolean).join(" "); return c ? ` class="${c}"` : ""; })()}><td class="n">${a.kind === "player" && a.lgRank ? a.lgRank : i+1}</td><td><span class="teamcell">${assetPhoto(a, true)}${esc(a.name)}${injTag(a.pid)}</span></td><td>${esc(a.pos)}</td><td class="n">${esc(ageText(a.age))}</td>
-      <td class="hide-sm">${teamHTML}</td><td class="n big">${fmt(a.value)}</td><td class="n hide-sm range-cell">${a.depthFloor ? "Depth chart value" : valueRangeText(a).replace("Range ", "") || (a.kind === "player" && a.lo != null ? "Experts agree" : "")}</td><td class="n hide-sm">${a.kind==="pick"?"":fmt(a.market)}</td><td class="n">${chTxt}</td></tr>`;
+    return `<tr data-id="${esc(a.id)}"${a.kind === "player" ? ' tabindex="0"' : ""}${(() => { const c = [a.id === S.valuesHL ? "hl" : "", a.owner != null && a.owner === S.myRid ? "mine" : ""].filter(Boolean).join(" "); return c ? ` class="${c}"` : ""; })()}><td class="n">${a.kind === "player" && a.lgRank ? a.lgRank : i+1}</td><td class="n">${a.kind === "player" && a.lgPosRank ? esc(a.pos) + a.lgPosRank : ""}</td><td><span class="teamcell">${assetPhoto(a, true)}${esc(a.name)}${injTag(a.pid)}</span></td><td class="hide-sm">${esc(a.pos)}</td><td class="n">${esc(ageText(a.age))}</td>
+      <td class="hide-sm">${teamHTML}</td><td class="n big">${fmt(a.value)}</td><td class="n hide-sm">${a.kind==="pick"?"":fmt(a.market)}</td><td class="n">${chTxt}</td></tr>`;
   }).join("") || `<tr><td colspan="9" class="empty">${pos === "MINE" && S.myRid == null ? "Choose your team in the league header to see your players." : "No players match. Try a different search or filter."}</td></tr>`;
 }
 $("valueSearch").addEventListener("input", () => { valuesLimit = VALUES_PAGE; renderValues(); });

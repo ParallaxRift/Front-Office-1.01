@@ -491,7 +491,8 @@ th .info-btn:hover{color:var(--ink)}
 .clear-f:hover{background:var(--loss-soft);border-color:var(--loss);color:var(--loss)}
 
 /* Trade Finder layout: Find a Player on top, then one box with your roster beside the results */
-.tf-findbox{margin-bottom:14px}
+.tf-findbox{margin-bottom:0}
+.tf-main{margin-bottom:14px}
 .tf-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
 .tf-head h3{margin:0!important}
 .tf-reset{padding:6px 16px;font-size:15px;border-radius:999px}
@@ -1052,7 +1053,9 @@ th.sortable[aria-sort=ascending],th.sortable[aria-sort=descending]{color:var(--i
   #valuesTable{min-width:0;font-size:14px}
   #valuesTable td,#valuesTable th{padding-left:5px;padding-right:5px}
   #valuesTable th{white-space:normal;line-height:1.2;vertical-align:bottom}
-  #valuesTable td:nth-child(2){white-space:normal;line-height:1.25}
+  #valuesTable td:nth-child(3){white-space:normal;line-height:1.25}
+  #valuesTable th .lbl-full{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  #valuesTable th .lbl-short{display:inline}
   #valuesTable th .info-btn{margin-left:2px}
 }
 .minibar[data-result=lopsided] .mb-verdict{background:#E8890C}
@@ -1465,3 +1468,5 @@ body:not(.has-league) .side-switch,body:not(.has-league) #miniBar{display:none!i
 #valuesTable tr.mine td{background:var(--field-soft)}
 #valuesTable tr.mine td:first-child{box-shadow:inset 4px 0 0 var(--field)}
 #valuesTable tr.mine .teamcell{font-weight:700;color:var(--field)}
+
+.lbl-short{display:none}

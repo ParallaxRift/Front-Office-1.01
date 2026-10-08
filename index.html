@@ -26,7 +26,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600&family=Big+Shoulders+Display:wght@700;800;900&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=20261008d">
+<link rel="stylesheet" href="css/styles.css?v=20261008f">
 <link rel="stylesheet" href="css/desktop.css?v=20261008b" media="(min-width: 601px)">
 </head>
 <body>
@@ -295,6 +295,19 @@
   </section>
 
   <section class="panel" id="panel-finder">
+    <div class="box tf-main">
+      <div class="tf-pick">
+        <h3>Player to Trade Away</h3>
+        <div class="teamline"><select id="tfTeam" aria-label="Team you're trading for"></select><span class="badge" id="tfBadge"></span></div>
+        <input type="search" id="tfSearch" placeholder="Search your players and picks" aria-label="Search your roster">
+        <div class="list tf-list" id="tfList"></div>
+      </div>
+      <div class="tf-out">
+        <h3 class="tf-h" id="tfHeading">Trades That Make Sense</h3>
+        <p class="note" id="tfNote" style="margin:0 0 12px"></p>
+        <div id="tfResults" class="tf-results"></div>
+      </div>
+    </div>
     <div class="box tf-opts tf-findbox">
       <div class="tf-head"><h3 id="tfOptsTitle">Find a Player</h3><button type="button" class="ghost tf-reset" id="tfReset">Reset</button></div>
       <div class="tf-find-grid">
@@ -319,19 +332,6 @@
         </div>
       </div>
     </div>
-    <div class="box tf-main">
-      <div class="tf-pick">
-        <h3>Player to Trade Away</h3>
-        <div class="teamline"><select id="tfTeam" aria-label="Team you're trading for"></select><span class="badge" id="tfBadge"></span></div>
-        <input type="search" id="tfSearch" placeholder="Search your players and picks" aria-label="Search your roster">
-        <div class="list tf-list" id="tfList"></div>
-      </div>
-      <div class="tf-out">
-        <h3 class="tf-h" id="tfHeading">Trades That Make Sense</h3>
-        <p class="note" id="tfNote" style="margin:0 0 12px"></p>
-        <div id="tfResults" class="tf-results"></div>
-      </div>
-    </div>
   </section>
 
   <section class="panel" id="panel-values">
@@ -353,7 +353,7 @@
     <p style="margin:0 0 10px;font-size:14px;color:var(--muted)">Tap any player to open his player card. On other tabs, tap a player's photo. <span id="valuesUpdated"></span></p>
     <div class="tablewrap" id="valuesWrap">
       <table id="valuesTable">
-        <thead><tr><th class="n sortable" data-sort="rank" aria-sort="none">#</th><th class="sortable" data-sort="name" aria-sort="none">Player</th><th class="sortable" data-sort="pos" aria-sort="none">Pos</th><th class="n sortable" data-sort="age" aria-sort="none">Age</th><th class="hide-sm">League team</th><th class="n sortable" data-sort="value" aria-sort="descending" title="This League: The player's value in your league after all of Front Office's adjustments: scoring, lineup, trade habits, age and starter role. This is the number the calculator uses.">This league<button type="button" class="info-btn" data-info="col-league" aria-label="What does This league mean?">?</button></th><th class="n hide-sm sortable" data-sort="range" aria-sort="none" title="Expert range: Where most experts would put him: his value one spread of expert rankings up and down, with your league's adjustments applied. A wide range means experts disagree; no range means they mostly agree.">Expert range<button type="button" class="info-btn" data-info="col-range" aria-label="What does Expert range mean?">?</button></th><th class="n hide-sm sortable" data-sort="market" aria-sort="none" title="Market: The same player's value from the plain rankings, before any league adjustments. It shows what he'd be worth in a generic league.">Market<button type="button" class="info-btn" data-info="col-market" aria-label="What does Market mean?">?</button></th><th class="n sortable" data-sort="change" aria-sort="none" title="Change: How far your league's value is from the market value. It stays blank when the difference is under 1%, so small moves don't clutter the table.">Change<button type="button" class="info-btn" data-info="col-change" aria-label="What does Change mean?">?</button></th></tr></thead>
+        <thead><tr><th class="n sortable" data-sort="rank" aria-sort="none"><span class="lbl-full">Overall Ranking</span><span class="lbl-short" aria-hidden="true">Ovr Rank</span></th><th class="n sortable" data-sort="posrank" aria-sort="none"><span class="lbl-full">Position Ranking</span><span class="lbl-short" aria-hidden="true">Pos Rank</span></th><th class="sortable" data-sort="name" aria-sort="none">Player</th><th class="sortable hide-sm" data-sort="pos" aria-sort="none">Pos</th><th class="n sortable" data-sort="age" aria-sort="none">Age</th><th class="hide-sm">League team</th><th class="n sortable" data-sort="value" aria-sort="descending" title="This League: The player's value in your league after all of Front Office's adjustments. This is the number the calculator uses.">This league<button type="button" class="info-btn" data-info="col-league" aria-label="What does This league mean?">?</button></th><th class="n hide-sm sortable" data-sort="market" aria-sort="none" title="Market: The same player's value from the generic rankings, before any league adjustments. It shows what he'd be worth in a generic league as a single value.">Market<button type="button" class="info-btn" data-info="col-market" aria-label="What does Market mean?">?</button></th><th class="n sortable" data-sort="change" aria-sort="none" title="Change: The % difference between your league's values after all logic is applied and the singular generic market value. It stays blank when the difference is under 1%.">Change<button type="button" class="info-btn" data-info="col-change" aria-label="What does Change mean?">?</button></th></tr></thead>
         <tbody id="valuesBody"></tbody>
       </table>
     </div>
@@ -573,7 +573,7 @@
 <script src="js/league-load.js?v=20261007k"></script>
 <script src="js/draft-classes.js?v=20261007t"></script>
 <script src="js/values-engine.js?v=20261008c"></script>
-<script src="js/render.js?v=20261008e"></script>
+<script src="js/render.js?v=20261008h"></script>
 <script src="js/player-cards.js?v=20261008c"></script>
 <script src="js/settings-tab.js?v=20261007a"></script>
 <script src="js/strategy.js?v=20261007g"></script>
@@ -586,7 +586,7 @@
 <script src="js/calc-browse.js?v=20261007a"></script>
 <script src="js/calc-minibar.js?v=20261007a"></script>
 <script src="js/trophy.js?v=20261007a"></script>
-<script src="js/popovers.js?v=20261007n"></script>
+<script src="js/popovers.js?v=20261008v"></script>
 <script src="js/trade-finder.js?v=20261007m"></script>
 <script src="js/pickers.js?v=20261007p"></script>
 <script src="js/nav.js?v=20261008r"></script>
