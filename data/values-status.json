@@ -1,5 +1,5 @@
 {
- "checked": "2026-10-07T22:34:42+00:00",
+ "checked": "2026-10-08T02:25:47+00:00",
  "rankings": {
   "1QB": {
    "status": 200,
@@ -203,7 +203,7 @@
    ]
   }
  ],
- "smoothed_days": 2,
+ "smoothed_days": 3,
  "projection_basis": "rest of season",
  "ros_probe": [
   {
@@ -214,6 +214,6 @@
   }
  ],
  "projected_players": 461,
- "snapshot": "2026-10-07.json",
+ "snapshot": "2026-10-08.json",
  "calls": 11
 }
