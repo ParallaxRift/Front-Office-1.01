@@ -202,6 +202,29 @@ function depthChartText(pid){
   return `${grp}${n}${spot ? " · " + spot : ""}`;
 }
 
+// Depth chart move since last week ("up from WR3 last week"), from the daily data update
+function depthMoveText(pid){
+  const was = cardData?.players?.[pid]?.dm, now = depthChartText(pid).split(" ")[0];
+  if (!was || !now || was === now) return "";
+  const n = x => parseInt(String(x).replace(/\D/g, "")) || 99;
+  return `${n(now) < n(was) ? "up" : "down"} from ${was} last week`;
+}
+// Sleeper trending chip for the card header
+function trendChip(pid){
+  const n = S.trending?.get(String(pid)); if (!n || Math.abs(n) < TREND_MIN) return "";
+  return `<span class="pc-tag ${n > 0 ? "h" : "o"}" title="Sleeper leagues adding him minus dropping him, last 24 hours">${n > 0 ? "Trending ▲" : "Dropping ▼"} ${fmt(Math.abs(n))}</span>`;
+}
+// Usage over the last weeks played vs. the season: snap share, share of team targets + carries, touches per game
+function usageBlock(u){
+  if (!u) return `<p class="empty">Usage appears during the season, after a few games.</p>`;
+  const [snap, snapS, share, shareS, tpg, n] = u, p = x => x == null ? "–" : Math.round(x * 100) + "%";
+  const arrow = (a, b) => a == null || b == null || Math.abs(a - b) < 0.05 ? "" : a > b ? ` <span class="up">▲ ${Math.round((a - b) * 100)}</span>` : ` <span class="down">▼ ${Math.round((b - a) * 100)}</span>`;
+  return `<div class="pc-scroll"><table class="pc-use"><thead><tr><th class="l">Share of his team's…</th><th>Last ${n || 3} weeks</th><th>Season</th></tr></thead><tbody>
+    <tr><td class="l">Offensive snaps</td><td>${p(snap)}${arrow(snap, snapS)}</td><td>${p(snapS)}</td></tr>
+    <tr><td class="l">Targets + carries</td><td>${p(share)}${arrow(share, shareS)}</td><td>${p(shareS)}</td></tr>
+    <tr><td class="l">Touches per game</td><td>${tpg != null ? tpg.toFixed(1) : "–"}</td><td></td></tr>
+  </tbody></table></div><p class="pc-note">Arrows show a change of 5 points or more vs. his season. From Sleeper's weekly stats.</p>`;
+}
 async function openPlayerCard(pid){
   const sp = S.sleeperPlayers?.[pid] || {}, a = S.assets?.get("p:" + pid);
   const name = a?.name || sp.full_name || `${sp.first_name || ""} ${sp.last_name || ""}`.trim() || "Player";
@@ -209,8 +232,8 @@ async function openPlayerCard(pid){
   const lab = INJ_LABEL[sp.injury_status];
   const owner = a?.owner != null ? S.teams.get(a.owner)?.name : "Free agent";
   const facts = [
-    ["Age", a?.age ? ageText(a.age) : sp.age], ["Height", heightText(sp.height)], ["Weight", sp.weight ? sp.weight + " lb" : ""],
-    ["College", sp.college], ["Experience", expText(sp.years_exp)], ["Depth chart", [depthChartText(pid), a?.starterLift > 0 ? `value lifted +${fmt(Math.round(a.starterLift))} while he starts` : ""].filter(Boolean).join(" · ")], ["Fantasy team", owner]
+    ["Age", (() => { const ag = a?.age || Number(sp.age) || 0, c = CLIFF[pos]; return ag ? `${ageText(ag)}${c && ag >= c ? ` · past the usual ${pos} age cliff (${c})` : c && ag >= c - 1 ? ` · nearing the ${pos} age cliff (${c})` : ""}` : ""; })()], ["Height", heightText(sp.height)], ["Weight", sp.weight ? sp.weight + " lb" : ""],
+    ["College", sp.college], ["Experience", expText(sp.years_exp)], ["Depth chart", [depthChartText(pid), depthMoveText(pid), a?.starterLift > 0 ? `value lifted +${fmt(Math.round(a.starterLift))} while he starts` : ""].filter(Boolean).join(" · ")], ["Fantasy team", owner]
   ].filter(f => f[1] !== undefined && f[1] !== null && f[1] !== "");
   $("pcard").innerHTML = `<div class="pc" role="dialog" aria-modal="true" aria-labelledby="pcName">
     <button type="button" class="pc-close" aria-label="Close player card">×</button>
@@ -219,12 +242,13 @@ async function openPlayerCard(pid){
       <div class="pc-id"><h2 id="pcName">${esc(name)}</h2>
         <div class="pc-sub"><span>${esc(pos)}${sp.number ? " · #" + esc(sp.number) : ""}</span>
           ${team ? `<span><img src="https://sleepercdn.com/images/team_logos/nfl/${esc(team.toLowerCase())}.png" alt="" onerror="this.remove()"> ${esc(NFL_TEAMS[team] || team)}</span>` : `<span>Free agent</span>`}
-          <span class="pc-tag ${lab ? lab[1] : sp.injury_status ? "o" : "h"}">${esc(lab ? lab[0] : sp.injury_status || "Healthy")}</span></div></div>
+          <span class="pc-tag ${lab ? lab[1] : sp.injury_status ? "o" : "h"}">${esc(lab ? lab[0] : sp.injury_status || "Healthy")}</span>${trendChip(pid)}</div></div>
       ${a ? `<div class="pc-val"><b>${fmt(a.value)}</b><small>${[a.lgPosRank ? pos + a.lgPosRank : "", a.lgRank ? "#" + a.lgRank + " overall" : ""].filter(Boolean).join(" · ")} in your league</small></div>` : ""}
     </header>
     <div class="pc-body">
       <dl class="pc-facts">${facts.map(([k, v]) => `<div${k === "Fantasy team" || k === "College" ? ' class="wide"' : ""}><dt>${esc(k)}</dt><dd>${k === "Fantasy team" && a?.owner != null ? `<span class="pc-ft">${teamPhoto(a.owner, "sm")}${esc(v)}</span>` : esc(v)}</dd></div>`).join("")}</dl>
       <h3>Current Status</h3><div id="pcNow">${currentStatus(sp)}</div>
+      <h3>Usage</h3><div id="pcUse"><p class="pc-loading">Loading usage…</p></div>
       <h3>Career Stats</h3><div id="pcStats"><p class="pc-loading">Loading stats…</p></div>
       <p class="pc-note">Current status and career stats from Sleeper. Regular season only. Fantasy points use standard full-PPR scoring.</p>
     </div></div>`;
@@ -241,6 +265,8 @@ async function openPlayerCard(pid){
   const season = liveSeasonYear();
   $("pcStats").innerHTML = data || live.ok ? statsTable(rec, pos, season) : `<p class="empty">Stats aren't available right now. Try again in a minute.</p>`;
   $("pcNow").innerHTML = currentStatus(sp, { ...rec, c: rec0?.c }, rec0?.n || []);
+  $("pcUse").innerHTML = usageBlock(rec0?.u);
+  const dm = depthMoveText(pid); if (dm){ const dd = [...$("pcard").querySelectorAll(".pc-facts dt")].find(x => x.textContent === "Depth chart"); if (dd && !dd.nextElementSibling.textContent.includes(dm)) dd.nextElementSibling.textContent += " · " + dm; }
 }
 function closePlayerCard(){ $("pcard").hidden = true; $("pcard").innerHTML = ""; document.body.style.overflow = ""; }
 // Capture phase, so tapping a photo inside a roster row opens the card instead of adding him to a trade

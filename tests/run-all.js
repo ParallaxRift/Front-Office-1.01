@@ -220,6 +220,20 @@ async function openLeague(browser, viewport, opts){
     });
     check('a new publish updates open pages', live === 'true,true', live);
 
+    // Trending tag, usage table and depth-chart move text
+    const sig = await page.evaluate(() => {
+      const a = [...S.assets.values()].find(x => x.kind === 'player');
+      S.trending = new Map([[String(a.pid), 1234]]);
+      const tag = trendTag(a.pid), use = usageBlock([0.62, 0.50, 0.31, 0.22, 14.2, 3]);
+      cardData = cardData || { players: {} }; cardData.players = cardData.players || {};
+      const keep = cardData.players[a.pid]; cardData.players[a.pid] = { ...(keep || { s: [] }), dm: 'RB9' };
+      const now = depthChartText(a.pid), mv = depthMoveText(a.pid);
+      if (keep) cardData.players[a.pid] = keep; else delete cardData.players[a.pid];
+      S.trending = new Map();
+      return [/▲1\.2k/.test(tag), /▲ 12/.test(use) && /▲ 9/.test(use), !now.match(/\d/) || /from RB9 last week/.test(mv) || now.startsWith('RB9') || !/^RB/.test(now) ].join(',');
+    });
+    check('trending tag, usage table and depth moves', sig === 'true,true,true', sig);
+
     // Live Scores flips to the next week on Tuesday morning (6 a.m. Central), not Wednesday
     const flips = await page.evaluate(() => { const real = Date.now, st = { season_start_date: '2026-09-10' };
       const at = iso => { Date.now = () => new Date(iso).getTime(); const w = flipWeek(st); Date.now = real; return w; };

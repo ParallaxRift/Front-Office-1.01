@@ -84,6 +84,26 @@ function teamAssets(rid){
 const PLAYER_IMG = pid => `https://sleepercdn.com/content/nfl/players/thumb/${encodeURIComponent(pid)}.jpg`;
 // Injury designation tag shown next to a player's name everywhere (live from Sleeper's player list)
 const INJ_SHORT = { Questionable: ["Q", "q"], Doubtful: ["D", "d"], Out: ["O", "o"], IR: ["IR", "o"], PUP: ["PUP", "o"], NFI: ["NFI", "o"], Sus: ["SUS", "o"], COV: ["COV", "o"], NA: ["NA", "d"], DNR: ["DNR", "d"] };
+// Sleeper trending: leagues adding him minus leagues dropping him in the last 24 hours
+// (Sleeper's public trending lists, loaded in the background and refreshed every 30 minutes)
+const TREND_MIN = 300;
+function trendText(n){ const a = Math.abs(n); return a >= 1000 ? (a / 1000).toFixed(1) + "k" : String(a); }
+function trendTag(pid){
+  const n = S.trending?.get(String(pid)); if (!n || Math.abs(n) < TREND_MIN) return "";
+  const up = n > 0, why = `${up ? "Added" : "Dropped"} in ${fmt(Math.abs(n))} more Sleeper leagues than ${up ? "dropped" : "added"} in the last 24 hours`;
+  return ` <span class="trend ${up ? "up" : "down"}" title="${why}" aria-label="${why}">${up ? "▲" : "▼"}${trendText(n)}</span>`;
+}
+async function loadTrending(){
+  try {
+    const get = t => fetch(`${API}/players/nfl/trending/${t}?lookback_hours=24&limit=100`).then(r => r.ok ? r.json() : []).catch(() => []);
+    const [adds, drops] = await Promise.all([get("add"), get("drop")]), m = new Map();
+    for (const x of Array.isArray(adds) ? adds : []) m.set(String(x.player_id), (m.get(String(x.player_id)) || 0) + (x.count || 0));
+    for (const x of Array.isArray(drops) ? drops : []) m.set(String(x.player_id), (m.get(String(x.player_id)) || 0) - (x.count || 0));
+    S.trending = m;
+    if (S.assets && $("panel-values")?.classList.contains("on")) renderValues();
+  } catch(_){}
+}
+loadTrending(); setInterval(loadTrending, 30 * 60000);
 function injTag(pid){
   const sp = pid != null ? S.sleeperPlayers?.[pid] : null, st = sp?.injury_status, t = INJ_SHORT[st];
   if (!t) return "";
@@ -521,7 +541,7 @@ function renderValues(){
     const teamHTML = a.owner != null ? `<span class="teamcell">${teamPhoto(a.owner, true)}${esc(team)}</span>` : "Free agent";
     const ch = a.market ? (a.value/a.market - 1) * 100 : 0;
     const chTxt = a.kind === "pick" || Math.abs(ch) < 1 ? "" : `<span class="${ch>0?"up":"down"}">${ch>0?"+":""}${Math.round(ch)}%</span>`;
-    return `<tr data-id="${esc(a.id)}"${a.kind === "player" ? ' tabindex="0"' : ""}${(() => { const c = [a.id === S.valuesHL ? "hl" : "", a.owner != null && a.owner === S.myRid ? "mine" : ""].filter(Boolean).join(" "); return c ? ` class="${c}"` : ""; })()}><td class="rk">${a.kind === "player" && a.lgRank ? a.lgRank : i+1}</td><td class="rk">${a.kind === "player" && a.lgPosRank ? esc(a.pos) + a.lgPosRank : ""}</td><td><span class="teamcell">${assetPhoto(a, true)}${esc(a.name)}${injTag(a.pid)}</span></td><td class="hide-sm">${esc(a.pos)}</td><td class="n">${esc(ageText(a.age))}</td>
+    return `<tr data-id="${esc(a.id)}"${a.kind === "player" ? ' tabindex="0"' : ""}${(() => { const c = [a.id === S.valuesHL ? "hl" : "", a.owner != null && a.owner === S.myRid ? "mine" : ""].filter(Boolean).join(" "); return c ? ` class="${c}"` : ""; })()}><td class="rk">${a.kind === "player" && a.lgRank ? a.lgRank : i+1}</td><td class="rk">${a.kind === "player" && a.lgPosRank ? esc(a.pos) + a.lgPosRank : ""}</td><td><span class="teamcell">${assetPhoto(a, true)}${esc(a.name)}${injTag(a.pid)}${a.kind === "player" ? trendTag(a.pid) : ""}</span></td><td class="hide-sm">${esc(a.pos)}</td><td class="n">${esc(ageText(a.age))}</td>
       <td class="hide-sm">${teamHTML}</td><td class="n big">${fmt(a.value)}</td><td class="n hide-sm">${a.kind==="pick"?"":fmt(a.market)}</td><td class="n">${chTxt}</td></tr>`;
   }).join("") || `<tr><td colspan="9" class="empty">${pos === "MINE" && S.myRid == null ? "Choose your team in the league header to see your players." : "No players match. Try a different search or filter."}</td></tr>`;
 }

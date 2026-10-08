@@ -1474,3 +1474,8 @@ body:not(.has-league) .side-switch,body:not(.has-league) #miniBar{display:none!i
 #valuesTable th.rk,#valuesTable td.rk{text-align:center;width:1%;white-space:nowrap;padding-left:10px;padding-right:10px;font-variant-numeric:tabular-nums}
 @media (max-width:600px){#valuesTable thead th.rk{white-space:normal;padding-left:4px;padding-right:4px}#valuesTable td.rk{padding-left:4px;padding-right:4px}}
 @media (max-width:600px){#standTable{min-width:0}#standTable td,#standTable th{padding:5px 5px}}
+/* Sleeper trending tag on Rankings */
+.trend{display:inline-block;vertical-align:1px;margin-left:5px;padding:1px 5px;border-radius:5px;font-size:11px;font-weight:800;line-height:1.35;white-space:nowrap}
+.trend.up{color:#1E6B47;background:#E3F1EA}.trend.down{color:#B42318;background:#FDECEA}
+/* Usage table on player cards */
+.pc-use .up{color:#1E8A52;font-weight:700}.pc-use .down{color:#C0362C;font-weight:700}

@@ -90,6 +90,7 @@ for pid, p in skill.items():
 print(f"{len(skill)} QBs, RBs, WRs and TEs on Sleeper")
 
 players = defaultdict(lambda: {"s": []})
+raw_current = {}
 
 # ---------- 2) Season stats from Sleeper ----------
 os.makedirs(STATS_CACHE, exist_ok=True)
@@ -101,6 +102,8 @@ for y in range(FIRST_SEASON, CURRENT + 1):
     else:
         try:
             raw = get_json(SLEEPER_SEASON.format(season=y))
+            if y == CURRENT:
+                raw_current = raw          # kept for this season's usage shares (step 3)
         except Exception as e:
             print(f"{y}: couldn't download stats ({e})")
             continue
@@ -122,7 +125,94 @@ for y in range(FIRST_SEASON, CURRENT + 1):
         players[pid]["s"].append([y, ""] + [int(n) if n == int(n) else n for n in row])
     print(f"{y}: {len(season)} player seasons")
 
-# ---------- 3) Save ----------
+# ---------- 3) Usage trends and depth chart moves (for the player cards) ----------
+# Usage: share of his team's offensive snaps, and of its targets + carries ("opportunity share"),
+# over the last 3 weeks played vs. the whole season, plus carries + catches per game.
+# Depth moves: each player's depth chart spot (RB1, WR3...) is saved once per NFL week in
+# data/depth-history.json, so the card can say "up from WR3 last week".
+DEPTH_HISTORY = os.path.join(HERE, "..", "data", "depth-history.json")
+SLEEPER_WEEK = "https://api.sleeper.app/v1/stats/nfl/regular/{season}/{week}"
+try:
+    state = get_json(SLEEPER_STATE)
+    season_now = int(state.get("season") or CURRENT)
+    week_now = int(state.get("week") or 0) if state.get("season_type") == "regular" else 0
+except Exception as e:
+    print(f"[usage] couldn't get the NFL week from Sleeper ({e})")
+    season_now, week_now = CURRENT, 0
+
+
+def usage(weeks):
+    team_opp, out = defaultdict(float), {}
+    for w in weeks:
+        for pid, x in (w or {}).items():
+            t = skill.get(pid, {}).get("team")
+            if t and isinstance(x, dict):
+                team_opp[t] += float(x.get("rec_tgt") or 0) + float(x.get("rush_att") or 0)
+    for w in weeks:
+        for pid, x in (w or {}).items():
+            if pid not in skill or not isinstance(x, dict):
+                continue
+            o = out.setdefault(pid, {"snp": 0.0, "tsnp": 0.0, "opp": 0.0, "touch": 0.0, "gp": 0.0})
+            o["snp"] += float(x.get("off_snp") or 0); o["tsnp"] += float(x.get("tm_off_snp") or 0)
+            o["opp"] += float(x.get("rec_tgt") or 0) + float(x.get("rush_att") or 0)
+            o["touch"] += float(x.get("rush_att") or 0) + float(x.get("rec") or 0)
+            o["gp"] += float(x.get("gp") or (1 if x.get("off_snp") else 0))
+    for pid, o in out.items():
+        t = team_opp.get(skill[pid].get("team"), 0)
+        o["share"] = o["opp"] / t if t else 0
+    return out
+
+
+if week_now > 1:
+    recent_weeks = []
+    for w in range(max(1, week_now - 3), week_now):
+        try:
+            recent_weeks.append(get_json(SLEEPER_WEEK.format(season=season_now, week=w)))
+            time.sleep(0.5)
+        except Exception as e:
+            print(f"[usage] week {w}: {e}")
+    l3, full = usage(recent_weeks), usage([raw_current])
+    r2 = lambda v: round(v, 3)
+    for pid, o in l3.items():
+        if o["gp"] <= 0:
+            continue
+        f_ = full.get(pid)
+        players[pid]["u"] = [r2(o["snp"] / o["tsnp"]) if o["tsnp"] else None, r2(f_["snp"] / f_["tsnp"]) if f_ and f_["tsnp"] else None,
+                             r2(o["share"]), r2(f_["share"]) if f_ else None, round(o["touch"] / o["gp"], 1), len(recent_weeks)]
+    print(f"[usage] {sum(1 for p in players.values() if p.get('u'))} players, weeks {week_now - len(recent_weeks)}-{week_now - 1}")
+
+# depth chart labels the way the site shows them: RB1, QB2, WR3 (receivers ranked across left, right and slot)
+GRP = {"LWR": "WR", "RWR": "WR", "SWR": "WR", "WR": "WR", "QB": "QB", "RB": "RB", "TE": "TE"}
+groups = defaultdict(list)
+for pid, p in skill.items():
+    g, o = GRP.get(p.get("depth_chart_position") or ""), p.get("depth_chart_order")
+    if p.get("team") and g == p.get("position") and o:
+        groups[(p["team"], g)].append((int(o), p.get("search_rank") or 10 ** 9, pid))
+labels = {}
+for (team, g), arr in groups.items():
+    for i, (_, _, pid) in enumerate(sorted(arr)):
+        labels[pid] = f"{g}{i + 1}"
+if week_now:
+    try:
+        with open(DEPTH_HISTORY, encoding="utf-8") as f:
+            hist = json.load(f)
+    except (OSError, ValueError):
+        hist = {}
+    if hist.get("season") != season_now:
+        hist = {"season": season_now, "weeks": {}}
+    hist["weeks"][str(week_now)] = labels                          # the latest run of the week wins
+    hist["weeks"] = {w: v for w, v in hist["weeks"].items() if int(w) >= week_now - 2}
+    with open(DEPTH_HISTORY, "w", encoding="utf-8") as f:
+        json.dump(hist, f, separators=(",", ":"))
+    before = hist["weeks"].get(str(week_now - 1)) or {}
+    moves = 0
+    for pid, now_label in labels.items():
+        was = before.get(pid)
+        if was and was != now_label:
+            players[pid]["dm"] = was; moves += 1
+    print(f"[depth] {moves} depth chart moves since last week")
+
+# ---------- 4) Save ----------
 # Keep players who are on a team or played/were hurt in the last five seasons (their whole career is kept)
 recent = CURRENT - 4
 players = {pid: p for pid, p in players.items()
