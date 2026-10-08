@@ -183,6 +183,19 @@ async function openLeague(browser, viewport, opts){
     });
     check('starter lift for cheap starting QBs and RBs', /^true,true,true,/.test(lift), lift);
 
+    // Player card: depth chart spot (WR1/WR2/WR3 across left, right and slot) and the news list
+    const card = await page.evaluate(() => {
+      const keep = JSON.stringify(S.sleeperPlayers);
+      const P = S.sleeperPlayers, put = (id, pos, dpos, ord) => P[id] = { ...(P[id] || {}), team: 'ZZZ', position: pos, depth_chart_position: dpos, depth_chart_order: ord };
+      put('t1', 'WR', 'LWR', 1); put('t2', 'WR', 'RWR', 1); put('t3', 'WR', 'SWR', 1); put('t4', 'WR', 'LWR', 2); put('t5', 'RB', 'RB', 1); put('t6', 'RB', 'KR', 1);
+      const d = ['t1','t2','t3','t4','t5','t6'].map(depthChartText).join('|');
+      S.sleeperPlayers = JSON.parse(keep);
+      const html = newsBlock([['2026-10-07', 'Named starter <b>', 'x', '', 'https://www.fantasypros.com/a'], ['2026-10-06', 'Hamstring', 'y', 'i', 'javascript:alert(1)'], ['2026-10-01', 'Old save', 'z']]);
+      const est = returnEstimate({ injury_status: 'Questionable' }, [['2026-10-07', 'Out for the season with a torn ACL', '', '', '']]);
+      return [d, /Read on FantasyPros/.test(html) && !/javascript:/.test(html) && !/starter <b>/.test(html) && (html.match(/pc-ntag/g) || []).length === 2, !est || est.lo < 99].join(';');
+    });
+    check('player card depth chart and news', card === 'WR1 · outside|WR2 · outside|WR3 · slot|WR4 · outside|RB1|Not on the depth chart;true;true', card);
+
     // Live Scores flips to the next week on Tuesday morning (6 a.m. Central), not Wednesday
     const flips = await page.evaluate(() => { const real = Date.now, st = { season_start_date: '2026-09-10' };
       const at = iso => { Date.now = () => new Date(iso).getTime(); const w = flipWeek(st); Date.now = real; return w; };

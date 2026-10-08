@@ -35,14 +35,16 @@ FP_URLS = [   # tried in order until one works; data/fp-status.json shows which
     "https://api.fantasypros.com/public/v2/json/nfl/injuries?season={season}&week={week}",
     "https://api.fantasypros.com/public/v2/json/nfl/{season}/injuries?week={week}",
 ]
-FP_NEWS_URLS = [   # latest injury news; tried in order until one works
-    "https://api.fantasypros.com/public/v2/json/nfl/news?category=injury&limit=500",
-    "https://api.fantasypros.com/public/v2/json/nfl/news?category=injury",
-    "https://api.fantasypros.com/public/v2/json/nfl/news",
+FP_NEWS_GROUPS = [   # all player news, then injury news; in each group the addresses are tried in order until one works
+    ["https://api.fantasypros.com/public/v2/json/nfl/news?limit=200",
+     "https://api.fantasypros.com/public/v2/json/nfl/news"],
+    ["https://api.fantasypros.com/public/v2/json/nfl/news?category=injury&limit=200",
+     "https://api.fantasypros.com/public/v2/json/nfl/news?category=injury"],
 ]
 FP_PAUSE = 2.5                   # seconds between FantasyPros requests (they limit how fast we can ask)
 FP_MAX_CALLS = 45                # FantasyPros requests per run; older seasons fill in over a few runs
-NEWS_DAYS = 45                   # ignore injury news older than this
+NEWS_DAYS = 45                   # ignore news older than this
+NEWS_KEEP = 5                    # news items kept per player (each run adds to what earlier runs saved)
 
 HERE = os.path.dirname(__file__)
 OUTPUT = os.path.join(HERE, "..", "data", "players.json")
@@ -147,7 +149,7 @@ for y in range(FIRST_SEASON, CURRENT + 1):
         players[pid]["s"].append([y, ""] + [int(n) if n == int(n) else n for n in row])
     print(f"{y}: {len(season)} player seasons")
 
-# ---------- 3) FantasyPros: injury news, then weekly injury reports ----------
+# ---------- 3) FantasyPros: player news, then weekly injury reports ----------
 def pick(d, *keys):
     for k in keys:
         v = d.get(k) if isinstance(d, dict) else None
@@ -272,18 +274,32 @@ else:
     # 3a) News first: one request, so it never gets squeezed out by the weekly reports
     names = sorted(((p.get("full_name") or "", pid) for pid, p in skill.items() if p.get("team") and p.get("full_name")),
                    key=lambda x: -len(x[0]))
-    items = []
-    for url in FP_NEWS_URLS:
-        data, status = fp_get(url)
-        if data is None:
-            note("news", url, status=status[0] if isinstance(status, tuple) else status, reply=status[1] if isinstance(status, tuple) else "")
-            if fp_stop:
-                break
-            continue
-        items = flatten(data)
-        note("news", url, status=200, records=len(items), sample=json.dumps(items[0])[:300] if items else None)
-        break
+    # News from earlier runs is kept, so a player's card builds up his recent news over the days
+    old_news = {}
+    try:
+        with open(OUTPUT, encoding="utf-8") as f:
+            old_news = {pid: p["n"] for pid, p in json.load(f).get("players", {}).items() if p.get("n")}
+    except (OSError, ValueError, AttributeError):
+        pass
+    items, seen = [], set()
+    for group in FP_NEWS_GROUPS:
+        for url in group:
+            data, status = fp_get(url)
+            if data is None:
+                note("news", url, status=status[0] if isinstance(status, tuple) else status, reply=status[1] if isinstance(status, tuple) else "")
+                if fp_stop:
+                    break
+                continue
+            got = flatten(data)
+            note("news", url, status=200, records=len(got), sample=json.dumps(got[0])[:300] if got else None)
+            for it in got:
+                key = pick(it, "id") or pick(it, "title", "headline")
+                if key and key not in seen:
+                    seen.add(key)
+                    items.append(it)
+            break
     cutoff = now.timestamp() - NEWS_DAYS * 86400
+    fresh = defaultdict(list)
     for it in items:
         title = pick(it, "title", "headline")
         desc = pick(it, "desc", "description", "body", "summary", "news")
@@ -299,10 +315,28 @@ else:
         if not pid:
             low = title.lower()
             pid = next((pid for nm, pid in names if nm.lower() in low), None)
-        if pid and len(players[pid].setdefault("n", [])) < 3:
-            players[pid]["n"].append([datetime.fromtimestamp(ts, timezone.utc).strftime("%Y-%m-%d"), title[:200], desc[:600]])
-            news_count += 1
-    print(f"[FP news] {len(items)} items, {news_count} matched to players")
+        if not pid:
+            continue
+        cats = " ".join(str(c) for c in it.get("categories") or []).lower() if isinstance(it.get("categories"), list) else ""
+        kind = "i" if "injur" in cats or "injur" in (title + " " + desc).lower() else ""
+        link = pick(it, "link", "url")
+        fresh[pid].append([datetime.fromtimestamp(ts, timezone.utc).strftime("%Y-%m-%d"), title[:200], desc[:600], kind,
+                           link if link.startswith("https://") else ""])
+        news_count += 1
+    cut_day = datetime.fromtimestamp(cutoff, timezone.utc).strftime("%Y-%m-%d")
+    for pid in set(fresh) | set(old_news):
+        if pid not in skill:
+            continue
+        merged, titles = [], set()
+        for n in sorted(fresh.get(pid, []) + old_news.get(pid, []), key=lambda n: n[0], reverse=True):
+            n = list(n) + (["i", ""] if len(n) == 3 else ["", ""])   # older saves only held injury news
+            n = n[:5]
+            if n[0] >= cut_day and n[1].lower() not in titles:
+                titles.add(n[1].lower())
+                merged.append(n)
+        if merged:
+            players[pid]["n"] = merged[:NEWS_KEEP]
+    print(f"[FP news] {len(items)} items, {news_count} matched to players, {sum(1 for p in players.values() if p.get('n'))} players have news")
 
     # 3b) Weekly injury reports. FantasyPros only has the current season (asking for an older season
     # returns this season again), and it returns leftovers for weeks not played yet, so we ask only

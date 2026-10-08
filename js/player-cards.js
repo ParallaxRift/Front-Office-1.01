@@ -101,7 +101,10 @@ const INJURY_TIMES = [
   [/knee/, 1, 4, ""], [/ankle/, 1, 3, ""], [/foot/, 1, 4, ""], [/toe/, 1, 3, ""], [/elbow|wrist|forearm/, 1, 3, ""],
   [/hand|finger|thumb/, 0, 2, ""], [/illness|sick|flu/, 0, 1, ""]
 ];
+// Saved news is [date, title, text, kind, link]; kind "i" = injury news (older saves had only injury news)
+const isInjuryNews = n => n.length < 4 || n[3] === "i";
 function returnEstimate(sp, news, fpNow){
+  news = (news || []).filter(isInjuryNews);
   const st = sp?.injury_status;
   if (!st || st === "Sus" || st === "NA" || st === "DNR") return null;
   const text = [sp.injury_body_part, sp.injury_notes, fpNow?.inj, fpNow?.note, ...(news || []).slice(0, 2).map(n => n[1] + " " + n[2])].filter(Boolean).join(" ").toLowerCase();
@@ -173,8 +176,7 @@ function seasonOutlook(pid){
 function currentStatus(sp, rec, news){
   const st = sp?.injury_status, lab = INJ_LABEL[st];
   if (!st && (!sp?.status || sp.status === "Active")) {
-    const n = (news || [])[0];
-    return `<div class="pc-status"><b>No current injury designation</b><p>Active${sp?.team ? " for the " + esc(NFL_TEAMS[sp.team] || sp.team) : ""}.</p></div>${n ? newsBlock(news) : ""}`;
+    return `<div class="pc-status"><b>No current injury designation</b><p>Active${sp?.team ? " for the " + esc(NFL_TEAMS[sp.team] || sp.team) : ""}.</p></div>`;
   }
   const label = lab ? lab[0] : (st || sp.status);
   const cls = lab && lab[1] === "q" ? "warn" : "hurt";
@@ -198,11 +200,27 @@ function currentStatus(sp, rec, news){
   return `<div class="pc-status ${cls}"><b>${esc(label)}${sp.injury_body_part ? " · " + esc(sp.injury_body_part) : ""}</b>
     <dl class="pc-inj">${rows.slice(1).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl>
     ${est ? `<div class="pc-est"><small>Estimated time out</small><b>${esc(est.head)}</b>${est.sub ? `<span>${esc(est.sub)}</span>` : ""}<p>${esc(est.conf)}: ${esc(est.why)} This is Front Office's estimate, not a team report.</p></div>` : ""}
-  </div>${news?.length ? newsBlock(news) : ""}`;
+  </div>`;
 }
 function newsBlock(news){
-  return `<div class="pc-news"><small>Latest injury news · FantasyPros</small>${news.slice(0, 3).map(n => `<article><b>${esc(n[1])}</b>${n[2] ? `<p>${esc(n[2])}</p>` : ""}<time>${esc(dateText(n[0]))}</time></article>`).join("")}</div>`;
+  if (!news?.length) return `<p class="empty">No news in the last few weeks.</p>`;
+  return `<div class="pc-news">${news.slice(0, 4).map(n => `<article>${isInjuryNews(n) ? `<em class="pc-ntag">Injury</em>` : ""}<b>${esc(n[1])}</b>${n[2] ? `<p>${esc(n[2])}</p>` : ""}<time>${esc(dateText(n[0]))}${/^https:\/\//.test(n[4] || "") ? ` · <a href="${esc(n[4])}" target="_blank" rel="noopener">Read on FantasyPros</a>` : ""}</time></article>`).join("")}</div>`;
 }
+// Where he sits on his NFL team's depth chart: RB1, WR3, QB2… (Sleeper splits receivers into left, right and slot)
+const DEPTH_GROUP = { LWR: "WR", RWR: "WR", SWR: "WR", WR: "WR", QB: "QB", RB: "RB", TE: "TE" };
+function depthChartText(pid){
+  const sp = S.sleeperPlayers?.[pid]; if (!sp?.team) return "";
+  const grp = DEPTH_GROUP[sp.depth_chart_position], order = Number(sp.depth_chart_order);
+  if (!grp || grp !== sp.position || !order) return "Not on the depth chart";
+  const val = id => S.assets?.get("p:" + id)?.value || 0;
+  const mates = Object.entries(S.sleeperPlayers).filter(([, p]) => p.team === sp.team && p.position === grp && DEPTH_GROUP[p.depth_chart_position] === grp && Number(p.depth_chart_order))
+    .sort(([ia, a], [ib, b]) => Number(a.depth_chart_order) - Number(b.depth_chart_order) || val(ib) - val(ia) || ia.localeCompare(ib));
+  const n = mates.findIndex(([id]) => id === String(pid)) + 1;
+  if (!n) return "";
+  const spot = { SWR: "slot", LWR: "outside", RWR: "outside" }[sp.depth_chart_position];
+  return `${grp}${n}${spot ? " · " + spot : ""}`;
+}
+
 async function openPlayerCard(pid){
   const sp = S.sleeperPlayers?.[pid] || {}, a = S.assets?.get("p:" + pid);
   const name = a?.name || sp.full_name || `${sp.first_name || ""} ${sp.last_name || ""}`.trim() || "Player";
@@ -211,7 +229,7 @@ async function openPlayerCard(pid){
   const owner = a?.owner != null ? S.teams.get(a.owner)?.name : "Free agent";
   const facts = [
     ["Age", a?.age ? ageText(a.age) : sp.age], ["Height", heightText(sp.height)], ["Weight", sp.weight ? sp.weight + " lb" : ""],
-    ["College", sp.college], ["Experience", expText(sp.years_exp)], ["Role", a ? roleText(a) : ""], ["Expert range", a?.depthFloor ? "Not ranked by experts; valued by his depth chart spot" : a && a.lo != null ? (valueRangeText(a).replace("Range ", "") || "Experts agree") : ""], ["Fantasy team", owner]
+    ["College", sp.college], ["Experience", expText(sp.years_exp)], ["Role", a ? roleText(a) : ""], ["Depth chart", depthChartText(pid)], ["Expert range", a?.depthFloor ? "Not ranked by experts; valued by his depth chart spot" : a && a.lo != null ? (valueRangeText(a).replace("Range ", "") || "Experts agree") : ""], ["Fantasy team", owner]
   ].filter(f => f[1] !== undefined && f[1] !== null && f[1] !== "");
   $("pcard").innerHTML = `<div class="pc" role="dialog" aria-modal="true" aria-labelledby="pcName">
     <button type="button" class="pc-close" aria-label="Close player card">×</button>
@@ -226,9 +244,10 @@ async function openPlayerCard(pid){
     <div class="pc-body">
       <dl class="pc-facts">${facts.map(([k, v]) => `<div${k === "Fantasy team" || k === "College" ? ' class="wide"' : ""}><dt>${esc(k)}</dt><dd>${k === "Fantasy team" && a?.owner != null ? `<span class="pc-ft">${teamPhoto(a.owner, "sm")}${esc(v)}</span>` : esc(v)}</dd></div>`).join("")}</dl>
       <h3>Current Status</h3><div id="pcNow">${currentStatus(sp)}</div>
+      <h3>Latest News</h3><div id="pcNews"><p class="pc-loading">Loading news…</p></div>
       <h3>Career Stats</h3><div id="pcStats"><p class="pc-loading">Loading stats…</p></div>
       <h3>Injury History</h3><div id="pcInj"><p class="pc-loading">Loading injury history…</p></div>
-      <p class="pc-note">Current status and career stats from Sleeper. Injury history from FantasyPros, updated daily. Regular season only. Fantasy points use standard full-PPR scoring.</p>
+      <p class="pc-note">Current status and career stats from Sleeper. News and injury history from FantasyPros, updated daily. Regular season only. Fantasy points use standard full-PPR scoring.</p>
     </div></div>`;
   $("pcard").hidden = false; document.body.style.overflow = "hidden";
   $("pcard").querySelector(".pc-close").focus();
@@ -243,6 +262,7 @@ async function openPlayerCard(pid){
   const season = liveSeasonYear();
   $("pcStats").innerHTML = data || live.ok ? statsTable(rec, pos, season) : `<p class="empty">Stats aren't available right now. Try again in a minute.</p>`;
   $("pcNow").innerHTML = currentStatus(sp, { ...rec, c: rec0?.c }, rec0?.n || []);
+  $("pcNews").innerHTML = data ? newsBlock(rec0?.n || []) : `<p class="empty">News isn't available right now. Try again in a minute.</p>`;
   $("pcInj").innerHTML = !data ? `<p class="empty">Injury history isn't available right now. Try again in a minute.</p>`
     : !(data.fp_injury_seasons || []).length ? `<p class="empty">Injury history from FantasyPros will appear after the next daily update.</p>` : injuryTable(rec);
 }

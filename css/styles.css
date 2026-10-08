@@ -993,7 +993,8 @@ th .info-btn:hover{color:var(--ink)}
 .pc-est span{display:block;font-weight:600;font-size:14px;margin-top:2px}
 .pc-est p{margin:6px 0 0;font-size:12.5px;color:var(--muted)}
 .pc-news{margin-top:10px;border:1px solid var(--line);border-radius:12px;padding:10px 14px}
-.pc-news small{display:block;font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
+.pc-news .pc-ntag{display:inline-block;font-style:normal;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#fff;background:#E5484D;border-radius:6px;padding:1px 6px;margin-bottom:3px}
+.pc-news time a{color:inherit;text-decoration:underline}
 .pc-news article{padding:8px 0;border-top:1px solid var(--line)}
 .pc-news article:first-of-type{border-top:0}
 .pc-news article b{display:block;font-size:14.5px}
