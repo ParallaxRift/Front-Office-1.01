@@ -261,6 +261,10 @@ function roleBuff(a){
   return 1;
 }
 function roleText(a){
+  const t = roleTextBase(a);
+  return t && a.starterLift > 0 ? `${t} (value lifted +${fmt(Math.round(a.starterLift / 10) * 10)} while he starts)` : t;
+}
+function roleTextBase(a){
   if (a.depthPos !== a.pos || !a.depthOrder) return "";
   if (a.pos === "QB" && a.depthOrder === 1) return "Starting QB";
   if (a.pos === "RB" && a.depthOrder === 1) return "Starting RB";
@@ -282,6 +286,7 @@ function depthFloor(pos, dpos, order, sf){
   const r = ok && order >= 1 && order <= 2 ? DEPTH_FLOOR_RANKS[pos]?.[order - 1] : null;
   return r ? marketCurve(sf ? r[0] : r[1]) : 0;
 }
+const STARTER_LIFT_TO = 2000, STARTER_LIFT_SHARE = 0.5;   // see "Starter lift" in buildValues
 function buildValues(){
   const cfg = S.cfg, P = S.sleeperPlayers, assets = new Map();
   const owner = new Map();
@@ -400,6 +405,19 @@ function buildValues(){
   const topRaw = Math.max(1, top5(list.map(a => a.raw)) * 1.025, Math.max(...list.map(a => a.raw)) * 0.97);
   const topBase = Math.max(1, top5(list.map(a => a.base)) * 1.025, Math.max(...list.map(a => a.base)) * 0.97);
   for (const a of list){ a.value = a.raw/topRaw*10000; a.market = a.base/topBase*10000; assets.set(a.id, a); }
+  // Starter lift: a QB or RB who is currently first on his NFL team's depth chart but valued under
+  // STARTER_LIFT_TO is lifted part of the way there (half the gap). A cheap player who is getting the
+  // starts (a backup RB filling in for an injured starter) matters for trades now, and experts' dynasty
+  // ranks are slow to show it. It follows Sleeper's depth chart, refreshed with every data update, so it
+  // switches on when a player takes the job and off when he loses it. Not for anyone on IR/PUP/NFI/suspended.
+  for (const a of list){
+    a.starterLift = 0;
+    const isStarter = (a.pos === "QB" || a.pos === "RB") && a.depthPos === a.pos && a.depthOrder === 1;
+    const inj = S.sleeperPlayers?.[a.pid]?.injury_status;
+    if (!isStarter || ["IR", "PUP", "NFI", "Sus"].includes(inj) || a.value >= STARTER_LIFT_TO) continue;
+    const lift = (STARTER_LIFT_TO - a.value) * STARTER_LIFT_SHARE;
+    a.starterLift = lift; a.raw *= (a.value + lift) / Math.max(1, a.value); a.value += lift;
+  }
   // Value range: where most experts would put him. One spread of expert ranks up and down the curve,
   // with all of this league's adjustments applied the same way. Players experts agree on get a narrow range.
   for (const a of list){

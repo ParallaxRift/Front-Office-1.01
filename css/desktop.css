@@ -207,3 +207,7 @@ body:not(.has-league) .connect{border-bottom:0!important}
 #standTable th:nth-child(2),#standTable td:nth-child(2){width:24%}
 #standTable th:nth-child(n+3),#standTable td:nth-child(n+3){text-align:center!important}
 #standTable td:nth-child(n+3) .badge{margin:0 auto}
+/* Player Values: your own players */
+#valuesTable tr.mine td{background:rgba(63,185,122,.12)!important}
+#valuesTable tr.mine td:first-child{box-shadow:inset 4px 0 0 var(--bc-get)}
+#valuesTable tr.mine .teamcell{font-weight:700;color:var(--bc-pos)}

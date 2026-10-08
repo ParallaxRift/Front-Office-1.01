@@ -170,6 +170,19 @@ async function openLeague(browser, viewport, opts){
     });
     check('depth-chart floor for unranked starters', floor === 'true,true,true', floor);
 
+    // Starter lift: a cheap RB who takes over as his team's RB1 is lifted halfway to 2,000; off again when he isn't the starter
+    const lift = await page.evaluate(() => {
+      const rb = [...S.assets.values()].filter(a => a.kind === 'player' && a.pos === 'RB' && a.value > 300 && a.value < 1500 && a.depthOrder !== 1)[0];
+      if (!rb) return 'no cheap RB';
+      const sp = S.sleeperPlayers[rb.pid], keep = [sp.depth_chart_position, sp.depth_chart_order, sp.injury_status], before = rb.value;
+      Object.assign(sp, { depth_chart_position: 'RB', depth_chart_order: 1, injury_status: null }); buildValues();
+      const on = S.assets.get(rb.id), mid = on.value, expect = before + (2000 - before) / 2;
+      [sp.depth_chart_position, sp.depth_chart_order, sp.injury_status] = keep; buildValues();
+      const off = S.assets.get(rb.id).value;
+      return [Math.abs(mid - expect) < expect * 0.06, /lifted/.test(roleText(on)), Math.abs(off - before) < 1, Math.round(before) + '->' + Math.round(mid)].join(',');
+    });
+    check('starter lift for cheap starting QBs and RBs', /^true,true,true,/.test(lift), lift);
+
     // Live Scores flips to the next week on Tuesday morning (6 a.m. Central), not Wednesday
     const flips = await page.evaluate(() => { const real = Date.now, st = { season_start_date: '2026-09-10' };
       const at = iso => { Date.now = () => new Date(iso).getTime(); const w = flipWeek(st); Date.now = real; return w; };

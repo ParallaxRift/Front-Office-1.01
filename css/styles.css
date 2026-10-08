@@ -1461,3 +1461,7 @@ body:not(.has-league) .side-switch,body:not(.has-league) #miniBar{display:none!i
   body.has-league .phone-switch{display:block;position:absolute;top:10px;right:0;padding:6px 11px;font-size:13px;border-radius:8px}
   body.has-league .leaguebar .leaguehead{padding-right:118px}
 }
+/* Player Values: your own players are highlighted */
+#valuesTable tr.mine td{background:var(--field-soft)}
+#valuesTable tr.mine td:first-child{box-shadow:inset 4px 0 0 var(--field)}
+#valuesTable tr.mine .teamcell{font-weight:700;color:var(--field)}
