@@ -211,3 +211,4 @@ body:not(.has-league) .connect{border-bottom:0!important}
 #valuesTable tr.mine td{background:rgba(63,185,122,.12)!important}
 #valuesTable tr.mine td:first-child{box-shadow:inset 4px 0 0 var(--bc-get)}
 #valuesTable tr.mine .teamcell{font-weight:700;color:var(--bc-pos)}
+.leaguebar .league-name{color:#fff}

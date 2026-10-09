@@ -1704,3 +1704,15 @@ body:has(#pcard:not([hidden])) #installTip{display:none!important}   /* the "Get
 .pc .pc-status b{font-size:15px}
 .pc .pc-uh td:first-child{font-weight:600}
 .pc .pc-uh th:not(:first-child),.pc .pc-uh td:not(:first-child),.pc .pc-use th:not(:first-child),.pc .pc-use td:not(:first-child){text-align:center}
+/* Polish pass */
+.ros-h3{font:700 22px var(--display);margin:24px 0 10px}
+.lu-table th.c,.lu-table td.c,#rosterTable th.c,#rosterTable td.c{text-align:center}
+.lu-table th.n,.lu-table td.n{text-align:right}
+.lu-table td:first-child,.lu-table th:first-child{width:96px}
+.lu-table .lu-sub{margin-left:38px}
+@media (min-width:901px){
+  #panel-settings .grid2{grid-template-columns:repeat(3,minmax(0,1fr))}
+  #panel-settings .grid2 > .box:nth-child(4){grid-column:span 2}
+}
+#luBody .pj-tiles,#rosterSum .pj-tiles{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
+@media (max-width:600px){#rosterSum .pj-tiles{grid-template-columns:repeat(3,minmax(0,1fr))}#luBody .pj-tiles{grid-template-columns:1fr 1fr}.lu-table td:first-child,.lu-table th:first-child{width:auto}}

@@ -26,8 +26,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600&family=Big+Shoulders+Display:wght@700;800;900&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=20261009k">
-<link rel="stylesheet" href="css/desktop.css?v=20261009a" media="(min-width: 601px)">
+<link rel="stylesheet" href="css/styles.css?v=20261009m">
+<link rel="stylesheet" href="css/desktop.css?v=20261009b" media="(min-width: 601px)">
 </head>
 <body>
 <div id="pcard" class="pc-backdrop" hidden></div>
@@ -103,7 +103,7 @@
   </section>
 
   <section class="leaguebar" id="leagueBar">
-    <div class="leaguehead"><span id="leagueAv"></span><div><div class="lname-row"><h2><button type="button" class="league-link" id="settingsBtn" aria-pressed="false" aria-controls="panel-settings" title="See this league's settings"><span id="leagueName"></span></button></h2><span class="champ-col"><span id="champSlot"></span></span></div><small id="myTeamLine"></small></div>
+    <div class="leaguehead"><span id="leagueAv"></span><div><div class="lname-row"><h2><span class="league-name" id="settingsBtn" aria-pressed="false"><span id="leagueName"></span></span></h2><span class="champ-col"><span id="champSlot"></span></span></div><small id="myTeamLine"></small></div>
       <div class="modebar" id="modeBar" hidden>
         <div class="mode-toggle" id="modeToggle" role="radiogroup" aria-label="How much to show">
           <button type="button" role="radio" data-mode="basics" aria-checked="false">The Basics</button>
@@ -381,6 +381,8 @@
   </section>
 
   <section class="panel" id="panel-roster">
+    <h3 class="sec-h">My Roster</h3>
+    <p class="note sec-sub">Every player and pick on a team, with the same detail as Rankings. Pick any team; it opens on yours.</p>
     <div class="stratHead">
       <div class="field" style="max-width:320px"><label for="rosterTeam">Team</label><select id="rosterTeam"></select></div>
     </div>
@@ -390,7 +392,7 @@
         <button aria-pressed="true" data-pos="ALL">All</button><button aria-pressed="false" data-pos="QB">QB</button><button aria-pressed="false" data-pos="RB">RB</button><button aria-pressed="false" data-pos="WR">WR</button><button aria-pressed="false" data-pos="TE">TE</button><button aria-pressed="false" data-pos="LINEUP" title="The players in your starting lineup in Sleeper right now">Current Lineup</button>
       </div>
     </div>
-    <p style="margin:0 0 10px;font-size:14px;color:var(--muted)">Tap any player to open his player card. Click a column heading to sort.</p>
+    <p class="note sec-sub" style="margin:0 0 10px">Tap any player to open his player card. Click a column heading to sort.</p>
     <div class="tablewrap">
       <table id="rosterTable">
         <thead><tr><th class="sortable" data-sort="slot" aria-sort="none">Slot</th><th class="sortable" data-sort="name" aria-sort="none">Player</th><th class="sortable hide-sm" data-sort="pos" aria-sort="none">Pos</th><th class="rk sortable" data-sort="posrank" aria-sort="none"><span class="lbl-full">Position Ranking</span><span class="lbl-short" aria-hidden="true">Pos Rank</span></th><th class="rk sortable hide-sm" data-sort="rank" aria-sort="none">Overall Ranking</th><th class="n sortable" data-sort="age" aria-sort="none">Age</th><th class="sortable hide-sm" data-sort="nfl" aria-sort="none">NFL team</th><th class="n sortable hide-sm" data-sort="ppg" aria-sort="none" title="This season's points per game, full PPR">Pts/G</th><th class="n sortable hide-sm" data-sort="snap" aria-sort="none" title="Share of his team's offensive snaps, last 3 weeks">Snap %</th><th class="n sortable" data-sort="value" aria-sort="descending" title="His value in this league after all of Front Office's adjustments">This league</th><th class="n sortable hide-sm" data-sort="market" aria-sort="none" title="Front Office Rankings value before this league's adjustments">Market</th><th class="n sortable hide-sm" data-sort="change" aria-sort="none" title="How much this league's settings move his value">Change</th><th class="n sortable hide-sm" data-sort="trend" aria-sort="none" title="How his value has moved since Front Office started saving value history">Trend</th></tr></thead>
@@ -398,25 +400,30 @@
       </table>
     </div>
     <div class="vmore"><span id="rosterCount"></span></div>
-    <h3 class="ros-h3">Draft Picks</h3>
+    <h3 class="sec-h ros-h3">Draft Picks</h3>
     <div id="rosterPicks"></div>
     <p class="note">Slot is where he sits on your Sleeper roster right now. Pts/G is full-PPR scoring this season; the Game Log on his card shows your league's scoring. Trend compares his value today with the first saved snapshot in Value History.</p>
   </section>
 
   <section class="panel" id="panel-lineup">
+    <h3 class="sec-h">Lineup</h3>
+    <p class="note sec-sub">Your best starting lineup for the week, compared with the one set in Sleeper.</p>
     <div class="stratHead"><div class="field" style="max-width:240px"><label for="luWeek">Week</label><select id="luWeek"></select></div></div>
     <div id="luBody"></div>
     <p class="note">Weekly projections from Sleeper, scored with your league's settings. Start/sit weighs this week's projection (65%) with each player's overall and position value in your league (35%), so one soft projection doesn't bench a much better player. Questionable players count at 90% and doubtful at 35%; players ruled out, on bye or on IR count 0. Players already in your Sleeper lineup win close calls. Tap any player to open his card.</p>
   </section>
 
   <section class="panel" id="panel-waivers">
+    <h3 class="sec-h">Waivers</h3>
+    <p class="note sec-sub">The best players no one in your league has rostered, and who on your bench to drop for them.</p>
     <div class="stratHead"><div class="field" style="max-width:240px"><label for="luWeekW">Week</label><select id="luWeekW"></select></div></div>
     <div id="luWaivers"></div>
     <p class="note">Free agents are players no team in your league has rostered. "Would start" compares them with your current best lineup for the week, using the same start score as the Lineup tab. Tap any player to open his card.</p>
   </section>
 
   <section class="panel" id="panel-scouting">
-    <p class="note sc-intro">How every manager in your league trades, graded with today's values. Click a manager to see their full report and how to pitch them a trade.</p>
+    <h3 class="sec-h">Scouting Reports</h3>
+    <p class="note sec-sub">How every manager in your league trades, graded with today's values. Click a manager to see their full report and how to pitch them a trade.</p>
     <div class="controls sc-filters">
       <div class="field"><label for="scTrait">Style</label><select id="scTrait"></select></div>
       <div class="field"><label for="scActivity">Activity</label><select id="scActivity"><option value="all">All managers</option><option value="traded">Has made a trade</option><option value="active">Active (3+ trades this year)</option><option value="none">No trades yet</option></select></div>
