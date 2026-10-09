@@ -113,27 +113,19 @@ $("hsSeasons").addEventListener("click", e => {
 // Computers: the League Champions wall. One trophy per finished season, newest first, with the champion
 // (photo and name) under it and the runner-up and third place smaller below.
 function renderChampWall(T, person){
-  const done = T.seasons.filter(x => x.champ).sort((a, b) => b.season - a.season);
+  const done = T.seasons.filter(x => x.champ).sort((a, b) => a.season - b.season);   // oldest first, left to right
   const live = T.seasons.find(x => !x.champ && x.season === Number(S.league.season) && x.status !== "complete");
   const place = (t, k) => t ? `<span class="cw-place">${person(t, "xs")}<em>${k}</em><b>${esc(t.name)}</b></span>` : "";
-  // the season being played: same trophy, still up for grabs, with the current leader
-  const recOf = r => { const s = r?.settings || {}; return { w: s.wins || 0, l: s.losses || 0, t: s.ties || 0, pf: (s.fpts || 0) + (s.fpts_decimal || 0) / 100 }; };
-  const lead = live ? [...S.rosters].sort((a, b) => { const x = recOf(a), y = recOf(b); return (y.w + y.t / 2) - (x.w + x.t / 2) || y.pf - x.pf; }) : [];
-  const tm = r => { const t = S.teams.get(r.roster_id), x = recOf(r); return t ? { name: t.name, photo: t.photo, rec: `${x.w}-${x.l}${x.t ? "-" + x.t : ""}` } : null; };
-  const leader = lead[0] && tm(lead[0]), odds = S.titleOdds?.odds, fav = odds ? [...odds.entries()].sort((a, b) => b[1] - a[1])[0] : null;
-  const favT = fav && S.teams.get(fav[0]);
+  // the season being played: the same trophy, still up for grabs (no name until there is a champion)
   const liveCard = live ? `
     <article class="cw-card cw-live-card">
       <div class="cw-trophy"><img src="icons/trophy.webp" alt="" loading="lazy"></div><span class="cw-year">${live.season}</span>
       <div class="cw-status"><span class="cw-dot"></span>Season in Progress</div>
-      ${leader ? `<div class="cw-champ">${person(leader, "lg")}<span><small>Leading the league</small><b>${esc(leader.name)}</b><em>${esc(leader.rec)} so far</em></span></div>` : ""}
-      <div class="cw-rest">${favT ? `<span class="cw-place">${person(favT, "xs")}<em>Fav</em><b>${esc(favT.name)} · ${Math.round(fav[1] * 100)}% title odds</b></span>` : ""}
-        ${lead[1] && tm(lead[1]) ? `<span class="cw-place">${person(tm(lead[1]), "xs")}<em>2nd</em><b>${esc(tm(lead[1]).name)}</b></span>` : ""}</div>
     </article>` : "";
-  $("champList").innerHTML = (done.length || live ? `<div class="champ-wall">${liveCard}${done.map(x => `
+  $("champList").innerHTML = (done.length || live ? `<div class="champ-wall">${done.map(x => `
     <article class="cw-card">
       <div class="cw-trophy"><img src="icons/trophy.webp" alt="" loading="lazy"></div><span class="cw-year">${x.season}</span>
       <div class="cw-champ">${person(x.champ, "lg")}<span><small>Champion</small><b>${esc(x.champ.name)}</b>${x.champ.rec ? `<em>${esc(x.champ.rec)} regular season</em>` : ""}</span></div>
       <div class="cw-rest">${place(x.runner, "2nd")}${place(x.third, "3rd")}</div>
-    </article>`).join("")}</div>` : `<p class="empty">No finished seasons yet. Your first champion will appear here once the playoffs finish.</p>`);
+    </article>`).join("")}${liveCard}</div>` : `<p class="empty">No finished seasons yet. Your first champion will appear here once the playoffs finish.</p>`);
 }
