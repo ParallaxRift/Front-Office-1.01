@@ -279,7 +279,7 @@ function valueHistoryBlock(a, vh){
     <p class="pc-note">His value in your league each time the Front Office Rankings changed, using your league's settings as they are today. ${matchMedia("(hover:none)").matches ? "Tap" : "Hover over"} a dot for the date and value.</p>`;
 }
 // ---------- Game log and usage history (week by week, from Sleeper) ----------
-const PC_TABS = [["status", "Current Status", "Status"], ["log", "Game Log", "Games"], ["career", "Career Stats", "Career"], ["usage", "Usage", "Usage"], ["value", "Value History", "Value"]];   // [key, label, short label for phones]
+const PC_TABS = [["status", "Current Status", "Status"], ["log", "Game Log", "Games"], ["career", "Career Stats", "Career"], ["usage", "Usage", "Usage"], ["value", "Value History", "Value"], ["trades", "Trade History", "Trades"]];   // [key, label, short label for phones]
 const PC = { pid: null, pos: "", tab: "status", season: null, seasons: null };
 const weekCache = new Map();
 async function sleeperWeeks(pid, season){
@@ -382,6 +382,58 @@ function usageHistory(rows, season){
       ${PC.pos === "QB" ? row("Pass att", st => v(st, "pass_att")) : ""}
     </tbody></table></div>`;
 }
+// ---------- Trade history: this league's trades that included him ----------
+// Includes trades of a draft pick that was later used on him ("pick used on him").
+function playerTradesBlock(pid){
+  const H = S.history;
+  if (!H) return `<p class="pc-loading">${S.historyError ? "Your league's trades couldn't be loaded. Reopen the league to try again." : "Loading your league's trades…"}</p>`;
+  const pickOn = it => it.kind === "pick" && String(H.pickResult.get(`${it.season}-${it.round}-${it.orig}`)?.pid || "") === String(pid);
+  const isHim = it => (it.kind === "player" && String(it.pid) === String(pid)) || pickOn(it);
+  const trades = H.trades.filter(t => t.sides.some(sd => sd.gets.some(isHim)))
+    .sort((a, b) => b.created - a.created).map(t => ({ t, g: gradeTrade(t) }));
+  if (!trades.length) return `<p class="empty">He hasn't been part of a trade in your league${H.seasons?.length > 1 ? ` since ${H.seasons[H.seasons.length - 1]}` : ""}.</p>`;
+  const tag = x => x.result === "won" ? `<span class="verdict-tag v-won">Won by ${fmt(x.margin)}</span>` : x.result === "lost" ? `<span class="verdict-tag v-lost">Lost by ${fmt(-x.margin)}</span>` : `<span class="verdict-tag v-even">Even</span>`;
+  const n = trades.length, viaPick = trades.filter(({ t }) => !t.sides.some(sd => sd.gets.some(it => it.kind === "player" && String(it.pid) === String(pid)))).length;
+  return `<p class="pc-log-sum" style="margin:0 0 12px">Traded <b>${n}</b> time${n > 1 ? "s" : ""} in your league${viaPick ? ` (${viaPick} as the draft pick later used on him)` : ""}. Newest first; graded with today's values.</p>
+    <div class="pc-trades">${trades.map(({ t, g }) => {
+      const sides = [...g.sides].sort((x, y) => (t.sides.find(s => s.rid === y.rid).gets.some(isHim)) - (t.sides.find(s => s.rid === x.rid).gets.some(isHim)));
+      return `<article class="trade">
+        <div class="trade-head"><span>${fmtDate(t.created)}</span><span>${t.season} season${t.sides.length > 2 ? `, ${t.sides.length}-team trade` : ""}</span></div>
+        <div class="trade-sides">${sides.map(x => {
+          const raw = t.sides.find(s => s.rid === x.rid), got = raw.gets.some(isHim);
+          return `<div class="tside${got ? " focus" : ""}">
+            <div class="tside-head">${avatar(x.photo, x.name, "md")}<span class="nm"><b>${esc(x.name)}</b><small>${got ? "Got him" : "Received"}</small></span>${tag(x)}</div>
+            ${x.items.map((i, k) => { const me = String(i.photoPid || "") === String(pid);
+              return `<div class="titem${me ? " me" : ""}">${i.photoPid ? avatar(PLAYER_IMG(i.photoPid), i.usedOn || i.name, "sm") : ""}<span class="tn">${esc(i.name)}${me ? `<span class="pc-me">This player</span>` : ""}<small class="${i.usedOn ? "used" : ""}">${esc(i.sub)}</small></span><span class="tv">${fmt(i.value)}</span></div>`; }).join("") || `<div class="titem"><span class="tn">Nothing but FAAB</span></div>`}
+            ${x.faab ? `<div class="titem"><span class="tn">$${x.faab} FAAB<small>Not valued</small></span><span class="tv">–</span></div>` : ""}
+          </div>`; }).join("")}</div></article>`; }).join("")}</div>`;
+}
+// ---------- School logo (College on the card) ----------
+// ESPN's college football team list gives each school's logo; Sleeper gives the college's name.
+let schoolsLoad = null;
+const schoolKey = n => String(n || "").toLowerCase().replace(/&/g, "and").replace(/\buniv(ersity)?\b|\bof\b|\bthe\b|\bstate\b/g, m => m.includes("state") ? "st" : "").replace(/\bst\b\.?/g, "st").replace(/[^a-z0-9]/g, "");
+const SCHOOL_ALIAS = { "southern california": "USC", "mississippi": "Ole Miss", "louisiana state": "LSU", "central florida": "UCF", "brigham young": "BYU", "texas christian": "TCU",
+  "southern methodist": "SMU", "alabama-birmingham": "UAB", "alabama birmingham": "UAB", "north carolina state": "NC State", "florida international": "FIU", "nevada-las vegas": "UNLV",
+  "miami (fl)": "Miami", "miami (fla.)": "Miami", "miami fl": "Miami", "texas-el paso": "UTEP", "texas-san antonio": "UTSA", "louisiana-lafayette": "Louisiana", "louisiana-monroe": "UL Monroe",
+  "massachusetts": "UMass", "connecticut": "UConn", "pittsburgh": "Pitt", "middle tennessee state": "Middle Tennessee", "western kentucky": "Western Kentucky", "hawaii": "Hawai'i", "san jose state": "San José State" };
+function loadSchools(){
+  if (!schoolsLoad) schoolsLoad = fetch("https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams?limit=1000")
+    .then(r => r.ok ? r.json() : null).then(d => {
+      const m = new Map(), teams = d?.sports?.[0]?.leagues?.[0]?.teams || [];
+      for (const { team: t } of teams){
+        const logo = t?.logos?.[0]?.href; if (!logo) continue;
+        for (const n of [t.location, t.shortDisplayName, t.nickname, t.abbreviation, t.displayName]) { const k = schoolKey(n); if (k && !m.has(k)) m.set(k, logo); }
+      }
+      if (!m.size) schoolsLoad = null;
+      return m;
+    }).catch(() => { schoolsLoad = null; return new Map(); });
+  return schoolsLoad;
+}
+async function schoolLogo(college){
+  if (!college) return "";
+  const m = await loadSchools(), alias = SCHOOL_ALIAS[college.toLowerCase().trim()];
+  return m.get(schoolKey(alias || college)) || m.get(schoolKey(college.replace(/\s*\(.*\)\s*/, ""))) || "";
+}
 async function openPlayerCard(pid){
   const sp = S.sleeperPlayers?.[pid] || {}, a = S.assets?.get("p:" + pid);
   const name = a?.name || sp.full_name || `${sp.first_name || ""} ${sp.last_name || ""}`.trim() || "Player";
@@ -409,8 +461,14 @@ async function openPlayerCard(pid){
       <section class="pc-pane" data-pane="log" hidden><div id="pcLog"><p class="pc-loading">Loading game log…</p></div></section>
       <section class="pc-pane" data-pane="career" hidden><div id="pcStats"><p class="pc-loading">Loading stats…</p></div><p class="pc-note">Career stats from Sleeper. Regular season only. Fantasy points here use standard full-PPR scoring; the Game Log uses your league's scoring.</p></section>
       <section class="pc-pane" data-pane="usage" hidden><div id="pcUse"><p class="pc-loading">Loading usage…</p></div><div id="pcUseHist"></div></section>
+      <section class="pc-pane" data-pane="trades" hidden><div id="pcTrades"></div></section>
       ${a ? `<section class="pc-pane" data-pane="value" hidden><div id="pcHist"><p class="pc-loading">Loading value history…</p></div></section>` : ""}
     </div></div>`;
+  if (sp.college) schoolLogo(sp.college).then(src => {
+    if (!src || $("pcard").hidden || PC.pid !== pid) return;
+    const dt = [...$("pcard").querySelectorAll(".pc-facts dt")].find(x => x.textContent === "College");
+    if (dt && !dt.nextElementSibling.querySelector("img")) dt.nextElementSibling.insertAdjacentHTML("afterbegin", `<img class="pc-school" src="${esc(src)}" alt="" onerror="this.remove()">`);
+  });
   PC.pid = pid; PC.pos = pos; PC.tab = "status"; PC.season = null; PC.seasons = null;
   $("pcard").hidden = false; document.body.style.overflow = "hidden";
   $("pcard").querySelector(".pc-close").focus();
@@ -444,6 +502,7 @@ $("pcard").addEventListener("click", e => {
   for (const b of $("pcard").querySelectorAll("[data-pctab]")) b.setAttribute("aria-selected", b === t);
   for (const pane of $("pcard").querySelectorAll(".pc-pane")) pane.hidden = pane.dataset.pane !== PC.tab;
   if (PC.tab === "log" || PC.tab === "usage") renderWeekPanes();
+  if (PC.tab === "trades") $("pcTrades").innerHTML = playerTradesBlock(PC.pid);
 });
 $("pcard").addEventListener("keydown", e => {   // arrow keys move between tabs
   const t = e.target.closest("[data-pctab]"); if (!t || !["ArrowLeft", "ArrowRight"].includes(e.key)) return;

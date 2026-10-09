@@ -1515,4 +1515,9 @@ body:not(.has-league) .side-switch,body:not(.has-league) #miniBar{display:none!i
 .pc-scroll:has(.uh-chart){border:0;border-radius:0}
 body:has(#pcard:not([hidden])) #installTip{display:none!important}   /* the "Get the app" tip never covers an open player card */
 .pc-tabs .t-short{display:none}
-@media (max-width:600px){.pc-tabs .t-full{display:none}.pc-tabs .t-short{display:inline}.pc-tabs button{padding:9px 10px 10px;flex:1 1 auto}.pc-tabs{gap:0}}
+@media (max-width:600px){.pc-tabs .t-full{display:none}.pc-tabs .t-short{display:inline}.pc-tabs button{padding:9px 6px 10px;flex:1 1 auto;font-size:13px}.pc-tabs{gap:0}}
+.pc-school{width:22px;height:22px;object-fit:contain;vertical-align:-5px;margin-right:6px}
+.pc-trades{display:grid;gap:12px}
+.pc-trades .titem.me .tn{font-weight:700}
+.pc-me{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:999px;background:var(--field);color:#fff;font:700 10px var(--body);text-transform:uppercase;letter-spacing:.04em;vertical-align:2px}
+.pc-trades .trade-sides{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
