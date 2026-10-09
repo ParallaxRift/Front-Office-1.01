@@ -91,7 +91,7 @@ function renderStandings(){
   const line = (k, v) => `<li><b>${k}</b> ${v}</li>`;
   $("standNote").innerHTML = `<ul class="stand-key">
     ${playoff ? line("Playoffs:", `the top ${playoff} teams make it; the line under #${playoff} marks the cutoff. Ties are broken by Points For.`) : line("Ties:", "broken by Points For.")}
-    ${line("Title odds:", `each team's chance to win the championship, ${oddsWhen}. They weigh record, roster strength, injuries, points scored and which way each team is trending.`)}
+    ${line("Title odds:", `each team's chance to win the championship, ${oddsWhen}. They weigh record, games left and the schedule still to play, roster strength and bench depth, injuries and how serious they are, bye weeks, points scored and which way each team is trending.`)}
     ${line("Power:", PW.w ? `roster strength blended with title odds (${Math.round(PW.w * 100)}% title odds this week), so record, injuries, points scored and trend count too.` : "roster strength from player values. Title odds blend in once the season simulator has run.")}
     ${line("Sort:", "click any column heading; click again to flip the order.")}
   </ul>`;
@@ -118,8 +118,18 @@ async function simData(){
   const done = S.nflState?.season_type === "regular" ? await lastFinishedWeek() : S.nflState?.season_type === "post" || L.status === "complete" ? 18 : 0;
   const weeks = await Promise.all(Array.from({ length: Math.min(18, lastReg + 3) }, (_, i) => getJSON(`/league/${L.league_id}/matchups/${i + 1}`).catch(() => [])));
   await loadCardData();
-  return { weeks, done: Math.min(done, lastReg), lastReg, firstPlayoff };
+  // NFL bye weeks for every week left (ESPN's schedule: a team with no game that week is on bye). If ESPN can't be
+  // reached, the simulator just doesn't know about byes, as before.
+  const dn = Math.min(done, lastReg), byes = new Map();
+  if (S.nflState?.season_type === "regular" && typeof loadGameStatus === "function"){
+    const wks = Array.from({ length: Math.max(0, firstPlayoff - dn) }, (_, i) => dn + 1 + i).filter(w => w <= 18);
+    const got = await Promise.all(wks.map(w => loadGameStatus(w).catch(() => null)));
+    wks.forEach((w, i) => { const g = got[i]; if (g && Object.keys(g).length >= 20) byes.set(w, new Set(Object.keys(g))); });   // the teams that DO play
+  }
+  return { weeks, done: dn, lastReg, firstPlayoff, byes };
 }
+// chance a healthy starter misses any given future week, by position (league-wide injury rates)
+const INJ_WEEKLY = { QB: 0.04, RB: 0.07, WR: 0.05, TE: 0.05 };
 function buildSim(D){
   const slots = (S.cfg.rp || []).filter(x => !["BN", "IR", "TAXI"].includes(x));
   const rids = [...S.teams.keys()];
@@ -165,22 +175,36 @@ function buildSim(D){
   // 3) each player's projection and availability by week
   const proj = a => { const g = ppgOf(a.pid), prior = fit[a.pos](a.value); if (!g) return prior; const w = g.n / (g.n + 3); return w * g.ppg + (1 - w) * prior; };
   const avail = (a, wk) => {
-    const sp = S.sleeperPlayers?.[a.pid]; const st = sp?.injury_status; if (!st) return 1;
+    const sp = S.sleeperPlayers?.[a.pid];
+    const plays = D.byes?.get(wk); if (plays && sp?.team && !plays.has(sp.team)) return 0;   // on bye that week
+    const st = sp?.injury_status; if (!st) return 1;
     const c = cardData?.players?.[a.pid];
     const est = returnEstimate(sp, c?.n || [], c?.c);
     const now = currentWeek();
     if (st === "Questionable"){ const p = Number(c?.c?.prob); return wk === now || wk === D.done + 1 ? (isNaN(p) ? 0.75 : p) : 1; }
     if (st === "Doubtful") return wk <= Math.max(now, D.done + 1) ? 0.2 : 1;
     if (!est) return ["Sus", "NA", "DNR"].includes(st) ? (wk <= D.done + 2 ? 0 : 1) : 1;
-    if (est.lo >= 99) return 0;
-    const back = D.done + 1 + Math.round((est.lo + est.hi) / 2);
-    return wk >= back ? 1 : 0;
+    if (est.lo >= 99) return 0;                                        // out for the season (and the playoffs)
+    // severity: he comes back somewhere in his estimated window, so each week inside it counts partly;
+    // his first couple of games back count a little less (rust, snap limits, re-injury risk)
+    const w0 = D.done + 1 + est.lo, w1 = D.done + 1 + Math.max(est.lo, est.hi);
+    const p = wk < w0 ? 0 : wk >= w1 ? 1 : (wk - w0 + 1) / (w1 - w0 + 1);
+    const fresh = wk >= w0 && wk <= w1 + 1 ? 0.9 : 1;
+    return p * fresh;
   };
   const lineupProj = (rid, wk, healthy) => {
     const pool = teamAssets(rid).filter(a => a.kind === "player").map(a => ({ pos: a.pos, pts: proj(a) * (healthy ? 1 : avail(a, wk)) })).sort((x, y) => y.pts - x.pts);
     const used = new Set(); let total = 0;
     const order = slots.filter(s => SLOT_OK[s]).sort((x, y) => SLOT_OK[x].length - SLOT_OK[y].length);   // fill strict slots first
-    for (const s of order){ const i = pool.findIndex((p, k) => !used.has(k) && SLOT_OK[s].includes(p.pos)); if (i >= 0){ used.add(i); total += pool[i].pts; } }
+    const picked = [];
+    for (const s of order){ const i = pool.findIndex((p, k) => !used.has(k) && SLOT_OK[s].includes(p.pos)); if (i >= 0){ used.add(i); total += pool[i].pts; picked.push([s, pool[i]]); } }
+    if (!healthy && wk > Math.max(currentWeek(), D.done + 1)){
+      const ahead = Math.min(1, (wk - Math.max(currentWeek(), D.done + 1)) / 3);   // the further out, the more can go wrong
+      for (const [s, p] of picked){
+        const rep = pool.find((q, k) => !used.has(k) && SLOT_OK[s].includes(q.pos));
+        total -= INJ_WEEKLY[p.pos] * ahead * Math.max(0, p.pts - (rep ? rep.pts : 0));
+      }
+    }
     const R = rec.get(rid), other = R.other.length ? R.other.reduce((t, x) => t + x, 0) / R.other.length : slots.filter(s => !SLOT_OK[s]).length * 8;
     return total + other;
   };
