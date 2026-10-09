@@ -1888,25 +1888,6 @@ body:has(#pcard:not([hidden])) #installTip{display:none!important}   /* the "Get
   /* Rankings: "Value" and "Market" (Change is on desktop) */
   #valuesTable th:nth-child(8),#valuesTable td:nth-child(8){display:table-cell!important}
   #valuesTable th:nth-child(9),#valuesTable td:nth-child(9){display:none!important}
-  /* Calculator: the Matchup of the Week look, same layout */
-  .board{background:radial-gradient(120% 45% at 0% 0%,rgba(224,90,74,.28),transparent 60%),radial-gradient(120% 45% at 100% 0%,rgba(63,185,122,.26),transparent 60%),
-    repeating-linear-gradient(135deg,rgba(255,255,255,.025) 0 2px,transparent 2px 14px),linear-gradient(180deg,#1B2835,#0F1820)!important;
-    box-shadow:0 0 0 1px rgba(242,179,61,.55),0 14px 30px -16px rgba(0,0,0,.7)!important;overflow:hidden}
-  .board::before{content:"";position:absolute;inset:0 0 auto 0;height:4px;background:linear-gradient(90deg,#E05A4A,#F2B33D 50%,#3FB97A);z-index:2}
-  .board .bplayers .bcol{position:relative;border-top:3px solid #E05A4A}
-  .board .bplayers .bcol + .bcol{border-top-color:#3FB97A}
-  .board .bplayers .bcol:first-child::after{content:"VS";position:absolute;left:50%;bottom:-27px;transform:translateX(-50%);z-index:3;width:38px;height:38px;border-radius:50%;
-    display:grid;place-items:center;font:900 16px "Big Shoulders Display","Barlow Condensed",Impact,sans-serif;color:#121B24;
-    background:radial-gradient(circle at 35% 30%,#FFE6A8,#F2B33D 60%,#C98A16);box-shadow:0 0 0 4px rgba(242,179,61,.18),0 0 18px rgba(242,179,61,.6)}
-  .board .bplayers .bcol + .bcol{margin-top:6px}
-  .board .verdict{color:#F7D58A!important;text-transform:uppercase;letter-spacing:.03em;font-family:"Big Shoulders Display","Barlow Condensed",Impact,sans-serif!important;font-weight:900!important}
-  .board .track{background:#3A4652!important;border-radius:999px!important;overflow:hidden;position:relative}
-  .board .track .fill{display:none!important}
-  .board .track .tilt{display:block!important;position:absolute;top:0;bottom:0;left:50%;width:0;background:linear-gradient(90deg,#C98A16,#F2B33D 50%,#FFD77A);box-shadow:0 0 10px rgba(242,179,61,.55);transition:left .45s,width .45s}
-  .board .track .mid{z-index:1}
-  .board:has(.fill.even) .track{background:linear-gradient(90deg,#2E9A63,#3FB97A 50%,#2E9A63)!important}
-  .board:has(.fill.even) .track .tilt{opacity:0}
-  .board .suggest button{background:rgba(242,179,61,.12)!important;color:#F7D58A!important;border:1px solid rgba(242,179,61,.35)!important}
 }
 @media (max-width:600px){
   /* My Team: like desktop, no "Team"/"Week" label over the dropdown; strategy cards in the desktop order */
@@ -1916,6 +1897,5 @@ body:has(#pcard:not([hidden])) #installTip{display:none!important}   /* the "Get
   #strategy > .grid2 > [data-k="moves"]{order:1}#strategy > .grid2 > [data-k="core"]{order:2}#strategy > .grid2 > [data-k="history"]{order:3}
   #strategy > .grid2 > [data-k="targets"]{order:4}#strategy > .grid2 > [data-k="sell"]{order:5}#strategy > .grid2 > [data-k="partners"]{order:6}
 }
-@media (max-width:600px){ .board .ta-panel{color:#E9EEF2!important} .board .ta-list b{color:#F7D58A} .board .ta-list span{color:#C9D4DC} }
 
 .r-word{display:none}
