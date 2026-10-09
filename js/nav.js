@@ -2,8 +2,8 @@
 // Part of the site; loaded in order by index.html. All files share one global scope.
 // ============================================================
 // SECTIONS
-// The tabs are grouped into four sections: Trade Tools, Rankings, My Team and League Locker.
-// Trade Tools always opens on the Trade Calculator; League Locker reopens the tab you last used there.
+// The tabs are grouped into sections: Trade Tools, Rankings, My Team, League and Scores.
+// Trade Tools always opens on the Trade Calculator; League reopens the tab you last used there.
 // The section bar picks a section; the row under it (only when a section has more
 // than one tab) picks the tab inside it. The tab buttons themselves are unchanged,
 // so every other part of the site still opens a tab the same way.
@@ -13,8 +13,8 @@ const NAV_GROUPS = [
   { id: "trade",  label: "Trade Tools",   tabs: ["calc", "finder", "history"], always: "calc" },
   { id: "values", label: "Rankings", tabs: ["values"] },
   { id: "team",   label: "My Team",       tabs: ["strategy", "roster", "lineup", "waivers"] },
-  { id: "league", label: "League Locker", tabs: ["standings", "power", "scouting", "sim", "trophy", "settings"] },
-  { id: "scores", label: "Live Scores",   tabs: ["scores"] },
+  { id: "league", label: "League", tabs: ["standings", "power", "scouting", "sim", "trophy", "settings"] },
+  { id: "scores", label: "Scores",        tabs: ["scores"] },
   { id: "statusGrp", label: "Team Statuses", tabs: ["statuses"], footer: true }   // opened from the footer link (and the phone More menu)
 ];
 const navGroupOf = tab => NAV_GROUPS.find(g => g.tabs.includes(tab));

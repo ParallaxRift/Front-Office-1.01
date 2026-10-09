@@ -40,7 +40,7 @@ function renderStandings(){
   const val = { place: r => r.place, name: r => (r.t?.name || "").toLowerCase(), rec: r => r.place, pct: r => r.pct, odds: r => r.odds, pf: r => r.pf, pa: r => r.pa, max: r => r.max, strk: r => r.strk, power: r => r.power, stat: r => r.stat }[sk] || (r => r.place);
   const shown = [...rows].sort((a, b) => { const x = val(a), y = val(b); return (typeof x === "string" ? x.localeCompare(y, undefined, { numeric: true }) : x < y ? -1 : x > y ? 1 : 0) * sd || a.place - b.place; });
   const H = (k, label, cls = "", extra = "") => `<th class="sortable ${cls}" data-sort="${k}" aria-sort="${sk === k && !(ranked && sd > 0) ? (sd > 0 ? "ascending" : "descending") : "none"}" ${extra}>${label}</th>`;
-  $("standTable").innerHTML = `<thead><tr>${H("place", "#", "n")}${H("name", "Team")}${H("rec", "Record", "n")}${H("pct", "Win %", "n hide-sm")}${H("odds", "Title odds", "n", `title="Chance to win the championship, from the season simulator as of today"`)}${H("pf", "Points for", "n hide-sm")}${H("pa", "Points against", "n hide-sm")}${anyMax ? H("max", "Max points", "n hide-sm") : ""}${H("strk", "Streak", "hide-sm")}${H("power", "Power", "n hide-sm")}${H("stat", "Status")}</tr></thead>
+  $("standTable").innerHTML = `<thead><tr>${H("place", "#", "n")}${H("name", "Team")}${H("rec", "Record", "n")}${H("pct", "Win %", "n hide-sm")}${H("odds", `Title odds <button type="button" class="info-btn" data-info="col-odds" aria-label="What title odds mean">?</button>`, "n")}${H("pf", "Points for", "n hide-sm")}${H("pa", "Points against", "n hide-sm")}${anyMax ? H("max", "Max points", "n hide-sm") : ""}${H("strk", "Streak", "hide-sm")}${H("power", "Power", "n hide-sm")}${H("stat", "Status")}</tr></thead>
     <tbody>${shown.map(r => `<tr class="${r.rid === S.myRid ? "me" : ""}${ranked && sd > 0 && playoff && r.place === playoff ? " cut" : ""}">
       <td class="n rk">${r.place}</td>
       <td><span class="teamcell">${teamPhoto(r.rid, "sm")}<span><b>${esc(r.t?.name || "Team " + r.rid)}</b>${r.t?.manager && r.t.manager !== r.t.name ? `<br><small style="color:var(--muted)">${esc(r.t.manager)}</small>` : ""}</span></span></td>
@@ -76,7 +76,7 @@ function renderStandings(){
   const line = (k, v) => `<li><b>${k}</b> ${v}</li>`;
   $("standNote").innerHTML = `<ul class="stand-key">
     ${playoff ? line("Playoffs:", `the top ${playoff} teams make it; the line under #${playoff} marks the cutoff. Ties are broken by Points For.`) : line("Ties:", "broken by Points For.")}
-    ${line("Title odds:", `each team's chance to win the championship, ${oddsWhen}.`)}
+    ${line("Title odds:", `each team's chance to win the championship, ${oddsWhen}. They weigh record, roster strength, injuries, points scored and which way each team is trending.`)}
     ${line("Power:", "roster strength from player values only. It doesn't count wins or record.")}
     ${line("Sort:", "click any column heading; click again to flip the order.")}
   </ul>`;
@@ -161,13 +161,31 @@ function buildSim(D){
     const back = D.done + 1 + Math.round((est.lo + est.hi) / 2);
     return wk >= back ? 1 : 0;
   };
-  const teamProj = (rid, wk) => {
-    const pool = teamAssets(rid).filter(a => a.kind === "player").map(a => ({ pos: a.pos, pts: proj(a) * avail(a, wk) })).sort((x, y) => y.pts - x.pts);
+  const lineupProj = (rid, wk, healthy) => {
+    const pool = teamAssets(rid).filter(a => a.kind === "player").map(a => ({ pos: a.pos, pts: proj(a) * (healthy ? 1 : avail(a, wk)) })).sort((x, y) => y.pts - x.pts);
     const used = new Set(); let total = 0;
     const order = slots.filter(s => SLOT_OK[s]).sort((x, y) => SLOT_OK[x].length - SLOT_OK[y].length);   // fill strict slots first
     for (const s of order){ const i = pool.findIndex((p, k) => !used.has(k) && SLOT_OK[s].includes(p.pos)); if (i >= 0){ used.add(i); total += pool[i].pts; } }
     const R = rec.get(rid), other = R.other.length ? R.other.reduce((t, x) => t + x, 0) / R.other.length : slots.filter(s => !SLOT_OK[s]).length * 8;
     return total + other;
+  };
+  // 4) team form. Roster strength and injuries come from the lineup projection above; blend in what the
+  //    team has actually scored (points for, scaled down by its current injuries) and which way it's
+  //    trending (last 3 weeks vs. the weeks before). Points against is luck (it's the opponent's score),
+  //    so it only counts through the record the team already has. Weight grows with games played.
+  const formOf = rid => {
+    const s = rec.get(rid).scores, n = s.length; if (n < 2) return null;
+    const ppg = s.reduce((t, x) => t + x, 0) / n;
+    let trend = 0;
+    if (n >= 4){ const l3 = s.slice(-3).reduce((t, x) => t + x, 0) / 3, before = s.slice(0, -3).reduce((t, x) => t + x, 0) / (n - 3);
+      trend = Math.max(-0.12, Math.min(0.12, (l3 - before) / Math.max(1, before))); }
+    return { n, ppg, trend };
+  };
+  const teamProj = (rid, wk, playoffs = false) => {
+    const base = lineupProj(rid, wk), f = formOf(rid); if (!f) return base;
+    const healthy = lineupProj(rid, wk, true), hurt = healthy > 0 ? base / healthy : 1;   // share of the lineup that's available that week
+    const w = Math.min(0.35, f.n / (f.n + 8));
+    return ((1 - w) * base + w * f.ppg * hurt) * (1 + 0.4 * f.trend * (playoffs ? 0.5 : 1));
   };
   // spread: each team's real week-to-week swing, pulled toward a typical 16%
   const sdOf = (rid, mean) => { const s = rec.get(rid).scores; if (s.length < 3) return mean * 0.16;
@@ -182,7 +200,7 @@ function buildSim(D){
     if (!pairs.length){ const sh = [...rids]; pairs = []; for (let i = 0; i + 1 < sh.length; i += 2) pairs.push([sh[i], sh[i + 1]]); pairs.random = true; }
     sched.push({ wk: w, pairs, mean: new Map(rids.map(r => [r, teamProj(r, w)])) });
   }
-  const playoffMean = new Map(rids.map(r => [r, teamProj(r, D.firstPlayoff)]));
+  const playoffMean = new Map(rids.map(r => [r, teamProj(r, D.firstPlayoff, true)]));
   const sd = new Map(rids.map(r => [r, sdOf(r, playoffMean.get(r))]));
   return { rec, sched, playoffMean, sd, median, rids };
 }

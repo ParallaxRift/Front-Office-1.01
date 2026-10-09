@@ -1747,3 +1747,11 @@ body:has(#pcard:not([hidden])) #installTip{display:none!important}   /* the "Get
 /* Desktop-only page titles (hidden on phones) and phone-only bits (hidden on desktop) */
 @media (max-width:600px){.dt-only{display:none!important}}
 @media (min-width:601px){.mob-only{display:none!important}}
+
+/* trending tag: a small "?" inside; tap the tag to see what it means */
+.trend{cursor:pointer}
+.trend .trend-q{display:inline-grid;place-items:center;width:12px;height:12px;margin-left:4px;border-radius:50%;border:1.2px solid currentColor;font:800 8.5px/1 var(--body);font-style:normal;vertical-align:1px;opacity:.75}
+.trend:hover .trend-q,.trend:focus-visible .trend-q{opacity:1}
+.trend:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
+/* phones: a trending tag wraps under the player's name instead of widening the table */
+@media (max-width:600px){ #valuesTable .nm-wrap{min-width:0} #valuesTable .nm-wrap .trend{margin-left:0;margin-top:2px} }

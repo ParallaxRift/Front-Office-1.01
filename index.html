@@ -26,8 +26,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600&family=Big+Shoulders+Display:wght@700;800;900&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=20261012q">
-<link rel="stylesheet" href="css/desktop.css?v=20261012d" media="(min-width: 601px)">
+<link rel="stylesheet" href="css/styles.css?v=20261014q">
+<link rel="stylesheet" href="css/desktop.css?v=20261019d" media="(min-width: 601px)">
 </head>
 <body>
 <div id="pcard" class="pc-backdrop" hidden></div>
@@ -132,7 +132,7 @@
     <button class="tab" role="tab" aria-selected="false" data-tab="trophy" data-full="Trophy Room">Trophy Room</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="statuses" data-full="Team Statuses">Team Statuses</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="settings" data-full="League Settings">League Settings</button>
-    <button class="tab" role="tab" aria-selected="false" data-tab="scores" data-full="Live Scores">Live Scores</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="scores" data-full="Scores">Scores</button>
   </div>
 
   <section class="panel on" id="panel-calc">
@@ -209,7 +209,7 @@
     <div class="box sim-box">
       <div class="sim-top"><h3>Season Simulator</h3>
         <div class="sim-btns"><button type="button" class="ghost" id="simReset" hidden>Reset</button><button type="button" class="btn" id="simBtn">Simulate Season</button></div>
-        <p class="note sec-sub sim-desc">Simulates the rest of the regular season and playoffs 10,000 times, factoring in current records, recent player scoring, player values, and injuries to estimate each team’s playoff and championship odds.</p></div>
+        <p class="note sec-sub sim-desc">Simulates the rest of the regular season and playoffs 10,000 times, factoring in current records, player values, injuries, recent player scoring, each team's points scored and which way it's trending to estimate each team’s playoff and championship odds.</p></div>
       <div id="simOut"></div>
     </div>
 
@@ -450,8 +450,8 @@
 
   <h2>Your League</h2>
   <ul>
-    <li><b>League Locker:</b> standings, power rankings, a season simulator with playoff and title odds, the Trophy Room of past champions, team statuses and league settings.</li>
-    <li><b>Live Scores:</b> every matchup with box scores, refreshing on game days.</li>
+    <li><b>League:</b> standings, power rankings, a season simulator with playoff and title odds, the Trophy Room of past champions, team statuses and league settings.</li>
+    <li><b>Scores:</b> every matchup with box scores, refreshing on game days.</li>
     <li><b>Two views:</b> The Basics for a quick trade check, or Freakshow for every tool. <a href="#modes">See what each shows</a>.</li>
     <li><b>On your phone:</b> add Front Office to your home screen and use it like an app.</li>
   </ul>
@@ -543,9 +543,9 @@
         <li><b>Trade Finder</b> (in Trade Tools): pick a player and get fair trades that fit your team's direction, or find realistic targets and what it would cost to land them.</li>
         <li><b>My Team:</b> a game plan, position report card, trade targets, sell list, and best trade partners.</li>
         <li><b>Trade History</b> (in Trade Tools): every league trade graded with today's values, team trade records, and the full trade log.</li>
-        <li><b>League Locker:</b> standings, power rankings, the season simulator, and what the team statuses mean.</li>
-        <li><b>Trophy Room</b> (in League Locker): past champions and weekly high points.</li>
-        <li><b>Live Scores</b>: every matchup, refreshing every minute on game days.</li>
+        <li><b>League:</b> standings, power rankings, the season simulator, and what the team statuses mean.</li>
+        <li><b>Trophy Room</b> (in League): past champions and weekly high points.</li>
+        <li><b>Scores</b>: every matchup, refreshing every minute on game days.</li>
         
       </ul>
     </section>
@@ -608,25 +608,25 @@
 <script src="js/league-load.js?v=20261008l"></script>
 <script src="js/draft-classes.js?v=20261007t"></script>
 <script src="js/values-engine.js?v=20261008r"></script>
-<script src="js/render.js?v=20261009c"></script>
+<script src="js/render.js?v=20261011c"></script>
 <script src="js/player-cards.js?v=20261009b"></script>
 <script src="js/settings-tab.js?v=20261007a"></script>
 <script src="js/strategy.js?v=20261008g"></script>
 <script src="js/my-roster.js?v=20261009c"></script>
 <script src="js/lineup.js?v=20261009d"></script>
-<script src="js/scouting.js?v=20261009d"></script>
-<script src="js/live-scores.js?v=20261010a"></script>
+<script src="js/scouting.js?v=20261010d"></script>
+<script src="js/live-scores.js?v=20261012a"></script>
 <script src="js/trade-history.js?v=20261009c"></script>
 <script src="js/modes.js?v=20261009d"></script>
-<script src="js/standings-sim.js?v=20261009b"></script>
+<script src="js/standings-sim.js?v=20261010b"></script>
 <script src="js/calc-browse.js?v=20261007a"></script>
 <script src="js/calc-minibar.js?v=20261007a"></script>
 <script src="js/trophy.js?v=20261007a"></script>
 <script src="js/table-sort.js?v=20261009b"></script>
-<script src="js/popovers.js?v=20261009c"></script>
+<script src="js/popovers.js?v=20261011c"></script>
 <script src="js/trade-finder.js?v=20261010a"></script>
 <script src="js/pickers.js?v=20261010d"></script>
-<script src="js/nav.js?v=20261010h"></script>
+<script src="js/nav.js?v=20261011h"></script>
 <script src="js/app-shell.js?v=20261010a"></script>
 <script src="js/calc-phone.js?v=20261007m"></script>
 <script src="js/about.js?v=20261008c"></script>

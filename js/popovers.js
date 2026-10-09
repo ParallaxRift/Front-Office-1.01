@@ -43,6 +43,13 @@ document.addEventListener("click", e => {
     showPop(badge, `<h4>${STATUS_INFO[k][0]}</h4><p>${STATUS_INFO[k][1]}</p><button type="button" class="pop-link">See What the Team Statuses Mean</button>`);
     return;
   }
+  // Sleeper trending tag (▲16.3k / ▼2.1k): what the number means
+  const trend = e.target.closest(".trend[data-why]");
+  if (trend){
+    e.preventDefault(); e.stopPropagation();
+    showPop(trend, `<h4>Sleeper Trending</h4><p><b>${esc(trend.dataset.why)}.</b></p><p>${TREND_INFO}</p>`);
+    return;
+  }
   const info = e.target.closest(".info-btn[data-info]");
   if (info && (info.dataset.info === "adjust" || COLUMN_INFO[info.dataset.info])){
     e.preventDefault(); e.stopPropagation();
@@ -51,12 +58,19 @@ document.addEventListener("click", e => {
   if (popEl && !e.target.closest(".pop")) closePop();
 }, true);
 document.addEventListener("keydown", e => { if (e.key === "Escape") closePop(); });
+document.addEventListener("keydown", e => {   // Enter or Space on a trending tag opens its explanation
+  const t = (e.key === "Enter" || e.key === " ") && e.target.closest?.(".trend[data-why]");
+  if (t){ e.preventDefault(); e.stopPropagation(); t.click(); }
+}, true);
 // close on a real scroll, not the few pixels the browser may move while opening the popup
 window.addEventListener("scroll", () => { if (popEl && Math.abs(window.scrollY - popScrollY) > 40) closePop(); }, { passive: true });
 
+// What the green ▲ / red ▼ trending tags next to player names mean
+const TREND_INFO = "This tag comes from Sleeper and counts every Sleeper league, not just yours. It's how many more leagues added this player than dropped him in the last 24 hours. <b>▲ green</b> means more adds than drops; <b>▼ red</b> means more drops than adds. \"k\" means thousands, so ▲16.3k is about 16,300 more leagues adding him. Only moves of 300 or more show. A big jump usually follows news: a breakout game, a new role, or an injury to the player ahead of him. It's a heads-up, not part of his Front Office value.";
 const COLUMN_INFO = {
   "col-league": ["This League", "The player's value in your league after all of Front Office's adjustments. This is the number the calculator uses."],
   "col-market": ["Market", "The same player's value from Front Office Rankings, before any league adjustments. It shows what he'd be worth in a generic league as a single value."],
+  "col-odds": ["Title Odds", "Each team's chance to win the championship. Front Office plays out the rest of the season and the playoffs thousands of times. Every team starts from its <b>current record</b>. Each week's score comes from its best healthy lineup (<b>roster strength</b> from player values, with <b>injured players</b> left out until their estimated return), blended with the <b>points it has actually scored</b> and its <b>recent trend</b> (last 3 weeks vs. earlier), which count for more as the season goes on. Points against is mostly luck, the other team's score, so it only counts through the wins and losses already on the record. Odds move a point or two between updates."],
   "col-strength": ["Roster Strength", "The combined Front Office value of the team's best possible starting lineup plus its three most valuable bench players, using your league's values (the same numbers as the Trade Calculator). A top player is worth up to 10,000, so in most leagues teams land somewhere between about 40,000 and 80,000. It measures talent only. Wins, record and draft picks don't count."],
   "col-netv": ["Net Value from Trades", "Everything this manager has received in trades minus everything they've given up, using today's player values (picks already used count as the player they became). A positive number means their trades have aged well; negative means they've given up more than they got. Each trade is graded with the same value adjustment as the Trade Calculator, so a pile of depth doesn't beat a star."],
   "col-change": ["Change", "The % difference between your league's values after all logic is applied and the singular generic market value. It stays blank when the difference is under 1%."]

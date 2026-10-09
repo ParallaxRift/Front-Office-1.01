@@ -99,7 +99,7 @@ function renderScouting(){
   const tagCls = x => /^(Sharp|Gets bargains)/.test(x) ? "good" : /^(Overpays|Often loses)/.test(x) ? "warn" : /^(Rarely trades|No trades)/.test(x) ? "quiet" : "";
   $("scoutTable").innerHTML = `<colgroup><col class="sc-c-name"><col class="sc-c-num"><col class="sc-c-num hide-sm"><col class="sc-c-net hide-sm"><col></colgroup>
     <thead><tr>${th("name", "Manager")}${th("trades", "Trades", "c")}${th("wl", "Won–Lost", "c hide-sm")}${th("net", "Net Value from Trades", "c hide-sm", ` <button type="button" class="info-btn" data-info="col-netv" aria-label="What does Net Value from Trades mean?">?</button>`)}<th>Style</th></tr></thead>
-    <tbody>${rows.map(r => `<tr data-rid="${r.t.rid}" tabindex="0" class="${r.t.rid === scoutSel ? "sel" : ""}${r.t.rid === S.myRid ? " me" : ""}">
+    <tbody>${rows.map(r => `<tr data-rid="${r.t.rid}" tabindex="0" class="${r.t.rid === scoutSel ? "sel" : ""}">
       <td><span class="teamcell">${teamPhoto(r.t.rid, true)}<span><b>${esc(r.t.name)}</b>${r.t.rid === S.myRid ? ` <small class="sc-you">You</small>` : ""}</span></span></td>
       <td class="c">${r.n}</td>
       <td class="c hide-sm">${r.n ? `${r.won}–${r.lost}<small class="sc-pct">${Math.round(r.won / r.n * 100)}%</small>` : "–"}</td>

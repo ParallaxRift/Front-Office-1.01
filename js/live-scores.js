@@ -177,6 +177,7 @@ function renderScores(data, week){
     const canOpen = pl.pos !== "DEF" && !/^[A-Z]{2,3}$/.test(pid) && S.sleeperPlayers?.[pid];
     return `<span class="bx-p ${side}${g === "in" ? " now" : ""}${canOpen ? ` click" data-pid="${esc(pid)}" role="button" tabindex="0" title="Open ${esc(pl.name)}'s player card` : ""}">${scorePhoto(pid, pl)}<span class="bx-nm"><b>${esc(pl.name)}${injTag(pid)}</b><small>${esc([pl.pos, pl.team].filter(Boolean).join(" · "))}</small></span><b class="bx-v">${v}</b></span>`;
   };
+  const boxOpen = !window.matchMedia("(max-width:600px)").matches;   // computers show every box score, two matchups side by side; phones open only yours
   $("matchups").innerHTML = list.map(pair => {
     const mine = pair.some(m => m.roster_id === S.myRid);
     if (mine) pair.sort((a,b) => (b.roster_id===S.myRid) - (a.roster_id===S.myRid));
@@ -199,7 +200,7 @@ function renderScores(data, week){
     return `<article class="mb${mine ? " mine" : ""}">${mine ? `<div class="mb-tag">Your matchup${final ? " · Final" : live ? " · Live" : ""}</div>` : final ? `<div class="mb-tag quiet">Final</div>` : ""}
       <div class="sb">${team(A, "l")}<span class="sb-vs">vs</span>${team(B, "r")}</div>
       <div class="sb-bar" role="img" aria-label="${esc(S.teams.get(A.roster_id)?.name || "")} ${pTot > 0 ? `has ${share}% of the projected points` : `has ${share}% of the points`}"><i style="width:${share}%"></i></div>
-      <details${mine ? " open" : ""}><summary>Box score</summary><div class="bx">${rows}</div></details>
+      <details${mine || boxOpen ? " open" : ""}><summary>Box score</summary><div class="bx">${rows}</div></details>
       <details><summary>Bench</summary><div class="bx">${bench}</div></details>
     </article>`;
   }).join("");

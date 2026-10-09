@@ -92,7 +92,8 @@ function trendText(n){ const a = Math.abs(n); return a >= 1000 ? (a / 1000).toFi
 function trendTag(pid){
   const n = S.trending?.get(String(pid)); if (!n || Math.abs(n) < TREND_MIN) return "";
   const up = n > 0, why = `${up ? "Added" : "Dropped"} in ${fmt(Math.abs(n))} more Sleeper leagues than ${up ? "dropped" : "added"} in the last 24 hours`;
-  return ` <span class="trend ${up ? "up" : "down"}" title="${why}" aria-label="${why}">${up ? "▲" : "▼"}${trendText(n)}</span>`;
+  // tap the tag (or its "?") to see what the number means
+  return ` <span class="trend ${up ? "up" : "down"}" data-why="${why}" title="${why}. Tap for details" role="button" tabindex="0">${up ? "▲" : "▼"}${trendText(n)}<i class="trend-q" aria-hidden="true">?</i></span>`;
 }
 async function loadTrending(){
   try {
@@ -542,7 +543,7 @@ function renderValues(){
     const teamHTML = a.owner != null ? `<span class="teamcell">${teamPhoto(a.owner, true)}${esc(team)}</span>` : "Free agent";
     const ch = a.market ? (a.value/a.market - 1) * 100 : 0;
     const chTxt = a.kind === "pick" || Math.abs(ch) < 1 ? "" : `<span class="${ch>0?"up":"down"}">${ch>0?"+":""}${Math.round(ch)}%</span>`;
-    return `<tr data-id="${esc(a.id)}"${a.kind === "player" ? ' tabindex="0"' : ""}${(() => { const c = [a.id === S.valuesHL ? "hl" : "", a.owner != null && a.owner === S.myRid ? "mine" : ""].filter(Boolean).join(" "); return c ? ` class="${c}"` : ""; })()}><td class="rk">${a.kind === "player" && a.lgRank ? a.lgRank : i+1}</td><td class="rk">${a.kind === "player" && a.lgPosRank ? esc(a.pos) + a.lgPosRank : ""}</td><td><span class="teamcell">${assetPhoto(a, true)}${esc(a.name)}${injTag(a.pid)}${a.kind === "player" ? trendTag(a.pid) : ""}</span></td><td class="hide-sm">${esc(a.pos)}</td><td class="n">${esc(ageText(a.age))}</td>
+    return `<tr data-id="${esc(a.id)}"${a.kind === "player" ? ' tabindex="0"' : ""}${(() => { const c = [a.id === S.valuesHL ? "hl" : "", a.owner != null && a.owner === S.myRid ? "mine" : ""].filter(Boolean).join(" "); return c ? ` class="${c}"` : ""; })()}><td class="rk">${a.kind === "player" && a.lgRank ? a.lgRank : i+1}</td><td class="rk">${a.kind === "player" && a.lgPosRank ? esc(a.pos) + a.lgPosRank : ""}</td><td><span class="teamcell">${assetPhoto(a, true)}<span class="nm-wrap">${esc(a.name)}${injTag(a.pid)}${a.kind === "player" ? trendTag(a.pid) : ""}</span></span></td><td class="hide-sm">${esc(a.pos)}</td><td class="n">${esc(ageText(a.age))}</td>
       <td class="hide-sm">${teamHTML}</td><td class="n big">${fmt(a.value)}</td><td class="n hide-sm">${a.kind==="pick"?"":fmt(a.market)}</td><td class="n">${chTxt}</td></tr>`;
   }).join("") || `<tr><td colspan="9" class="empty">${pos === "MINE" && S.myRid == null ? "Choose your team in the league header to see your players." : "No players match. Try a different search or filter."}</td></tr>`;
 }
