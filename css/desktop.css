@@ -504,3 +504,27 @@ p.tuning-upd{margin:6px 0 0;margin-left:0}
 /* Scouting Reports (desktop): no title; the filter dropdowns need no labels ("All styles", "All managers", "All teams") */
 #panel-scouting .sc-filters .field label{display:none!important}
 #panel-scouting .sc-filters{align-items:center!important}
+/* Trophy Room (desktop): the League Champions wall */
+.champ-wall{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
+.cw-card{position:relative;overflow:hidden;border-radius:14px;background:linear-gradient(180deg,#141E28,#0C141B);color:#fff;
+  box-shadow:0 0 0 1px rgba(242,179,61,.45),var(--bc-lift);display:flex;flex-direction:column}
+.cw-trophy{position:relative;display:grid;place-items:center;padding:22px 18px 4px;
+  background:radial-gradient(60% 55% at 50% 45%,rgba(242,179,61,.38),rgba(242,179,61,.08) 55%,transparent 75%)}
+.cw-trophy img{height:210px;width:auto;max-width:100%;display:block;filter:drop-shadow(0 12px 18px rgba(0,0,0,.6)) drop-shadow(0 0 22px rgba(242,179,61,.25));transition:transform .5s ease}
+.cw-card:hover .cw-trophy img{transform:translateY(-4px) scale(1.04)}
+.cw-year{display:block;text-align:center;margin:2px 0 8px;font:900 38px/1 var(--bc-num);letter-spacing:.04em;
+  background:linear-gradient(180deg,#FFF3CF,#F2B33D 70%,#B97E12);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.cw-champ{display:flex;align-items:center;gap:10px;padding:12px 14px 10px;border-top:1px solid rgba(242,179,61,.25)}
+.cw-champ .av{width:44px!important;height:44px!important;box-shadow:0 0 0 2px var(--bc-gold)}
+.cw-champ span{min-width:0;display:flex;flex-direction:column}
+.cw-champ small{font:800 10px var(--bc-text);letter-spacing:.14em;text-transform:uppercase;color:var(--bc-gold)}
+.cw-champ b{font-size:16px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cw-champ em{font-style:normal;font-size:12px;color:#9DB0BE}
+.cw-rest{display:flex;flex-direction:column;gap:6px;padding:0 14px 14px}
+.cw-place{display:flex;align-items:center;gap:8px;font-size:12.5px;color:#C9D4DC;min-width:0}
+.cw-place .av{width:22px!important;height:22px!important}
+.cw-place em{font:800 11px var(--bc-num);font-style:normal;color:#9DB0BE;min-width:24px}
+.cw-place b{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cw-live{margin:12px 0 0;font-size:13px}
+@media (prefers-reduced-motion:reduce){.cw-trophy img{transition:none}}
+#champList.champ-list{display:block!important}

@@ -66,6 +66,7 @@ async function loadTrophyRoom(){
 function renderTrophyRoom(){
   const T = trophy; if (!T) return;
   const person = (t, size) => `${avatar(t.photo, t.name, size)}`;
+  if (!isPhoneView()){ renderChampWall(T, person); } else
   $("champList").innerHTML = T.seasons.map(x => x.champ ? `
     <article class="tr-champ">
       <div class="yr">${x.season}</div>
@@ -108,3 +109,18 @@ $("hsSeasons").addEventListener("click", e => {
   trophySeason = Number(b.dataset.season); renderTrophyRoom();
 });
 
+
+// Computers: the League Champions wall. One trophy per finished season, newest first, with the champion
+// (photo and name) under it and the runner-up and third place smaller below.
+function renderChampWall(T, person){
+  const done = T.seasons.filter(x => x.champ).sort((a, b) => b.season - a.season);
+  const live = T.seasons.find(x => !x.champ && x.season === Number(S.league.season) && x.status !== "complete");
+  const place = (t, k) => t ? `<span class="cw-place">${person(t, "xs")}<em>${k}</em><b>${esc(t.name)}</b></span>` : "";
+  $("champList").innerHTML = (done.length ? `<div class="champ-wall">${done.map(x => `
+    <article class="cw-card">
+      <div class="cw-trophy"><img src="icons/trophy.webp" alt="" loading="lazy"></div><span class="cw-year">${x.season}</span>
+      <div class="cw-champ">${person(x.champ, "lg")}<span><small>Champion</small><b>${esc(x.champ.name)}</b>${x.champ.rec ? `<em>${esc(x.champ.rec)} regular season</em>` : ""}</span></div>
+      <div class="cw-rest">${place(x.runner, "2nd")}${place(x.third, "3rd")}</div>
+    </article>`).join("")}</div>` : `<p class="empty">No finished seasons yet. Your first champion will appear here once the playoffs finish.</p>`)
+    + (live ? `<p class="note cw-live">${live.season} season in progress. The champion joins the wall once the playoffs finish.</p>` : "");
+}
