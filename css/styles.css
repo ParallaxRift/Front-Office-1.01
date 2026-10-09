@@ -1732,3 +1732,14 @@ body:has(#pcard:not([hidden])) #installTip{display:none!important}   /* the "Get
 .bx-p.click{cursor:pointer;border-radius:8px;transition:background .12s}
 .bx-p.click:hover,.bx-p.click:focus-visible{background:rgba(127,127,127,.12);outline:none}
 .bx-p.click:hover .bx-nm b{text-decoration:underline;text-underline-offset:2px}
+
+/* Trade Finder: quick filters on Trades That Make Sense */
+.tf-quick{display:flex;flex-wrap:wrap;gap:10px 22px;align-items:center;margin:0 0 14px;padding:10px 12px;background:var(--paper);border:1px solid var(--line);border-radius:12px}
+.tf-quick[hidden]{display:none}
+.tf-qg{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.tf-qg:last-child{flex-wrap:nowrap}
+.tf-ql{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+.tf-quick .seg button{padding:4px 12px;font-size:13px}
+.tf-quick select{padding:5px 10px;font-size:14px;border-radius:8px;max-width:220px}
+.linklike{background:none;border:0;padding:0;color:var(--field);font:inherit;font-weight:600;text-decoration:underline;cursor:pointer}
+@media (max-width:600px){.tf-quick{gap:8px;padding:8px}.tf-qg{width:100%}.tf-quick select{flex:1;max-width:none}}

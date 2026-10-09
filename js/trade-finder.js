@@ -226,6 +226,7 @@ function findForTarget(me, target){
   const { results, C, th, T, rid } = targetPackages(me, target);
   plan.textContent = `Looking for ways to get ${target.name} from ${th.team.name}${C.dir === "win" ? " while keeping your starting lineup as strong as possible" : " without giving up your best young pieces"}.`;
   $("tfHeading").textContent = `Ways to Get ${target.name}`;
+  $("tfQuick").hidden = true;
   const top = results.slice(0, tfMaxIdeas(8));
   note.textContent = top.length ? "Packages from your roster that match their value, easiest on your lineup first." : "";
   if (!top.length){ out.innerHTML = `<p class="empty">No fair packages of up to 3 pieces found for ${esc(target.name)}. They may be worth more than your tradeable pieces.</p>`; return; }
@@ -244,8 +245,10 @@ function findForTarget(me, target){
 }
 
 // Before you pick anyone: the best deal for each of the top recommended players, so the page starts with answers
+let tfQuick = { pos: "ALL", deal: "any", team: "any" };
 function suggestDefault(me){
   const out = $("tfResults"), note = $("tfNote");
+  $("tfQuick").hidden = true;
   $("tfHeading").textContent = "Suggested Trades for Your Team";
   const C = finderContext(me), cards = [];
   for (const rec of tfRecTop){
@@ -269,6 +272,7 @@ function suggestDefault(me){
 }
 function findTrades(me, sending, V){
   $("tfHeading").textContent = "Trades That Make Sense";
+  $("tfQuick").hidden = true;
   const out = $("tfResults"), note = $("tfNote"), plan = $("tfPlan");
   const prof = teamProfiles(), my = prof.get(me), N = S.teams.size, third = N / 3, need = slotNeeds();
   const status = S.teams.get(me).status;
@@ -344,11 +348,23 @@ function findTrades(me, sending, V){
   }
   // best two per team, then best overall
   results.sort((a, b) => b.score - a.score);
-  const perTeam = {}, picks = [];
-  for (const r of results){ if ((perTeam[r.rid] = (perTeam[r.rid] || 0) + 1) <= 2) picks.push(r); if (picks.length >= tfMaxIdeas(10)) break; }
+  const perTeam = {}, pool = [];
+  for (const r of results){ if ((perTeam[r.rid] = (perTeam[r.rid] || 0) + 1) <= 12) pool.push(r); if (pool.length >= 400) break; }
+  // quick filters above the results: what you get, how even the deal is, and which team
+  const dealOf = r => tradeCall(r.R - V, Math.max(r.R, V)) === "fair" ? "fair" : r.R > V ? "win" : "pay";
+  const teamsIn = [...new Set(pool.map(r => r.rid))];
+  if (tfQuick.team !== "any" && !teamsIn.includes(Number(tfQuick.team))) tfQuick.team = "any";
+  $("tfQuickTeam").innerHTML = `<option value="any">All teams</option>` + teamsIn.map(rid => `<option value="${rid}"${String(rid) === tfQuick.team ? " selected" : ""}>${esc(S.teams.get(rid)?.name || "")}</option>`).join("");
+  const filtered = pool.filter(r => (tfQuick.pos === "ALL" || r.pack.some(a => tfQuick.pos === "PICK" ? a.kind === "pick" : a.pos === tfQuick.pos))
+    && (tfQuick.deal === "any" || (tfQuick.deal === "one" ? r.pack.length === 1 && sending.length === 1 : dealOf(r) === tfQuick.deal))
+    && (tfQuick.team === "any" || String(r.rid) === tfQuick.team));
+  const seen = {}, picks = [];
+  for (const r of filtered){ if (tfQuick.team === "any" && (seen[r.rid] = (seen[r.rid] || 0) + 1) > 2) continue; picks.push(r); if (picks.length >= tfMaxIdeas(10)) break; }
+  $("tfQuick").hidden = !pool.length;
   note.textContent = picks.length
     ? `Every deal here is within about ${Math.round((1 - FAIR_LOW) * 100)}% of fair by your league's values. Best fits first.`
     : "";
+  if (!picks.length && pool.length){ out.innerHTML = `<p class="empty">No trades match these filters. <button type="button" class="linklike" id="tfQuickClear">Show all</button></p>`; return; }
   if (!picks.length){ out.innerHTML = `<p class="empty">No fair deals of up to ${maxPieces} piece${maxPieces > 1 ? "s" : ""} found${want !== "fit" ? " for that position" : ""}${partner !== "any" ? " with that team" : ""}. Try "Best fit," "Any team," or add or remove a piece.</p>`; return; }
 
   out.innerHTML = picks.map((r, i) => {
@@ -402,11 +418,24 @@ $("tfSending").addEventListener("click", e => {
 $("tfSearch").addEventListener("input", renderFinder);
 // Reset: clear everything picked and put the filters back to their defaults
 $("tfReset").addEventListener("click", () => {
-  tfSend.clear(); tfTarget = null;
+  tfSend.clear(); tfTarget = null; tfQuickReset();
   $("tfWant").value = "fit"; $("tfPartner").value = "any"; $("tfMax").value = "4"; $("tfSearch").value = "";
   renderFinder();
 });
+// quick filters on Trades That Make Sense
+for (const [id, k] of [["tfQuickPos", "pos"], ["tfQuickDeal", "deal"]]) $(id).addEventListener("click", e => {
+  const b = e.target.closest("button[data-v]"); if (!b) return;
+  tfQuick[k] = b.dataset.v;
+  for (const x of $(id).children) x.setAttribute("aria-pressed", x === b);
+  renderFinder();
+});
+$("tfQuickTeam").addEventListener("change", e => { tfQuick.team = e.target.value; renderFinder(); });
+function tfQuickReset(){
+  tfQuick = { pos: "ALL", deal: "any", team: "any" };
+  for (const id of ["tfQuickPos", "tfQuickDeal"]) for (const x of $(id).children) x.setAttribute("aria-pressed", x === $(id).firstElementChild);
+}
 $("tfResults").addEventListener("click", e => {
+  if (e.target.closest("#tfQuickClear")){ tfQuickReset(); renderFinder(); return; }
   const b = e.target.closest(".tf-open"); if (!b) return;
   $("teamA").value = $("tfTeam").value; $("teamB").value = b.dataset.rid;
   S.sendIds = new Set(b.dataset.send ? b.dataset.send.split(",") : tfSend); S.getIds = new Set(b.dataset.get.split(","));

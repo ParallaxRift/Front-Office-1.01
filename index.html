@@ -26,7 +26,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600&family=Big+Shoulders+Display:wght@700;800;900&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=20261010q">
+<link rel="stylesheet" href="css/styles.css?v=20261011q">
 <link rel="stylesheet" href="css/desktop.css?v=20261010d" media="(min-width: 601px)">
 </head>
 <body>
@@ -274,6 +274,13 @@
       <div class="tf-out">
         <h3 class="tf-h" id="tfHeading">Trades That Make Sense</h3>
         <p class="note" id="tfNote" style="margin:0 0 12px"></p>
+        <div class="tf-quick" id="tfQuick" hidden>
+          <div class="tf-qg"><span class="tf-ql">You get</span><div class="seg" id="tfQuickPos" role="group" aria-label="Filter by what you get">
+            <button type="button" data-v="ALL" aria-pressed="true">All</button><button type="button" data-v="QB" aria-pressed="false">QB</button><button type="button" data-v="RB" aria-pressed="false">RB</button><button type="button" data-v="WR" aria-pressed="false">WR</button><button type="button" data-v="TE" aria-pressed="false">TE</button><button type="button" data-v="PICK" aria-pressed="false">Picks</button></div></div>
+          <div class="tf-qg"><span class="tf-ql">Deal</span><div class="seg" id="tfQuickDeal" role="group" aria-label="Filter by how fair the deal is">
+            <button type="button" data-v="any" aria-pressed="true">Any</button><button type="button" data-v="fair" aria-pressed="false">Even</button><button type="button" data-v="win" aria-pressed="false">In your favor</button><button type="button" data-v="one" aria-pressed="false">1-for-1</button></div></div>
+          <div class="tf-qg"><span class="tf-ql">Team</span><select id="tfQuickTeam" aria-label="Filter by trade partner"></select></div>
+        </div>
         <div id="tfResults" class="tf-results"></div>
       </div>
     </div>
@@ -609,7 +616,7 @@
 <script src="js/trophy.js?v=20261007a"></script>
 <script src="js/table-sort.js?v=20261009b"></script>
 <script src="js/popovers.js?v=20261009c"></script>
-<script src="js/trade-finder.js?v=20261009a"></script>
+<script src="js/trade-finder.js?v=20261010a"></script>
 <script src="js/pickers.js?v=20261010d"></script>
 <script src="js/nav.js?v=20261010h"></script>
 <script src="js/app-shell.js?v=20261010a"></script>
