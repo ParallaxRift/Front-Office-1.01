@@ -532,3 +532,10 @@ p.tuning-upd{margin:6px 0 0;margin-left:0}
 .champ-wall{grid-template-columns:repeat(auto-fill,minmax(260px,1fr))!important}
 .cw-champ b,.cw-place b{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;line-height:1.25}
 .cw-trophy img{height:230px}
+/* Trophy Room: the season in progress card */
+.cw-live-card .cw-trophy img{filter:grayscale(.15) brightness(.82) drop-shadow(0 12px 18px rgba(0,0,0,.6))}
+.cw-status{display:flex;align-items:center;justify-content:center;gap:8px;margin:-2px 0 10px;font:800 12px var(--bc-text);letter-spacing:.16em;text-transform:uppercase;color:#F7D58A}
+.cw-dot{width:8px;height:8px;border-radius:50%;background:var(--bc-get);box-shadow:0 0 0 0 rgba(63,185,122,.7);animation:cwPulse 1.8s ease-out infinite}
+@keyframes cwPulse{70%{box-shadow:0 0 0 8px rgba(63,185,122,0)}100%{box-shadow:0 0 0 0 rgba(63,185,122,0)}}
+@media (prefers-reduced-motion:reduce){.cw-dot{animation:none}}
+.cw-live-card .cw-champ .av{box-shadow:0 0 0 2px #7D8C98}
