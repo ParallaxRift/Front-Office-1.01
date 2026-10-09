@@ -385,3 +385,24 @@ p.tuning-upd{margin:6px 0 0;margin-left:0}
 #strategy > .grid2{display:block!important;columns:3 320px;column-gap:18px;background:var(--bc-card);border:1px solid var(--bc-line);border-radius:12px;padding:20px;box-shadow:var(--bc-lift)}
 #strategy > .grid2 > .box{break-inside:avoid;display:inline-block;width:100%;margin:0 0 18px!important;box-shadow:none!important;border:1px solid var(--bc-line)!important;border-radius:10px!important}
 #strategy > .grid2 > .box:last-child{margin-bottom:0!important}
+/* Team Strategy band (desktop): a bit smaller */
+.strat-hero{padding:18px 22px 14px!important}
+.strat-hero .stratTop{gap:16px}
+.strat-hero .stratTop .av{width:64px!important;height:64px!important}
+.strat-hero .plan{font-size:44px!important;margin:6px 0 2px!important}
+.strat-hero .facts{font-size:14px!important}
+.strat-hero .posgrid{gap:10px!important;margin:14px 0 10px!important}
+.strat-hero .pg{padding:10px 14px!important}
+.strat-hero .pg span{font-size:30px!important}
+.strat-hero .pg small{font-size:12px!important}
+/* My Roster (desktop): the team name and photo sit above the team dropdown */
+#panel-roster.on{display:flex;flex-direction:column}
+#panel-roster.on > *{min-width:0}
+#panel-roster #rosterSum{display:contents}
+#panel-roster #rosterSum .ros-head{order:-1;margin:0 0 14px}
+/* Lineup tiles (desktop): five across, the same compact size as the Team Strategy tiles */
+#luBody .pj-tiles{grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:10px!important;margin-bottom:14px!important}
+#luBody .pj-tile{padding:10px 14px!important;min-width:0}
+#luBody .pj-tile small{font-size:11.5px!important}
+#luBody .pj-tile b{font-size:30px!important;margin:2px 0 1px!important}
+#luBody .pj-tile span{font-size:12.5px!important;line-height:1.35;display:block}

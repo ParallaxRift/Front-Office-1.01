@@ -142,6 +142,24 @@ async function renderLineup(){
     </div>
     <div class="box gr-box"><h3>Drop Candidates</h3><p class="note" style="margin:0 0 8px">Your lowest-value bench players, if you need a roster spot.${budget ? ` You have $${faabLeft(S.myRid)} of $${budget} FAAB left.` : ""}</p>
       ${drops.length ? `<ul class="moves">${drops.map(p => `<li><b>${esc(p.a.name)}</b> (${esc(p.a.pos)}, value ${fmt(p.a.value)}${p.avail && p.pts ? `, ${p.pts.toFixed(1)} projected` : ""})</li>`).join("")}</ul>` : `<p class="empty">No bench players.</p>`}</div>`;
+  // ---- two more tiles (computers): this week's matchup and the top waiver pickup ----
+  const tilesEl = $("luBody").querySelector(".pj-tiles"); if (!tilesEl) return;
+  const pick = stream.find(would) || stream[0];
+  const pickTile = pick ? `<div class="pj-tile dt-only"><small>Top pickup</small><b>${pick.pts.toFixed(1)}</b><span>${esc(pick.a.name)} (${esc(pick.a.pos)}), ${would(pick) ? "would start for you" : "best free agent this week"}</span></div>` : "";
+  tilesEl.insertAdjacentHTML("beforeend", `<div class="pj-tile dt-only lu-opp"><small>This week's matchup</small><b>…</b><span>Loading</span></div>${pickTile}`);
+  try {
+    const ms = await getJSON(`/league/${S.league.league_id}/matchups/${week}`);
+    if (LU.week !== week) return;
+    const meM = (ms || []).find(m => m.roster_id === S.myRid), oppM = meM && meM.matchup_id != null ? ms.find(m => m.matchup_id === meM.matchup_id && m.roster_id !== S.myRid) : null;
+    const el = tilesEl.querySelector(".lu-opp"); if (!el) return;
+    if (!oppM){ el.remove(); return; }
+    const oppR = S.rosters.find(x => x.roster_id === oppM.roster_id), oppRes = new Set([...(oppR?.reserve || []), ...(oppR?.taxi || [])].map(String));
+    const theirs = scorePlayers(teamAssets(oppM.roster_id).filter(a => a.kind === "player").map(a => luPlayer(a, proj)), fit, new Set((oppM.starters || []).map(String)));
+    const oppBest = bestLineup(theirs.filter(p => !oppRes.has(String(p.a.pid))), slots), oppPts = oppBest.slots.reduce((tt, x) => tt + (x.p ? live(x.p) : 0), 0);
+    const mePts = setNow.length ? nowPts : bestPts, sd = Math.max(8, Math.hypot(mePts, oppPts) * 0.16);
+    const win = 0.5 * (1 + erf((mePts - oppPts) / sd / Math.SQRT2));
+    el.innerHTML = `<small>This week's matchup</small><b>${Math.round(win * 100)}%</b><span>to win vs ${esc(S.teams.get(oppM.roster_id)?.name || "your opponent")}: ${mePts.toFixed(1)} to ${oppPts.toFixed(1)} projected</span>`;
+  } catch(e){ tilesEl.querySelector(".lu-opp")?.remove(); }
 }
 for (const id of ["luWeek", "luWeekW"]) $(id).addEventListener("change", () => { LU.week = Number($(id).value); renderLineup(); });
 for (const id of ["luBody", "luWaivers"]) $(id).addEventListener("click", e => { const tr = e.target.closest("tr[data-id^='p:']"); if (tr) openPlayerCard(tr.dataset.id.slice(2)); });
