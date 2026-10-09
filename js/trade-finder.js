@@ -10,13 +10,19 @@ const tfSend = new Set();
 let tfTarget = null;   // a player on another team you want; Front Office finds what to send for them
 const statusPhrase = { contend: "contending", middle: "in the middle", rebuild: "rebuilding" };
 const FAIR_LOW = 0.88, FAIR_HIGH = 1.12;   // packages within this range of what you send
+// On computers the two sections work on their own: the top (Players to Trade Away + Suggested Trades)
+// ignores the Find a Player dropdowns, and Find a Player (dropdowns, recommendations and "Find a deal")
+// shows its results in its own box. Phones keep one combined flow, with the filters under the picked players.
+const tfSplit = () => !(typeof isPhoneView === "function" && isPhoneView());
+const tfTopOpts = () => tfSplit() ? { want: "fit", partner: "any", max: 4 } : { want: $("tfWant").value, partner: $("tfPartner").value, max: Number($("tfMax").value) || 4 };
 
 function renderFinder(){
   if (!S.league) return;
-  $("tfReset").disabled = !tfSend.size && !tfTarget && $("tfWant").value === "fit" && $("tfPartner").value === "any" && $("tfMax").value === "4" && !$("tfSearch").value;
+  const findClean = !tfTarget && $("tfWant").value === "fit" && $("tfPartner").value === "any" && $("tfMax").value === "4";
+  $("tfReset").disabled = tfSplit() ? findClean : findClean && !tfSend.size && !$("tfSearch").value;
   syncPicker("tfTeam");
   const me = Number($("tfTeam").value), t = S.teams.get(me);
-  $("tfBadge").textContent = statusText[t.status]; $("tfBadge").className = "badge " + badgeClass[t.status];
+  void t;
   // drop anything no longer on this roster (team switched, or a trade happened)
   for (const id of [...tfSend]) if (S.assets.get(id)?.owner !== me) tfSend.delete(id);
   // roster list
@@ -32,7 +38,9 @@ function renderFinder(){
   const V = tradeValue(sending.map(a => a.value), []);
   if (tfTarget && (!S.assets.get(tfTarget) || S.assets.get(tfTarget).owner === me)) tfTarget = null;
   renderRecs(me);
-  if (tfTarget){
+  $("tfFindOut").hidden = true;
+  if (tfTarget && tfSplit()){ findForTarget(me, S.assets.get(tfTarget), $("tfFindOut")); }   // computers: results stay in Find a Player
+  else if (tfTarget){
     const a = S.assets.get(tfTarget), owner = S.teams.get(a.owner);
     $("tfOptsTitle").textContent = "Find a Player";
     $("tfSending").innerHTML = `<button type="button" class="tf-target" id="tfClearTarget" aria-label="Stop looking for ${esc(a.name)}">
@@ -98,7 +106,22 @@ const tfRecsShown = () => typeof isPhoneView === "function" && isPhoneView() ? 3
 const tfMaxIdeas = n => typeof isPhoneView === "function" && isPhoneView() ? 15 : n;              // phones: 3 shown, up to 12 more behind a button
 let tfRecTop = [], tfRecsAll = false;   // the recommended targets, and whether "Show more" is open
 function renderRecs(me){
-  const C = finderContext(me), want = $("tfWant").value, partner = $("tfPartner").value;
+  const want = $("tfWant").value, partner = $("tfPartner").value;
+  const { C, spare, top } = computeRecs(me, want, partner);
+  $("tfRecsNote").textContent = C.dir === "win"
+    ? "Realistic targets outside the elite tier who would help your lineup, priced against your bench and picks."
+    : "Young, affordable players with upside for your rebuild, priced against your non-core pieces.";
+  tfRecTop = tfSplit() ? computeRecs(me, "fit", "any").top : top;   // the top section's suggestions don't follow the Find a Player dropdowns on computers
+  const shown = tfRecsAll ? top : top.slice(0, tfRecsShown());
+  $("tfRecs").innerHTML = top.length ? shown.map(r => {
+    const cost = priceFrom(spare, r.a.value);
+    const costTxt = cost ? `Could cost: ${cost.map(x => x.name).join(" + ")}` : "";
+    return tfRecHTML(r, costTxt);
+  }).join("") + (top.length > tfRecsShown() ? `<button type="button" class="ghost tf-more" id="tfRecsMore">${tfRecsAll ? "Show fewer" : `Show ${top.length - tfRecsShown()} more`}</button>` : "")
+    : `<p class="empty">No affordable targets${want !== "fit" && want !== "PICK" ? " at that position" : ""}${partner !== "any" ? " on that team" : ""} right now. Your bench and picks may not stretch that far.</p>`;
+}
+function computeRecs(me, want, partner){
+  const C = finderContext(me);
   const myPlayers = teamAssets(me).filter(a => a.kind === "player");
   const core = myCore(me, C);
   const spare = teamAssets(me).filter(a => !core.has(a.id) && a.value > 0);          // non-core: bench + picks
@@ -139,20 +162,11 @@ function renderRecs(me){
   recs.sort((x, y) => y.score - x.score);
   const per = {}, top = [];
   for (const r of recs){ if ((per[r.a.owner] = (per[r.a.owner] || 0) + 1) <= 2) top.push(r); if (top.length >= 10) break; }
-  $("tfRecsNote").textContent = C.dir === "win"
-    ? "Realistic targets outside the elite tier who would help your lineup, priced against your bench and picks."
-    : "Young, affordable players with upside for your rebuild, priced against your non-core pieces.";
-  tfRecTop = top;
-  const shown = tfRecsAll ? top : top.slice(0, tfRecsShown());
-  $("tfRecs").innerHTML = top.length ? shown.map(r => {
-    const cost = priceFrom(spare, r.a.value);
-    const costTxt = cost ? `Could cost: ${cost.map(x => x.name).join(" + ")}` : "";
-    return `<div class="tf-rec${tfTarget === r.a.id ? " on" : ""}">
+  return { C, spare, top };
+}
+const tfRecHTML = (r, costTxt) => `<div class="tf-rec${tfTarget === r.a.id ? " on" : ""}">
       ${assetPhoto(r.a, "md")}<span class="tn"><b>${esc(r.a.name)}${injTag(r.a.pid)}</b><small>${esc([r.a.pos + (r.a.lgPosRank || ""), r.a.nfl, r.a.age ? "age " + ageText(r.a.age) : "", S.teams.get(r.a.owner)?.name].filter(Boolean).join(", "))}</small><span class="why">${esc(r.why)}</span>${costTxt ? `<span class="cost">${esc(costTxt)}</span>` : ""}</span>
       <span class="v">${fmt(r.a.value)}</span><button type="button" class="ghost go" data-target="${esc(r.a.id)}">Find a deal</button></div>`;
-  }).join("") + (top.length > tfRecsShown() ? `<button type="button" class="ghost tf-more" id="tfRecsMore">${tfRecsAll ? "Show fewer" : `Show ${top.length - tfRecsShown()} more`}</button>` : "")
-    : `<p class="empty">No affordable targets${want !== "fit" && want !== "PICK" ? " at that position" : ""}${partner !== "any" ? " on that team" : ""} right now. Your bench and picks may not stretch that far.</p>`;
-}
 
 // FAAB to even out a deal that's a little off: the side coming out ahead adds FAAB (as much as it has
 // left), valued the same way as in the calculator. Only offered when it actually makes the deal fair.
@@ -169,7 +183,7 @@ function tfFaab(me, rid, getV, sendV){
 const tfFaabHTML = f => f ? `<p class="tf-faab"><span class="tf-faab-ic">$</span>${esc(f.text)}</p>` : "";
 const tfFaabData = f => f ? ` data-faab-side="${f.side}" data-faab="${f.amt}"` : "";
 // Reverse search: what could you send to land one specific player?
-function targetPackages(me, target, C = finderContext(me)){
+function targetPackages(me, target, C = finderContext(me), maxK = 3){
   const T = target.value, rid = target.owner, th = C.prof.get(rid);
   const mine = teamAssets(me), myPlayers = mine.filter(a => a.kind === "player");
   const before = {}; C.POS.forEach(p => before[p] = C.starterSum(myPlayers, p));
@@ -182,7 +196,7 @@ function targetPackages(me, target, C = finderContext(me)){
     for (let i = start; i <= arr.length - (k - picked.length); i++){ picked.push(arr[i]); yield* combos(arr, k, i + 1, picked); picked.pop(); }
   }
   const results = [];
-  for (let k = 1; k <= 3; k++) for (const pack of combos(pool.slice(0, POOL[k]), k)){
+  for (let k = 1; k <= maxK; k++) for (const pack of combos(pool.slice(0, POOL[k]), k)){
     if (pack.reduce((t, a) => t + a.value, 0) < T * 0.9) continue;
     const pv = pack.map(a => a.value);
     const S2 = tradeValue(pv, [T]) * T / Math.max(1, tradeValue([T], pv));   // adjusted for depth and roster spots
@@ -221,15 +235,26 @@ function packageWhy(r, C, th){
 }
 const tfRowHTML = a => `<div class="tf-row">${assetPhoto(a, "md")}<span class="tn"><b>${esc(a.name)}${injTag(a.pid)}</b><small>${esc(a.kind === "player" ? [a.pos + (a.lgPosRank || ""), a.nfl, a.age ? "age " + ageText(a.age) : ""].filter(Boolean).join(", ") : a.nfl)}</small></span><span class="v">${fmt(a.value)}</span></div>`;
 function tfVerdict(T, S2){ const diff = T - S2; return tradeCall(diff, Math.max(T, S2)) === "fair" ? ["Fair", "#3B82F6"] : diff > 0 ? ["You win by " + fmt(diff), "#22A55A"] : ["You pay " + fmt(-diff) + " extra", "#E5484D"]; }
-function findForTarget(me, target){
-  const out = $("tfResults"), note = $("tfNote"), plan = $("tfPlan");
-  const { results, C, th, T, rid } = targetPackages(me, target);
+function findForTarget(me, target, box){
+  const plan = $("tfPlan"), maxK = box ? Math.min(3, Number($("tfMax").value) || 3) : 3;
+  const { results, C, th, T, rid } = targetPackages(me, target, undefined, maxK);
   plan.textContent = `Looking for ways to get ${target.name} from ${th.team.name}${C.dir === "win" ? " while keeping your starting lineup as strong as possible" : " without giving up your best young pieces"}.`;
-  $("tfHeading").textContent = `Ways to Get ${target.name}`;
-  $("tfQuick").hidden = true;
-  const top = results.slice(0, tfMaxIdeas(8));
-  note.textContent = top.length ? "Packages from your roster that match their value, easiest on your lineup first." : "";
-  if (!top.length){ out.innerHTML = `<p class="empty">No fair packages of up to 3 pieces found for ${esc(target.name)}. They may be worth more than your tradeable pieces.</p>`; return; }
+  const top = results.slice(0, tfMaxIdeas(box ? 6 : 8));
+  const noteTxt = top.length ? "Packages from your roster that match their value, easiest on your lineup first." : "";
+  const none = `<p class="empty">No fair packages of up to ${maxK} piece${maxK > 1 ? "s" : ""} found for ${esc(target.name)}. They may be worth more than your tradeable pieces.</p>`;
+  let out;
+  if (box){   // computers: a results area inside Find a Player, so Suggested Trades above stays as it is
+    box.hidden = false;
+    box.innerHTML = `<div class="tf-find-head"><h3>Ways to Get ${esc(target.name)}</h3><button type="button" class="ghost" id="tfClearTarget">Close</button></div>
+      <p class="note" style="margin:0 0 12px">${noteTxt}</p><div class="tf-results" id="tfFindResults"></div>`;
+    out = $("tfFindResults");
+  } else {
+    out = $("tfResults");
+    $("tfHeading").textContent = `Ways to Get ${target.name}`;
+    $("tfQuick").hidden = true;
+    $("tfNote").textContent = noteTxt;
+  }
+  if (!top.length){ out.innerHTML = none; return; }
   out.innerHTML = top.map((r, i) => {
     const verdict = tfVerdict(T, r.S2), why = packageWhy(r, C, th), fb = tfFaab(me, rid, T, r.S2);
     return `<article class="tf-card${i === 0 ? " best" : ""}">
@@ -256,7 +281,8 @@ function suggestDefault(me){
     const { results, th, T, rid } = targetPackages(me, rec.a, C);
     if (results.length) cards.push({ target: rec.a, r: results[0], th, T, rid });
   }
-  note.textContent = cards.length ? "The best deal for each of your top recommended players. Or pick players from your roster to see what they could bring back." : "";
+  note.textContent = !cards.length ? "" : tfSplit() ? "The best deal from your selected players to trade away."
+    : "The best deal for each of your top recommended players. Or pick players from your roster to see what they could bring back.";
   if (!cards.length){ out.innerHTML = `<p class="empty">Choose who you'd trade away and Front Office will find fair deals that fit your team.</p>`; return; }
   out.innerHTML = cards.map(({ target, r, th, T, rid }, i) => {
     const verdict = tfVerdict(T, r.S2), why = packageWhy(r, C, th), fb = tfFaab(me, rid, T, r.S2);
@@ -295,10 +321,9 @@ function findTrades(me, sending, V){
   const futureVal = a => a.kind === "pick" ? a.value * 1.2 : a.value * (!a.age ? 1 : a.age <= 23 ? 1.2 : a.age <= 25 ? 1.08 : a.age >= (CLIFF[a.pos] || 30) ? 0.7 : 0.95);
   const nowVal = a => a.kind === "pick" ? a.value * 0.35 : a.value * (a.age && a.age <= 22 ? 0.85 : 1);
   const sentFuture = sending.reduce((s, a) => s + futureVal(a), 0), sentNow = sending.reduce((s, a) => s + nowVal(a), 0);
-  const want = $("tfWant").value, partner = $("tfPartner").value;
+  const { want, partner, max: maxPieces } = tfTopOpts();
 
   const results = [];
-  const maxPieces = Number($("tfMax").value) || 4;
   // Biggest pieces first; bigger packages look at fewer candidates to stay fast
   const POOL = { 1: 30, 2: 26, 3: 16, 4: 12 };
   function* combos(arr, k, start = 0, picked = []){
@@ -401,13 +426,14 @@ $("tfRecs").addEventListener("click", e => {
   if (e.target.closest("#tfRecsMore")){ tfRecsAll = !tfRecsAll; renderRecs(Number($("tfTeam").value)); return; }
   const b = e.target.closest("[data-target]"); if (!b) return;
   tfTarget = tfTarget === b.dataset.target ? null : b.dataset.target;
-  if (tfTarget) tfSend.clear();
+  if (tfTarget && !tfSplit()) tfSend.clear();
   renderFinder();
-  $("tfHeading").scrollIntoView({ behavior: "smooth", block: "start" });
+  if (tfSplit()){ if (tfTarget) $("tfFindOut").scrollIntoView({ behavior: "smooth", block: "start" }); }
+  else $("tfHeading").scrollIntoView({ behavior: "smooth", block: "start" });
 });
 $("tfList").addEventListener("click", e => {
   const b = e.target.closest(".asset"); if (!b) return;
-  tfTarget = null;
+  if (!tfSplit()) tfTarget = null;
   tfSend.has(b.dataset.id) ? tfSend.delete(b.dataset.id) : tfSend.add(b.dataset.id); renderFinder();
 });
 $("tfSending").addEventListener("click", e => {
@@ -417,9 +443,11 @@ $("tfSending").addEventListener("click", e => {
 ["tfTeam","tfWant","tfPartner","tfMax"].forEach(id => $(id).addEventListener("change", renderFinder));
 $("tfSearch").addEventListener("input", renderFinder);
 // Reset: clear everything picked and put the filters back to their defaults
+// (computers: this Reset sits in Find a Player, so it only resets that section)
 $("tfReset").addEventListener("click", () => {
-  tfSend.clear(); tfTarget = null; tfQuickReset();
-  $("tfWant").value = "fit"; $("tfPartner").value = "any"; $("tfMax").value = "4"; $("tfSearch").value = "";
+  tfTarget = null;
+  if (!tfSplit()){ tfSend.clear(); tfQuickReset(); $("tfSearch").value = ""; }
+  $("tfWant").value = "fit"; $("tfPartner").value = "any"; $("tfMax").value = "4";
   renderFinder();
 });
 // quick filters on Trades That Make Sense
@@ -434,8 +462,15 @@ function tfQuickReset(){
   tfQuick = { pos: "ALL", deal: "any", team: "any" };
   for (const id of ["tfQuickPos", "tfQuickDeal"]) for (const x of $(id).children) x.setAttribute("aria-pressed", x === $(id).firstElementChild);
 }
+$("tfFindOut").addEventListener("click", e => {
+  if (e.target.closest("#tfClearTarget")){ tfTarget = null; renderFinder(); return; }
+  tfOpenInCalc(e);
+});
 $("tfResults").addEventListener("click", e => {
   if (e.target.closest("#tfQuickClear")){ tfQuickReset(); renderFinder(); return; }
+  tfOpenInCalc(e);
+});
+function tfOpenInCalc(e){
   const b = e.target.closest(".tf-open"); if (!b) return;
   $("teamA").value = $("tfTeam").value; $("teamB").value = b.dataset.rid;
   S.sendIds = new Set(b.dataset.send ? b.dataset.send.split(",") : tfSend); S.getIds = new Set(b.dataset.get.split(","));
@@ -444,5 +479,4 @@ $("tfResults").addEventListener("click", e => {
   renderCalc();
   $("tabs").querySelector('[data-tab="calc"]').click();
   window.scrollTo({ top: $("groups").offsetTop, behavior: "smooth" });
-});
-
+}

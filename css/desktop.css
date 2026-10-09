@@ -249,14 +249,14 @@ body:not(.has-league) .connect{border-bottom:0!important}
 .foot{background:var(--bc-night)!important;box-shadow:0 0 0 100vmax var(--bc-night)!important;clip-path:inset(-1px -100vmax -100vmax)!important;margin-bottom:0!important;padding-bottom:40px!important}
 
 /* ---------- page title block ---------- */
-.panel > h3.sec-h:first-of-type{font-size:28px;font-weight:800;line-height:1.05;letter-spacing:.01em;margin:6px 0 6px}
+.panel > h3.sec-h:first-of-type{font-size:28px;font-weight:800;line-height:1.05;letter-spacing:.01em;margin:0 0 6px!important}
 .panel > h3.sec-h:not(:first-of-type){font-size:28px;font-weight:800;margin-top:34px!important}
 .panel > p.sec-sub,.panel > .note.sec-sub{font-size:15px;color:var(--bc-muted);margin:0 0 20px;max-width:880px}
 
 /* ---------- cards ---------- */
 .panel:not(#panel-calc) .box,.panel:not(#panel-calc) .tablewrap,.hs,.mb,.tr-champ,.tf-card{box-shadow:var(--bc-lift)!important}
 .panel:not(#panel-calc) .box{padding:22px 24px!important}
-.panel:not(#panel-calc) .box > h3,.panel:not(#panel-calc) .box h3:not(.tf-h):not(.sc-h){font-size:23px!important;font-weight:800!important;line-height:1.1!important;margin:0 0 10px!important}
+.panel:not(#panel-calc) .box > h3,.panel:not(#panel-calc) .box h3:not(.sc-h){font-size:23px!important;font-weight:800!important;line-height:1.1!important;margin:0 0 10px!important}
 .hrec > h3{font-size:28px!important}
 .panel:not(#panel-calc) .box > .note:first-of-type{margin-top:0}
 .status-key{max-width:none!important}
@@ -325,9 +325,6 @@ body:not(.has-league) .connect{border-bottom:0!important}
 /* ---------- player card header: the broadcast navy, gold rule on top ---------- */
 .pc-head{background:linear-gradient(120deg,#121B24 0%,#18242F 55%,#1D5C40 100%)!important;border-top:4px solid var(--bc-gold)}
 #panel-sim.panel .sim-box.box .sim-top h3{font-size:28px!important;font-weight:800!important;line-height:1!important;margin:0!important}
-/* Trade History has no page title: "Trade Log" stays a normal section heading */
-#panel-history > h3.sec-h:first-of-type{font-size:28px;font-weight:800;margin-top:34px!important}
-#panel-history > h3.sec-h:first-of-type::before{display:none}
 /* Trade calculator: no red/green stripe across the top of the scoreboard */
 .board .bside,.board .bside.right,.board .vrow{border-top:0!important}
 /* Scores: two matchups side by side, yours included, in tighter cards */
@@ -360,3 +357,18 @@ body:not(.has-league) .connect{border-bottom:0!important}
 .stand-key li:nth-child(2){grid-column:2;grid-row:1 / span 2}
 .stand-key li:nth-child(3){grid-column:3;grid-row:1 / span 2}
 .stand-key li:nth-child(4){grid-column:1;grid-row:2}
+
+/* Trade Finder: both headings match; the roster list fills the column next to the suggestions */
+#panel-finder .tf-out .tf-h{font-family:var(--bc-num)!important}
+#panel-finder .tf-main{align-items:stretch}
+#panel-finder .tf-pick{display:flex;flex-direction:column;min-height:0}
+#panel-finder .tf-main .tf-list{flex:1 1 0;max-height:none!important;min-height:360px;overflow:auto}
+#panel-finder .tf-out .tf-sending:not(:empty){margin:0 0 14px}
+/* Find a Player: "Find a deal" results show here, below the recommendations */
+.tf-find-out{margin-top:18px;padding-top:16px;border-top:1px solid var(--bc-line)}
+.tf-find-out[hidden]{display:none}
+.tf-find-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 4px}
+.tf-find-head h3{margin:0!important}
+.tf-find-out .tf-results{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+/* Trade Finder (desktop): no team status under the team names on trade cards */
+#panel-finder .tf-card-head .nm small{display:none}

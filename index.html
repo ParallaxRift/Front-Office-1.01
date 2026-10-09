@@ -27,7 +27,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600&family=Big+Shoulders+Display:wght@700;800;900&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/styles.css?v=20261015q">
-<link rel="stylesheet" href="css/desktop.css?v=20261020d" media="(min-width: 601px)">
+<link rel="stylesheet" href="css/desktop.css?v=20261023d" media="(min-width: 601px)">
 </head>
 <body>
 <div id="pcard" class="pc-backdrop" hidden></div>
@@ -270,14 +270,15 @@
   <section class="panel" id="panel-finder">
     <div class="box tf-main">
       <div class="tf-pick">
-        <h3>Player to Trade Away</h3>
-        <div class="teamline"><select id="tfTeam" aria-label="Team you're trading for"></select><span class="badge" id="tfBadge"></span></div>
+        <h3>Players to Trade Away</h3>
+        <div class="teamline"><select id="tfTeam" aria-label="Team you're trading for"></select></div>
         <input type="search" id="tfSearch" placeholder="Search your players and picks" aria-label="Search your roster">
         <div class="list tf-list" id="tfList"></div>
       </div>
       <div class="tf-out">
         <h3 class="tf-h" id="tfHeading">Trades That Make Sense</h3>
         <p class="note" id="tfNote" style="margin:0 0 12px"></p>
+        <div id="tfSending" class="tf-sending"></div>
         <div class="tf-quick" id="tfQuick" hidden>
           <div class="tf-qg"><span class="tf-ql">You get</span><div class="seg" id="tfQuickPos" role="group" aria-label="Filter by what you get">
             <button type="button" data-v="ALL" aria-pressed="true">All</button><button type="button" data-v="QB" aria-pressed="false">QB</button><button type="button" data-v="RB" aria-pressed="false">RB</button><button type="button" data-v="WR" aria-pressed="false">WR</button><button type="button" data-v="TE" aria-pressed="false">TE</button><button type="button" data-v="PICK" aria-pressed="false">Picks</button></div></div>
@@ -292,7 +293,6 @@
       <div class="tf-head"><h3 id="tfOptsTitle">Find a Player</h3><button type="button" class="ghost tf-reset" id="tfReset">Reset</button></div>
       <div class="tf-find-grid">
         <div class="tf-find-main">
-          <div id="tfSending" class="tf-sending"></div>
           <div class="tf-filters">
           <div class="field"><label for="tfWant">Looking for</label>
             <select id="tfWant">
@@ -309,6 +309,7 @@
           <h3>Recommended Players to Trade For</h3>
           <p class="note" id="tfRecsNote" style="margin:0 0 8px"></p>
           <div class="tf-recs" id="tfRecs"></div>
+          <div class="tf-find-out" id="tfFindOut" hidden></div>
         </div>
       </div>
     </div>
@@ -624,7 +625,7 @@
 <script src="js/trophy.js?v=20261007a"></script>
 <script src="js/table-sort.js?v=20261009b"></script>
 <script src="js/popovers.js?v=20261012c"></script>
-<script src="js/trade-finder.js?v=20261010a"></script>
+<script src="js/trade-finder.js?v=20261012a"></script>
 <script src="js/pickers.js?v=20261010d"></script>
 <script src="js/nav.js?v=20261011h"></script>
 <script src="js/app-shell.js?v=20261010a"></script>
