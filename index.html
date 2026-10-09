@@ -26,8 +26,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600&family=Big+Shoulders+Display:wght@700;800;900&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=20261011q">
-<link rel="stylesheet" href="css/desktop.css?v=20261010d" media="(min-width: 601px)">
+<link rel="stylesheet" href="css/styles.css?v=20261012q">
+<link rel="stylesheet" href="css/desktop.css?v=20261012d" media="(min-width: 601px)">
 </head>
 <body>
 <div id="pcard" class="pc-backdrop" hidden></div>
@@ -183,7 +183,7 @@
   </section>
 
   <section class="panel" id="panel-trophy">
-    <h3 class="sec-h">🏆 League Champions</h3>
+    <h3 class="sec-h"><span class="mob-only">🏆 </span>League Champions</h3>
     <div id="champList" class="champ-list"><p class="empty">Open this tab to load your league's history.</p></div>
     <h3 class="sec-h" style="margin-top:28px">Weekly High Points</h3>
     <div class="trophy-bar"><div class="seg" id="hsSeasons"></div></div>
@@ -215,6 +215,8 @@
 
   </section>
   <section class="panel" id="panel-statuses">
+    <h3 class="sec-h dt-only">Team Statuses</h3>
+    <p class="note sec-sub dt-only">The Contender, Middle and Rebuilding tags you see across Front Office, and how each team earns one.</p>
     <div class="box status-key">
       <h3>What the Team Statuses Mean</h3>
       <p class="note sec-sub">Every team is ranked by roster strength using the same value score behind the Power Rankings, then the league is divided into three tiers: top, middle, and bottom third. During the season, each team's playoff odds from the Season Simulator count too, starting after Week 3 and growing to 60% of the score late in the season.</p>
@@ -228,6 +230,8 @@
   </section>
 
   <section class="panel" id="panel-history">
+    <h3 class="sec-h dt-only">Trade History</h3>
+    <p class="note sec-sub dt-only">Every trade in your league, graded with today's player values.</p>
     <div class="histstats" id="histStats"></div>
     <div class="box hrec">
       <h3>Team Trade Records</h3>
@@ -338,6 +342,8 @@
   </section>
 
   <section class="panel" id="panel-settings">
+    <h3 class="sec-h dt-only">League Settings</h3>
+    <p class="note sec-sub dt-only">How your league is set up, and how those settings shape every player's value.</p>
     <div class="grid2">
       <div class="box"><h3>Format</h3><dl class="kv" id="setFormat"></dl></div>
       <div class="box"><h3>Starting Lineup</h3><div class="slots" id="setSlots"></div><dl class="kv" id="setRoster" style="margin-top:14px"></dl></div>
@@ -407,6 +413,8 @@
   </section>
 
   <section class="panel" id="panel-strategy">
+    <h3 class="sec-h dt-only">Team Strategy</h3>
+    <p class="note sec-sub dt-only">Where your team stands, which direction fits it, and the moves that get you there.</p>
     <div class="stratHead">
       <div class="field" style="max-width:320px"><label for="stratTeam">Team</label><select id="stratTeam"></select></div>
     </div>
@@ -603,7 +611,7 @@
 <script src="js/render.js?v=20261009c"></script>
 <script src="js/player-cards.js?v=20261009b"></script>
 <script src="js/settings-tab.js?v=20261007a"></script>
-<script src="js/strategy.js?v=20261007g"></script>
+<script src="js/strategy.js?v=20261008g"></script>
 <script src="js/my-roster.js?v=20261009c"></script>
 <script src="js/lineup.js?v=20261009d"></script>
 <script src="js/scouting.js?v=20261009d"></script>

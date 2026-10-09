@@ -126,12 +126,12 @@ function renderStrategy(){
   if (young && !buying) moves.push("Your roster is one of the youngest. Be patient and let it mature.");
 
   $("strategy").innerHTML = `
-    <div class="stratTop">${teamPhoto(t.rid, "xl")}<div>
+    <div class="strat-hero"><div class="stratTop">${teamPhoto(t.rid, "xl")}<div>
     <span class="badge ${badgeClass[t.status]}">${statusText[t.status]}</span>
     <p class="plan">${esc(plan)}</p></div></div>
     <p class="facts">${esc(why)}</p>
     <div class="posgrid">${POS.map(cell).join("")}<div class="pg ${pickCls}"><b>Picks</b><span>${ordinal(me.pickRank)}</span><small>${fmt(me.picks)} value</small></div></div>
-    <p class="facts" style="margin-bottom:14px">Starter ranks out of ${N} teams. Roster age ranks ${ordinal(me.ageRank)} youngest (value-weighted average ${me.age ? me.age.toFixed(1) : "?"}).</p>
+    <p class="facts" style="margin-bottom:14px">Starter ranks out of ${N} teams. Roster age ranks ${ordinal(me.ageRank)} youngest (value-weighted average ${me.age ? me.age.toFixed(1) : "?"}).</p></div>
     <div class="grid2">
       <div class="box"><h3>Recommended Moves</h3><ul class="moves">${moves.concat(tips).map(m=>`<li>${esc(m)}</li>`).join("") || "<li>Your roster is balanced. Look for value trades rather than filling holes.</li>"}</ul></div>
       ${needs.map(p => { const list = targetsFor(p); return `<div class="box"><h3>${buying ? "Targets" : "Young Targets"} at ${p}</h3>${list.length ? `<p class="note" style="margin:0">${buying ? "Proven players on non-contending teams. Tap to open in the trade calculator." : "Young players with upside. Tap to open in the trade calculator."}</p><div class="targets">${list.map(tgtBtn).join("")}</div>` : `<p class="note">No clear targets in range.</p>`}</div>`; }).join("")}

@@ -232,3 +232,98 @@ body:not(.has-league) .connect{border-bottom:0!important}
 .lu-change,.lu-sit{font-size:12px;padding:3px 10px}
 .lu-ok{font-size:15px}
 #panel-lineup > .note,#panel-waivers > .note{font-size:15px}
+
+/* ============================================================
+   Desktop polish (10/9): one finished look for every page except the Trade Calculator.
+   - The footer runs to the bottom of the window (no light strip under it)
+   - Every page opens with the same title block: a short gold rule, a big title, one line of grey text
+   - Card titles share one size; cards get a soft shadow so they sit off the canvas
+   - Summary numbers everywhere use the scoreboard look from the calculator (dark tiles, stadium numerals)
+   - Field labels, dropdowns and bullet lists match from page to page
+   ============================================================ */
+:root{--bc-lift:0 1px 2px rgba(18,27,36,.05),0 8px 24px -12px rgba(18,27,36,.18)}
+@media (prefers-color-scheme:dark){:root{--bc-lift:0 1px 2px rgba(0,0,0,.4),0 8px 24px -12px rgba(0,0,0,.6)}}
+
+/* footer reaches the bottom of the window */
+.wrap{padding-bottom:0}
+.foot{background:var(--bc-night)!important;box-shadow:0 0 0 100vmax var(--bc-night)!important;clip-path:inset(-1px -100vmax -100vmax)!important;margin-bottom:0!important;padding-bottom:40px!important}
+
+/* ---------- page title block ---------- */
+.panel > h3.sec-h:first-of-type{font-size:40px;font-weight:900;line-height:1;letter-spacing:.005em;margin:10px 0 8px}
+.panel > h3.sec-h:first-of-type::before{content:"";display:block;width:40px;height:4px;border-radius:2px;background:var(--bc-gold);margin:0 0 14px}
+.panel > h3.sec-h:not(:first-of-type){font-size:28px;font-weight:800;margin-top:34px!important}
+.panel > p.sec-sub,.panel > .note.sec-sub{font-size:15px;color:var(--bc-muted);margin:0 0 20px;max-width:880px}
+#panel-sim .sim-top h3::before{content:"";display:block;width:40px;height:4px;border-radius:2px;background:var(--bc-gold);margin:0 0 14px}
+
+/* ---------- cards ---------- */
+.panel:not(#panel-calc) .box,.panel:not(#panel-calc) .tablewrap,.hs,.mb,.tr-champ,.tf-card{box-shadow:var(--bc-lift)!important}
+.panel:not(#panel-calc) .box{padding:22px 24px!important}
+.panel:not(#panel-calc) .box > h3,.panel:not(#panel-calc) .box h3:not(.tf-h):not(.sc-h){font-size:23px!important;font-weight:800!important;line-height:1.1!important;margin:0 0 10px!important}
+.hrec > h3{font-size:28px!important}
+.panel:not(#panel-calc) .box > .note:first-of-type{margin-top:0}
+.status-key{max-width:none!important}
+.grid2{gap:18px!important}
+
+/* ---------- scoreboard tiles: summary numbers on every page ---------- */
+.hs,#rosterSum .pj-tile,#luBody .pj-tile,#luWaivers .pj-tile,.recap .pj-tile{background:var(--bc-deck)!important;border:0!important;border-top:3px solid var(--bc-deck2)!important;border-radius:10px!important;color:#fff;padding:16px 18px!important}
+.hs:first-child,#rosterSum .pj-tile:first-child,#luBody .pj-tile:first-child,.recap .pj-tile:first-child{border-top-color:var(--bc-gold)!important}
+.hs small,#rosterSum .pj-tile small,#luBody .pj-tile small,#luWaivers .pj-tile small,.recap .pj-tile small{color:#9DB0BE!important;font:700 11.5px var(--bc-text)!important;letter-spacing:.07em;text-transform:uppercase}
+.hs small + b + small{text-transform:none;letter-spacing:0;font-weight:500!important;font-size:13px!important}
+.hs b,#rosterSum .pj-tile b,#luBody .pj-tile b,#luWaivers .pj-tile b,.recap .pj-tile b{color:#fff!important;font-family:var(--bc-num)!important;font-weight:900!important;font-size:38px!important;line-height:1.05!important;margin:4px 0 2px}
+.hs .teamcell{color:#E9EEF2!important}
+#rosterSum .pj-tile span,#luBody .pj-tile span,#luWaivers .pj-tile span,.recap .pj-tile span{color:#C9D4DC!important}
+.pj-tile b.up{color:#5FD39A!important}.pj-tile b.down{color:#FF8A78!important}
+.histstats{gap:14px!important;margin-bottom:18px!important}
+#rosterSum .pj-tiles,#luBody .pj-tiles,.recap .pj-tiles{gap:14px!important}
+
+/* ---------- Team Strategy: a scoreboard band at the top ---------- */
+.strat-hero{background:var(--bc-deck);color:#fff;border-radius:12px;border-top:4px solid var(--bc-gold);padding:24px 26px 20px;margin:0 0 22px;box-shadow:var(--bc-lift)}
+.strat-hero .stratTop{gap:20px}
+.strat-hero .plan{color:#fff;font-size:60px!important;font-weight:900;line-height:.95;margin:8px 0 2px}
+.strat-hero .facts{color:#AAB8C3!important;font-size:15px}
+.strat-hero .posgrid{gap:12px;margin:18px 0 12px}
+.strat-hero .pg{background:var(--bc-deck2)!important;border:0!important;border-top:3px solid #3A4A58!important;border-radius:10px;padding:14px 16px;color:#fff}
+.strat-hero .pg b{color:#9DB0BE;font:700 12px var(--bc-text)!important;letter-spacing:.07em;text-transform:uppercase}
+.strat-hero .pg span{color:#fff;font-size:40px;font-weight:900;line-height:1.05}
+.strat-hero .pg small{color:#AAB8C3!important;font-size:13px}
+.strat-hero .pg.good{border-top-color:var(--bc-get)!important}.strat-hero .pg.good span{color:#5FD39A}
+.strat-hero .pg.bad{border-top-color:var(--bc-send)!important}.strat-hero .pg.bad span{color:#FF8A78}
+.strat-hero .badge{box-shadow:none}
+
+/* ---------- fields: labels like the scoreboard's, dropdowns one height ---------- */
+.panel:not(#panel-calc) .field label{font:700 11.5px var(--bc-text)!important;letter-spacing:.07em;text-transform:uppercase;color:var(--bc-muted)!important;margin-bottom:6px}
+.panel:not(#panel-calc) select,.panel:not(#panel-calc) input[type=search]{min-height:42px;background-color:var(--bc-card)}
+.panel:not(#panel-calc) .ghost{min-height:38px}
+
+/* ---------- bullet lists: small gold markers ---------- */
+.panel:not(#panel-calc) ul.moves,.panel:not(#panel-calc) ul.tf-why,#scoutBody ul{list-style:none;padding-left:0!important}
+.panel:not(#panel-calc) ul.moves > li,.panel:not(#panel-calc) ul.tf-why > li,#scoutBody ul > li{position:relative;padding-left:20px;line-height:1.5}
+.panel:not(#panel-calc) ul.moves > li::before,.panel:not(#panel-calc) ul.tf-why > li::before,#scoutBody ul > li::before{content:"";position:absolute;left:3px;top:.62em;width:7px;height:7px;border-radius:2px;background:var(--bc-gold)}
+.lu-moves .moves > li::before{top:.68em}
+
+/* ---------- tables: a touch more air, numbers line up ---------- */
+.panel:not(#panel-calc) table.stand tbody td,#scoutTable tbody td,#histTable tbody td{padding-top:12px!important;padding-bottom:12px!important}
+.panel:not(#panel-calc) table tbody td{font-variant-numeric:tabular-nums}
+#scoutTable thead th,#hsTable thead th,#hsLeaders thead th{background:var(--bc-deck)!important;color:#C9D4DC!important}
+
+/* ---------- Trophy Room ---------- */
+.tr-champ{background:var(--bc-card);border:1px solid var(--bc-line)!important;border-top:4px solid var(--bc-gold)!important;border-radius:10px!important}
+.tr-champ .yr{font-family:var(--bc-num);font-weight:900}
+
+/* ---------- League Settings ---------- */
+.rules .mult{font-family:var(--bc-num)!important;font-weight:900!important;color:var(--bc-ink)}
+.kv{font-size:15px}
+.kv dd{font-family:var(--bc-num);font-weight:800;font-size:19px}
+
+/* ---------- Trade Finder cards ---------- */
+.tf-card{border-radius:12px!important;overflow:hidden}
+.tf-card .tf-card-head{background:var(--bc-deck)!important;color:#fff}
+.tf-card .tf-card-head .nm b{color:#fff}.tf-card .tf-card-head .nm small{color:#9DB0BE}
+.tf-card .tf-rank{background:var(--bc-deck2)!important;color:#E9EEF2!important}
+.tf-card.best{border-color:var(--bc-gold)!important}
+.tf-card.best .tf-card-head{border-top:4px solid var(--bc-gold)}
+.tf-card.best .tf-rank{background:var(--bc-gold)!important;color:#121B24!important}
+
+/* ---------- player card header: the broadcast navy, gold rule on top ---------- */
+.pc-head{background:linear-gradient(120deg,#121B24 0%,#18242F 55%,#1D5C40 100%)!important;border-top:4px solid var(--bc-gold)}
+#panel-sim.panel .sim-box.box .sim-top h3{font-size:40px!important;font-weight:900!important;line-height:1!important;margin:0!important}

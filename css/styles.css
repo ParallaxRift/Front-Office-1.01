@@ -1743,3 +1743,7 @@ body:has(#pcard:not([hidden])) #installTip{display:none!important}   /* the "Get
 .tf-quick select{padding:5px 10px;font-size:14px;border-radius:8px;max-width:220px}
 .linklike{background:none;border:0;padding:0;color:var(--field);font:inherit;font-weight:600;text-decoration:underline;cursor:pointer}
 @media (max-width:600px){.tf-quick{gap:8px;padding:8px}.tf-qg{width:100%}.tf-quick select{flex:1;max-width:none}}
+
+/* Desktop-only page titles (hidden on phones) and phone-only bits (hidden on desktop) */
+@media (max-width:600px){.dt-only{display:none!important}}
+@media (min-width:601px){.mob-only{display:none!important}}
