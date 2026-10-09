@@ -635,3 +635,14 @@ p.tuning-upd{margin:6px 0 0;margin-left:0}
 .board .bplayers .bitems:empty::after{content:"Nothing added yet";display:block;padding:10px 2px;color:#7D8C98;font-size:13px}
 .board{overflow:visible!important}
 .board::before{border-radius:14px 14px 0 0}
+/* Trade Calculator (desktop): the two player boxes are a solid dark (no stripes); the search box sits under the team
+   dropdown at the full width of the box and the height of a player row */
+.board .bplayers .bcol{background:#16212B!important;border:1px solid rgba(255,255,255,.10)!important;color:#fff}
+.board .kt-top{flex-direction:column;align-items:stretch;gap:10px;margin:0 0 4px}
+.board .kt-team{flex:none;width:100%}
+.board .kt-team select{background:#1E2A35!important;color:#fff!important;border:1px solid rgba(255,255,255,.16)!important;font-size:15px;padding:10px 12px}
+.board .kt-search{flex:none;width:100%}
+.board .kt-search input{height:64px;font-size:16px!important;padding-left:44px!important;background-color:#1E2A35!important;background-position:15px center!important;background-size:19px!important;
+  color:#fff!important;border:1.5px dashed rgba(242,179,61,.6)!important;border-radius:10px!important}
+.board .kt-search input::placeholder{color:#C9B27A}
+.board .kt-search input:focus{border-style:solid!important;border-color:#F2B33D!important}
