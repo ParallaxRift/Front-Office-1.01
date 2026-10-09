@@ -72,9 +72,14 @@ function renderStandings(){
         <td class="hide-sm">${luck}</td>
         <td><span class="badge ${badgeClass[t.status]}">${statusText[t.status]}</span></td></tr>`;
     }).join("")}</tbody>`;
-  const WORDS = ["zero","one","two","three","four","five","six","seven","eight","nine","ten","eleven","twelve","thirteen","fourteen","fifteen","sixteen"];
-  const oddsNote = S.titleOdds ? ` Title odds are as of ${S.titleOdds.at.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}, from ${S.titleOdds.runs.toLocaleString()} simulated seasons.` : S.nflState?.season_type === "regular" ? " Title odds appear once the season simulator finishes." : " Title odds are available during the regular season.";
-  $("standNote").textContent = `${playoff ? `The green line marks the playoff cutoff at the top ${WORDS[playoff] || playoff} teams, with ties broken by Points For. ` : "Ties are broken by Points For. "}Power is Front Office’s measure of pure roster strength based on player values — it does not factor in wins or record.${oddsNote} Click any column heading to sort by it; click again to flip the order.`;
+  const oddsWhen = S.titleOdds ? `from ${S.titleOdds.runs.toLocaleString()} simulated seasons, as of ${S.titleOdds.at.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}` : S.nflState?.season_type === "regular" ? "they appear once the season simulator finishes" : "available during the regular season";
+  const line = (k, v) => `<li><b>${k}</b> ${v}</li>`;
+  $("standNote").innerHTML = `<ul class="stand-key">
+    ${playoff ? line("Playoffs:", `the top ${playoff} teams make it; the line under #${playoff} marks the cutoff. Ties are broken by Points For.`) : line("Ties:", "broken by Points For.")}
+    ${line("Title odds:", `each team's chance to win the championship, ${oddsWhen}.`)}
+    ${line("Power:", "roster strength from player values only. It doesn't count wins or record.")}
+    ${line("Sort:", "click any column heading; click again to flip the order.")}
+  </ul>`;
 }
 
 // ============================================================

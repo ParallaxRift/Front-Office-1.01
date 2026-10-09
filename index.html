@@ -26,7 +26,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600&family=Big+Shoulders+Display:wght@700;800;900&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=20261009d">
+<link rel="stylesheet" href="css/styles.css?v=20261009k">
 <link rel="stylesheet" href="css/desktop.css?v=20261009a" media="(min-width: 601px)">
 </head>
 <body>
@@ -122,14 +122,15 @@
     <button class="tab" role="tab" aria-selected="false" data-tab="values" data-full="Rankings">Rankings</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="strategy" data-full="My Team Strategy">Team Strategy</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="roster" data-full="My Roster">My Roster</button>
-    <button class="tab" role="tab" aria-selected="false" data-tab="lineup" data-full="Lineup &amp; Waivers">Lineup &amp; Waivers</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="lineup" data-full="Lineup">Lineup</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="waivers" data-full="Waivers">Waivers</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="history" data-full="Trade History">Trade History</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="standings" data-full="Standings">Standings</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="power" data-full="Power Rankings">Power Rankings</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="scouting" data-full="Scouting Reports">Scouting Reports</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="sim" data-full="Season Simulator">Season Simulator</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="trophy" data-full="Trophy Room">Trophy Room</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="statuses" data-full="Team Statuses">Team Statuses</button>
-    <button class="tab" role="tab" aria-selected="false" data-tab="scouting" data-full="Scouting Reports">Scouting Reports</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="settings" data-full="League Settings">League Settings</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="scores" data-full="Live Scores">Live Scores</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="feedback" data-full="Feedback &amp; Build Notes">Feedback &amp; Build Notes</button>
@@ -196,7 +197,7 @@
   <section class="panel" id="panel-standings">
     <h3 class="sec-h">Standings</h3>
     <div class="tablewrap"><table id="standTable" class="stand"></table></div>
-    <p class="note sec-sub" id="standNote" style="margin:10px 0 0"></p>
+    <div class="note sec-sub" id="standNote" style="margin:10px 0 0"></div>
 
   </section>
   <section class="panel" id="panel-power">
@@ -290,10 +291,11 @@
 
   <section class="panel" id="panel-scores">
     <div class="scorebar">
-      <div class="field" style="flex:0 1 210px"><label for="weekSelect">Week</label><select id="weekSelect"></select></div>
+      <div class="field wk-field"><label for="weekSelect">Week</label><div class="wk-step"><button type="button" class="ghost wk-btn" id="weekPrev" aria-label="Previous week">‹</button><select id="weekSelect"></select><button type="button" class="ghost wk-btn" id="weekNext" aria-label="Next week">›</button></div></div>
       <button class="ghost" id="refreshScores">Refresh</button>
       <span class="updated" id="scoresUpdated" role="status" aria-live="polite"></span>
     </div>
+    <div class="recap" id="scoresRecap"></div>
     <div class="matchups" id="matchups"></div>
   </section>
 
@@ -403,15 +405,25 @@
 
   <section class="panel" id="panel-lineup">
     <div class="stratHead"><div class="field" style="max-width:240px"><label for="luWeek">Week</label><select id="luWeek"></select></div></div>
-    <h3 class="ros-h3" style="margin-top:6px">Start / Sit</h3>
     <div id="luBody"></div>
-    <h3 class="ros-h3">Waiver Help</h3>
-    <div id="luWaivers"></div>
     <p class="note">Weekly projections from Sleeper, scored with your league's settings. Start/sit weighs this week's projection (65%) with each player's overall and position value in your league (35%), so one soft projection doesn't bench a much better player. Questionable players count at 90% and doubtful at 35%; players ruled out, on bye or on IR count 0. Players already in your Sleeper lineup win close calls. Tap any player to open his card.</p>
   </section>
 
+  <section class="panel" id="panel-waivers">
+    <div class="stratHead"><div class="field" style="max-width:240px"><label for="luWeekW">Week</label><select id="luWeekW"></select></div></div>
+    <div id="luWaivers"></div>
+    <p class="note">Free agents are players no team in your league has rostered. "Would start" compares them with your current best lineup for the week, using the same start score as the Lineup tab. Tap any player to open his card.</p>
+  </section>
+
   <section class="panel" id="panel-scouting">
-    <p class="note" style="margin:0 0 12px">Every manager's trading habits, from your league's trade history and graded with today's values. Pick a manager to see the full report and how to pitch them.</p>
+    <p class="note sc-intro">How every manager in your league trades, graded with today's values. Click a manager to see their full report and how to pitch them a trade.</p>
+    <div class="controls sc-filters">
+      <div class="field"><label for="scTrait">Style</label><select id="scTrait"></select></div>
+      <div class="field"><label for="scActivity">Activity</label><select id="scActivity"><option value="all">All managers</option><option value="traded">Has made a trade</option><option value="active">Active (3+ trades this year)</option><option value="none">No trades yet</option></select></div>
+      <div class="field"><label for="scStatus">Team status</label><select id="scStatus"><option value="all">All teams</option><option value="contend">Contenders</option><option value="middle">Middle</option><option value="rebuild">Rebuilding</option></select></div>
+      <button type="button" class="ghost" id="scClear" hidden>Clear filters</button>
+      <span class="sc-count" id="scCount"></span>
+    </div>
     <div class="tablewrap"><table id="scoutTable" class="stand"></table></div>
     <div id="scoutBody" style="margin-top:16px"></div>
   </section>
@@ -604,7 +616,7 @@
   <path d="M44 25v14" stroke="#D99A1E" stroke-width="2.3" stroke-linecap="round"/>
   <path d="M40.8 28h6.4M40.8 32h6.4M40.8 36h6.4" stroke="#D99A1E" stroke-width="2" stroke-linecap="round"/>
 </svg><span>Front Office</span></a>
-  <nav><a href="#">Home</a><a href="#about">About</a><a href="#modes">The Basics vs. Freakshow</a><a href="#beta">Sleeper Leagues in Beta</a><a href="#terms">Terms</a><a href="#privacy">Privacy</a><a href="#" id="footFeedback" hidden>Feedback &amp; Build Notes</a></nav>
+  <nav><a href="#">Home</a><a href="#about">About</a><a href="#modes">The Basics vs. Freakshow</a><a href="#beta">Sleeper Leagues in Beta</a><a href="#terms">Terms</a><a href="#privacy">Privacy</a><a href="#" id="footStatuses" hidden>Team Statuses</a><a href="#" id="footFeedback" hidden>Feedback &amp; Build Notes</a></nav>
   <span class="ver" id="footVersion"></span><span class="ver" id="footUpdated"></span>
   <p>© 2026 Front Office. All rights reserved. League data from Sleeper. <a href="#about">Credits</a></p>
 </footer>
@@ -615,26 +627,26 @@
 <script src="js/draft-classes.js?v=20261007t"></script>
 <script src="js/values-engine.js?v=20261008r"></script>
 <script src="js/render.js?v=20261009c"></script>
-<script src="js/player-cards.js?v=20261008k"></script>
+<script src="js/player-cards.js?v=20261009b"></script>
 <script src="js/settings-tab.js?v=20261007a"></script>
 <script src="js/strategy.js?v=20261007g"></script>
 <script src="js/my-roster.js?v=20261009c"></script>
-<script src="js/lineup.js?v=20261009c"></script>
-<script src="js/scouting.js?v=20261009c"></script>
-<script src="js/live-scores.js?v=20261007n"></script>
+<script src="js/lineup.js?v=20261009d"></script>
+<script src="js/scouting.js?v=20261009d"></script>
+<script src="js/live-scores.js?v=20261009a"></script>
 <script src="js/trade-history.js?v=20261009c"></script>
-<script src="js/modes.js?v=20261009c"></script>
+<script src="js/modes.js?v=20261009d"></script>
 <script src="js/build-notes.js?v=20261007a"></script>
 <script src="js/feedback.js?v=20261007f"></script>
-<script src="js/standings-sim.js?v=20261008u"></script>
+<script src="js/standings-sim.js?v=20261009a"></script>
 <script src="js/calc-browse.js?v=20261007a"></script>
 <script src="js/calc-minibar.js?v=20261007a"></script>
 <script src="js/trophy.js?v=20261007a"></script>
-<script src="js/popovers.js?v=20261008w"></script>
+<script src="js/popovers.js?v=20261009a"></script>
 <script src="js/trade-finder.js?v=20261007m"></script>
-<script src="js/pickers.js?v=20261009c"></script>
-<script src="js/nav.js?v=20261009d"></script>
-<script src="js/app-shell.js?v=20261008w"></script>
+<script src="js/pickers.js?v=20261009d"></script>
+<script src="js/nav.js?v=20261009g"></script>
+<script src="js/app-shell.js?v=20261009a"></script>
 <script src="js/calc-phone.js?v=20261007m"></script>
 <script src="js/about.js?v=20261008c"></script>
 <script src="js/share.js?v=20261008a"></script>

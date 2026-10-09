@@ -279,7 +279,7 @@ function valueHistoryBlock(a, vh){
     <p class="pc-note">His value in your league each time the Front Office Rankings changed, using your league's settings as they are today. ${matchMedia("(hover:none)").matches ? "Tap" : "Hover over"} a dot for the date and value.</p>`;
 }
 // ---------- Game log and usage history (week by week, from Sleeper) ----------
-const PC_TABS = [["status", "Current Status", "Status"], ["proj", "Projections", "Proj"], ["log", "Game Log", "Games"], ["career", "Career Stats", "Career"], ["usage", "Usage", "Usage"], ["value", "Value History", "Value"], ["trades", "Trade History", "Trades"]];   // [key, label, short label for phones]
+const PC_TABS = [["log", "Game Log", "Games"], ["status", "Current Status", "Status"], ["proj", "Projections", "Proj"], ["career", "Career Stats", "Career"], ["usage", "Usage", "Usage"], ["value", "Value History", "Value"], ["trades", "Trade History", "Trades"]];   // [key, label, short label for phones]
 const PC = { pid: null, pos: "", tab: "status", season: null, seasons: null };
 const weekCache = new Map();
 async function sleeperWeeks(pid, season){
@@ -507,9 +507,11 @@ async function openPlayerCard(pid){
   const lab = INJ_LABEL[sp.injury_status];
   const owner = a?.owner != null ? S.teams.get(a.owner)?.name : "Free agent";
   const facts = [
-    ["Age", (() => { const ag = a?.age || Number(sp.age) || 0, c = CLIFF[pos]; return ag ? `${ageText(ag)}${c && ag >= c ? ` · past the usual ${pos} age cliff (${c})` : c && ag >= c - 1 ? ` · nearing the ${pos} age cliff (${c})` : ""}` : ""; })()], ["Height", heightText(sp.height)], ["Weight", sp.weight ? sp.weight + " lb" : ""],
+    ["Age", (() => { const ag = a?.age || Number(sp.age) || 0; return ag ? ageText(ag) : ""; })()], ["Height", heightText(sp.height)], ["Weight", sp.weight ? sp.weight + " lb" : ""],
     ["College", sp.college], ["Experience", expText(sp.years_exp)], ["Depth chart", [depthChartText(pid), depthMoveText(pid), a?.starterLift > 0 ? `value lifted +${fmt(Math.round(a.starterLift))} while he starts` : ""].filter(Boolean).join(" · ")], ["Fantasy team", owner]
   ].filter(f => f[1] !== undefined && f[1] !== null && f[1] !== "");
+  // Current Status only shows for a player with an injury or other designation (healthy players skip it)
+  const hurt = !!sp.injury_status;
   $("pcard").innerHTML = `<div class="pc" role="dialog" aria-modal="true" aria-labelledby="pcName">
     <button type="button" class="pc-close" aria-label="Close player card">×</button>
     <header class="pc-head">
@@ -522,10 +524,10 @@ async function openPlayerCard(pid){
     </header>
     <div class="pc-body">
       <dl class="pc-facts">${facts.map(([k, v]) => `<div${k === "Fantasy team" || k === "College" ? ' class="wide"' : ""}><dt>${esc(k)}</dt><dd>${k === "Fantasy team" && a?.owner != null ? `<span class="pc-ft">${teamPhoto(a.owner, "sm")}${esc(v)}</span>` : esc(v)}</dd></div>`).join("")}</dl>
-      <div class="pc-tabs" role="tablist" aria-label="Player details">${PC_TABS.filter(([k]) => k !== "value" || a).map(([k, l, sh], i) => `<button type="button" role="tab" data-pctab="${k}" aria-selected="${i === 0}" aria-label="${l}"><span class="t-full">${l}</span><span class="t-short">${sh}</span></button>`).join("")}</div>
-      <section class="pc-pane" data-pane="status"><div id="pcNow">${currentStatus(sp)}</div><p class="pc-note">Current status from Sleeper.</p></section>
+      <div class="pc-tabs" role="tablist" aria-label="Player details">${PC_TABS.filter(([k]) => (k !== "value" || a) && (k !== "status" || hurt)).map(([k, l, sh], i) => `<button type="button" role="tab" data-pctab="${k}" aria-selected="${i === 0}" aria-label="${l}"><span class="t-full">${l}</span><span class="t-short">${sh}</span></button>`).join("")}</div>
+      <section class="pc-pane" data-pane="status" hidden><div id="pcNow">${currentStatus(sp)}</div><p class="pc-note">Current status from Sleeper.</p></section>
       <section class="pc-pane" data-pane="proj" hidden><div id="pcProj"><p class="pc-loading">Loading projections…</p></div></section>
-      <section class="pc-pane" data-pane="log" hidden><div id="pcLog"><p class="pc-loading">Loading game log…</p></div></section>
+      <section class="pc-pane" data-pane="log"><div id="pcLog"><p class="pc-loading">Loading game log…</p></div></section>
       <section class="pc-pane" data-pane="career" hidden><div id="pcStats"><p class="pc-loading">Loading stats…</p></div><p class="pc-note">Career stats from Sleeper. Regular season only. Fantasy points here use standard full-PPR scoring; the Game Log uses your league's scoring.</p></section>
       <section class="pc-pane" data-pane="usage" hidden><div id="pcUse"><p class="pc-loading">Loading usage…</p></div><div id="pcUseHist"></div></section>
       <section class="pc-pane" data-pane="trades" hidden><div id="pcTrades"></div></section>
@@ -536,7 +538,7 @@ async function openPlayerCard(pid){
     const dt = [...$("pcard").querySelectorAll(".pc-facts dt")].find(x => x.textContent === "College");
     if (dt && !dt.nextElementSibling.querySelector("img")) dt.nextElementSibling.insertAdjacentHTML("afterbegin", `<img class="pc-school" src="${esc(src)}" alt="" onerror="this.remove()">`);
   });
-  PC.pid = pid; PC.pos = pos; PC.tab = "status"; PC.season = null; PC.seasons = null;
+  PC.pid = pid; PC.pos = pos; PC.tab = "log"; PC.season = null; PC.seasons = null;
   $("pcard").hidden = false; document.body.style.overflow = "hidden";
   $("pcard").querySelector(".pc-close").focus();
   if (a) loadValueHistory().then(vh => { const box = $("pcHist"); if (box && !$("pcard").hidden){ box.innerHTML = valueHistoryBlock(a, vh); box.dataset.pid = pid; } });

@@ -83,7 +83,7 @@ $("tabs").addEventListener("click", e => {
   if (b.dataset.tab === "trophy") loadTrophyRoom();
   if (b.dataset.tab === "roster") renderRoster();
   if (b.dataset.tab === "scouting") renderScouting();
-  if (b.dataset.tab === "lineup") renderLineup();
+  if (b.dataset.tab === "lineup" || b.dataset.tab === "waivers") renderLineup();
   store.set("tr_tab", b.dataset.tab);
   $("settingsBtn").setAttribute("aria-pressed", String(b.dataset.tab === "settings"));
 });

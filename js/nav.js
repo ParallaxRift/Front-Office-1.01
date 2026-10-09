@@ -12,10 +12,11 @@
 const NAV_GROUPS = [
   { id: "trade",  label: "Trade Tools",   tabs: ["calc", "finder", "history"], always: "calc" },
   { id: "values", label: "Rankings", tabs: ["values"] },
-  { id: "team",   label: "My Team",       tabs: ["strategy", "roster", "lineup"] },
-  { id: "league", label: "League Locker", tabs: ["standings", "power", "sim", "trophy", "statuses", "scouting", "settings"] },
+  { id: "team",   label: "My Team",       tabs: ["strategy", "roster", "lineup", "waivers"] },
+  { id: "league", label: "League Locker", tabs: ["standings", "power", "scouting", "sim", "trophy", "settings"] },
   { id: "scores", label: "Live Scores",   tabs: ["scores"] },
-  { id: "more",   label: "Feedback & Build Notes", tabs: ["feedback"] }
+  { id: "statusGrp", label: "Team Statuses", tabs: ["statuses"], footer: true },   // opened from the footer link (and the phone More menu)
+  { id: "more",   label: "Feedback & Build Notes", tabs: ["feedback"], footer: true }   // opened from the footer link (and the phone More menu), not the section bar
 ];
 const navGroupOf = tab => NAV_GROUPS.find(g => g.tabs.includes(tab));
 const navTab = tab => $("tabs").querySelector(`[data-tab="${tab}"]`);
@@ -37,8 +38,9 @@ function syncNav(){
   }
   for (const t of $("tabs").children) t.classList.toggle("off-group", !active || t.dataset.group !== active.id);
   $("tabs").classList.toggle("single", !active || visibleIn(active).length < 2);
-  const fb = navTab("feedback");
+  const fb = navTab("feedback"), ts = navTab("statuses");
   $("footFeedback").hidden = !S.league || !fb || fb.hidden;
+  $("footStatuses").hidden = !S.league || !ts || ts.hidden;
   const fbBtn = $("groups").querySelector('[data-group="more"]'); if (fbBtn) fbBtn.classList.add("group-notes");
 }
 $("groups").addEventListener("click", e => {
@@ -46,6 +48,11 @@ $("groups").addEventListener("click", e => {
   const g = NAV_GROUPS.find(x => x.id === b.dataset.group);
   const pick = [g.always || navLast[g.id], ...g.tabs].map(x => x && navTab(x)).find(t => t && !t.hidden);
   if (pick) pick.click(); else syncNav();
+});
+$("footStatuses").addEventListener("click", e => {
+  e.preventDefault();
+  navTab("statuses")?.click();
+  window.scrollTo({ top: $("groups").offsetTop - 10, behavior: "smooth" });
 });
 $("footFeedback").addEventListener("click", e => {
   e.preventDefault();

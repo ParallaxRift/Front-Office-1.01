@@ -76,24 +76,41 @@ function scoutPitch(d){
   if (me && d.t.rid === me.rid) return ["This is you. This is how the rest of the league sees your trading."].concat(scoutTraits(d).map(x => x + "."));
   return p;
 }
-let scoutSel = null;
+let scoutSel = null, scoutSort = { key: "trades", dir: -1 };
 function renderScouting(){
   const box = $("scoutBody"); if (!box) return;
   if (!S.history){ box.innerHTML = `<p class="pc-loading">${S.historyError ? "Your league's trades couldn't be loaded. Reopen the league to try again." : "Loading your league's trades…"}</p>`; $("scoutTable").innerHTML = ""; return; }
   const D = scoutData(); if (!D) return;
-  const rows = [...D.values()].sort((a, b) => b.n - a.n || b.net - a.net);
-  if (scoutSel == null || !D.has(scoutSel)) scoutSel = (rows.find(r => r.t.rid !== S.myRid && r.n) || rows[0])?.t.rid;
-  $("scoutTable").innerHTML = `<thead><tr><th>Manager</th><th class="n">Trades</th><th class="n hide-sm">Won–Lost</th><th class="n hide-sm">Net value</th><th>Style</th></tr></thead>
+  const all = [...D.values()];
+  // ---- filters ----
+  const traitSel = $("scTrait"), keepTrait = traitSel.value;
+  const traits = [...new Set(all.flatMap(scoutTraits))].filter(x => x !== "No trades yet").sort();
+  traitSel.innerHTML = `<option value="">All styles</option>` + traits.map(x => `<option${x === keepTrait ? " selected" : ""}>${esc(x)}</option>`).join("");
+  const act = $("scActivity").value, stat = $("scStatus").value, trait = traitSel.value;
+  const rows = all.filter(r => (!trait || scoutTraits(r).includes(trait))
+      && (act === "all" || (act === "traded" ? r.n > 0 : act === "active" ? r.h?.active : r.n === 0))
+      && (stat === "all" || r.t.status === stat));
+  const key = { name: r => r.t.name.toLowerCase(), trades: r => r.n, wl: r => r.n ? r.won / r.n : -1, net: r => r.n ? r.net : -1e12 }[scoutSort.key];
+  rows.sort((x, y) => { const u = key(x), v = key(y); return (typeof u === "string" ? u.localeCompare(v) : u - v) * scoutSort.dir || y.n - x.n || y.net - x.net; });
+  $("scClear").hidden = !trait && act === "all" && stat === "all";
+  $("scCount").textContent = `${rows.length} of ${all.length} managers`;
+  if (scoutSel == null || !D.has(scoutSel)) scoutSel = ([...all].sort((x, y) => y.n - x.n).find(r => r.t.rid !== S.myRid && r.n) || all[0])?.t.rid;
+  const th = (k, label, cls = "", extra = "") => `<th class="sortable ${cls}" data-sort="${k}" aria-sort="${scoutSort.key === k ? (scoutSort.dir > 0 ? "ascending" : "descending") : "none"}">${label}${extra}</th>`;
+  const tagCls = x => /^(Sharp|Gets bargains)/.test(x) ? "good" : /^(Overpays|Often loses)/.test(x) ? "warn" : /^(Rarely trades|No trades)/.test(x) ? "quiet" : "";
+  $("scoutTable").innerHTML = `<colgroup><col class="sc-c-name"><col class="sc-c-num"><col class="sc-c-num hide-sm"><col class="sc-c-net hide-sm"><col></colgroup>
+    <thead><tr>${th("name", "Manager")}${th("trades", "Trades", "c")}${th("wl", "Won–Lost", "c hide-sm")}${th("net", "Net Value from Trades", "c hide-sm", ` <button type="button" class="info-btn" data-info="col-netv" aria-label="What does Net Value from Trades mean?">?</button>`)}<th>Style</th></tr></thead>
     <tbody>${rows.map(r => `<tr data-rid="${r.t.rid}" tabindex="0" class="${r.t.rid === scoutSel ? "sel" : ""}${r.t.rid === S.myRid ? " me" : ""}">
-      <td><span class="teamcell">${teamPhoto(r.t.rid, true)}${esc(r.t.name)}</span></td><td class="n">${r.n}</td>
-      <td class="n hide-sm">${r.n ? `${r.won}–${r.lost}` : "–"}</td><td class="n hide-sm ${r.net > 0 ? "up" : r.net < 0 ? "down" : ""}">${r.n ? (r.net > 0 ? "+" : "") + fmt(r.net) : "–"}</td>
-      <td class="sc-traits">${scoutTraits(r).slice(0, 3).map(x => `<span class="sc-tag">${esc(x)}</span>`).join("")}</td></tr>`).join("")}</tbody>`;
+      <td><span class="teamcell">${teamPhoto(r.t.rid, true)}<span><b>${esc(r.t.name)}</b>${r.t.rid === S.myRid ? ` <small class="sc-you">You</small>` : ""}</span></span></td>
+      <td class="c">${r.n}</td>
+      <td class="c hide-sm">${r.n ? `${r.won}–${r.lost}<small class="sc-pct">${Math.round(r.won / r.n * 100)}%</small>` : "–"}</td>
+      <td class="c hide-sm ${r.net > 0 ? "up" : r.net < 0 ? "down" : ""}">${r.n ? (r.net > 0 ? "+" : "") + fmt(r.net) : "–"}</td>
+      <td class="sc-traits">${scoutTraits(r).slice(0, 3).map(x => `<span class="sc-tag ${tagCls(x)}">${esc(x)}</span>`).join("")}</td></tr>`).join("") || `<tr><td colspan="5" class="empty">No managers match these filters.</td></tr>`}</tbody>`;
   const d = D.get(scoutSel); if (!d){ box.innerHTML = ""; return; }
   const ago = d.last ? Math.round((Date.now() - d.last) / 864e5) : null;
   const fact = (k, v) => v === "" || v == null ? "" : `<div><dt>${k}</dt><dd>${v}</dd></div>`;
   box.innerHTML = `<div class="box sc-report">
     <div class="ros-head">${teamPhoto(d.t.rid, "xl")}<div><b>${esc(d.t.name)}</b>${d.t.manager && d.t.manager !== d.t.name ? `<small style="color:var(--muted);display:block">${esc(d.t.manager)}</small>` : ""}<span class="badge ${badgeClass[d.t.status]}">${statusText[d.t.status]}</span></div></div>
-    <div class="sc-tags">${scoutTraits(d).map(x => `<span class="sc-tag">${esc(x)}</span>`).join("")}</div>
+    <div class="sc-tags">${scoutTraits(d).map(x => `<span class="sc-tag ${/^(Sharp|Gets bargains)/.test(x) ? "good" : /^(Overpays|Often loses)/.test(x) ? "warn" : /^(Rarely trades|No trades)/.test(x) ? "quiet" : ""}">${esc(x)}</span>`).join("")}</div>
     <dl class="pc-facts sc-facts">
       ${fact("Trades", d.n ? `${d.n}${d.h?.recent && d.h.recent !== d.n ? ` (${d.h.recent} in the last year)` : ""}` : "None")}
       ${fact("Record (today's values)", d.n ? `${d.won} won, ${d.lost} lost, ${d.n - d.won - d.lost} even` : "")}
@@ -108,10 +125,17 @@ function renderScouting(){
     ${d.t.rid !== S.myRid ? `<button type="button" class="ghost" data-scout-grade="${d.t.rid}">Build a trade with ${esc(d.t.name)}</button>` : ""}
   </div>`;
 }
-$("scoutTable").addEventListener("click", e => { const tr = e.target.closest("tr[data-rid]"); if (!tr) return; scoutSel = Number(tr.dataset.rid); renderScouting(); $("scoutBody").scrollIntoView({ behavior: "smooth", block: "start" }); });
+$("scoutTable").addEventListener("click", e => {
+  if (e.target.closest(".info-btn")) return;
+  const h = e.target.closest("th[data-sort]");
+  if (h){ const k = h.dataset.sort; scoutSort = scoutSort.key === k ? { key: k, dir: -scoutSort.dir } : { key: k, dir: k === "name" ? 1 : -1 }; return renderScouting(); }
+  const tr = e.target.closest("tr[data-rid]"); if (!tr) return; scoutSel = Number(tr.dataset.rid); renderScouting(); $("scoutBody").scrollIntoView({ behavior: "smooth", block: "start" }); });
 $("scoutTable").addEventListener("keydown", e => { if (e.key !== "Enter") return; const tr = e.target.closest("tr[data-rid]"); if (tr){ scoutSel = Number(tr.dataset.rid); renderScouting(); } });
 $("scoutBody").addEventListener("click", e => {
   const b = e.target.closest("[data-scout-grade]"); if (!b) return;
   $("teamA").value = S.myRid; $("teamB").value = b.dataset.scoutGrade; S.sendIds.clear(); S.getIds.clear();
   renderCalc(); navTab("calc").click(); window.scrollTo({ top: $("groups").offsetTop, behavior: "smooth" });
 });
+
+for (const id of ["scTrait", "scActivity", "scStatus"]) $(id).addEventListener("change", renderScouting);
+$("scClear").addEventListener("click", () => { $("scTrait").value = ""; $("scActivity").value = "all"; $("scStatus").value = "all"; renderScouting(); });

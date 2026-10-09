@@ -88,12 +88,13 @@ async function renderLineup(){
   const inSeason = S.nflState?.season_type === "regular", season = liveSeasonYear();
   const cur = inSeason ? currentWeek() : 1, lastFantasy = lastFantasyWeek();
   if (LU.week == null || LU.week < cur) LU.week = cur;
-  $("luWeek").innerHTML = Array.from({ length: Math.max(1, Math.min(18, lastFantasy) - cur + 1) }, (_, i) => cur + i).map(w => `<option value="${w}"${w === LU.week ? " selected" : ""}>Week ${w}${w === cur ? " (this week)" : ""}</option>`).join("");
-  if (!inSeason){ $("luBody").innerHTML = `<p class="empty">Start/sit and waiver help run during the NFL regular season.</p>`; $("luWaivers").innerHTML = ""; return; }
-  $("luBody").innerHTML = `<p class="pc-loading">Loading Week ${LU.week} projections…</p>`;
+  const weekOpts = Array.from({ length: Math.max(1, Math.min(18, lastFantasy) - cur + 1) }, (_, i) => cur + i).map(w => `<option value="${w}"${w === LU.week ? " selected" : ""}>Week ${w}${w === cur ? " (this week)" : ""}</option>`).join("");
+  $("luWeek").innerHTML = $("luWeekW").innerHTML = weekOpts;
+  if (!inSeason){ $("luBody").innerHTML = `<p class="empty">Start/sit runs during the NFL regular season.</p>`; $("luWaivers").innerHTML = `<p class="empty">Waiver help runs during the NFL regular season.</p>`; return; }
+  $("luBody").innerHTML = $("luWaivers").innerHTML = `<p class="pc-loading">Loading Week ${LU.week} projections…</p>`;
   const week = LU.week, proj = await weekProjections(season, week);
   if (LU.week !== week) return;
-  if (!proj){ $("luBody").innerHTML = `<p class="empty">Sleeper's projections aren't available right now. Try again in a minute.</p>`; $("luWaivers").innerHTML = ""; return; }
+  if (!proj){ $("luBody").innerHTML = $("luWaivers").innerHTML = `<p class="empty">Sleeper's projections aren't available right now. Try again in a minute.</p>`; return; }
   const r = S.rosters.find(x => x.roster_id === S.myRid), slots = (S.cfg.rp || []).filter(x => !["BN", "IR", "TAXI"].includes(x));
   const reserve = new Set([...(r?.reserve || []), ...(r?.taxi || [])].map(String));
   // the lineup set in Sleeper right now (same order as the league's starting slots)
@@ -142,5 +143,5 @@ async function renderLineup(){
     <div class="box gr-box"><h3>Drop Candidates</h3><p class="note" style="margin:0 0 8px">Your lowest-value bench players, if you need a roster spot.${budget ? ` You have $${faabLeft(S.myRid)} of $${budget} FAAB left.` : ""}</p>
       ${drops.length ? `<ul class="moves">${drops.map(p => `<li><b>${esc(p.a.name)}</b> (${esc(p.a.pos)}, value ${fmt(p.a.value)}${p.avail && p.pts ? `, ${p.pts.toFixed(1)} projected` : ""})</li>`).join("")}</ul>` : `<p class="empty">No bench players.</p>`}</div>`;
 }
-$("luWeek").addEventListener("change", () => { LU.week = Number($("luWeek").value); renderLineup(); });
+for (const id of ["luWeek", "luWeekW"]) $(id).addEventListener("change", () => { LU.week = Number($(id).value); renderLineup(); });
 for (const id of ["luBody", "luWaivers"]) $(id).addEventListener("click", e => { const tr = e.target.closest("tr[data-id^='p:']"); if (tr) openPlayerCard(tr.dataset.id.slice(2)); });

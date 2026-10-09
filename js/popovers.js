@@ -53,6 +53,7 @@ window.addEventListener("scroll", () => { if (popEl && Math.abs(window.scrollY -
 const COLUMN_INFO = {
   "col-league": ["This League", "The player's value in your league after all of Front Office's adjustments. This is the number the calculator uses."],
   "col-market": ["Market", "The same player's value from Front Office Rankings, before any league adjustments. It shows what he'd be worth in a generic league as a single value."],
+  "col-netv": ["Net Value from Trades", "Everything this manager has received in trades minus everything they've given up, using today's player values (picks already used count as the player they became). A positive number means their trades have aged well; negative means they've given up more than they got. Each trade is graded with the same value adjustment as the Trade Calculator, so a pile of depth doesn't beat a star."],
   "col-change": ["Change", "The % difference between your league's values after all logic is applied and the singular generic market value. It stays blank when the difference is under 1%."]
 };
 const ADJUST_INFO_HTML = `<h4>What Is the Value Adjustment?</h4>

@@ -52,8 +52,9 @@ async function openLeague(browser, viewport, opts){
             if (vp.width < 500){ // phones navigate with the bottom tab bar; Live Scores and Feedback live in the More sheet
               const bar = { trade: 'trade', values: 'values', team: 'team', league: 'league', scores: 'scores' }[group];
               if (bar) await page.tap(`#tabbar [data-go="${bar}"]`).catch(() => bad.push(`${t} tab bar button missing`));
-              else { await page.tap('#tabbar [data-go="more"]'); await page.waitForTimeout(250); await page.tap(`#moreSheet [data-more="feedback"]`).catch(() => bad.push(`${t} More item missing`)); await page.waitForTimeout(250); }
-            } else await page.click(`#groups [data-group="${group}"]`).catch(() => bad.push(`${t} section button missing`));
+              else { await page.tap('#tabbar [data-go="more"]'); await page.waitForTimeout(250); await page.tap(`#moreSheet [data-more="${t}"]`).catch(() => bad.push(`${t} More item missing`)); await page.waitForTimeout(250); }
+            } else if (group === "more" || group === "statusGrp") await page.click(group === "more" ? '#footFeedback' : '#footStatuses').catch(() => bad.push(`${t} footer link missing`));   // these open from the footer
+            else await page.click(`#groups [data-group="${group}"]`).catch(() => bad.push(`${t} section button missing`));
             if (await page.$eval(`[data-tab="${t}"]`, e => e.offsetParent !== null)) await page.click(`[data-tab="${t}"]`);
           }
           await page.waitForTimeout(250);

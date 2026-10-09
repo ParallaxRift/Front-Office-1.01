@@ -112,7 +112,7 @@ function rerenderKeepingPlace(){
   if (has(keep.ro)) $("rosterTeam").value = keep.ro;
   if ($("panel-roster").classList.contains("on")) renderRoster();
   if ($("panel-scouting").classList.contains("on")) renderScouting();
-  if ($("panel-lineup").classList.contains("on")) renderLineup();
+  if ($("panel-lineup").classList.contains("on") || $("panel-waivers").classList.contains("on")) renderLineup();
   if (keep.wk && [...$("weekSelect").options].some(o => o.value === keep.wk)) $("weekSelect").value = keep.wk;
   renderCalc(); renderStrategy();
   if ($("panel-finder").classList.contains("on")) renderFinder();
