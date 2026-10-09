@@ -25,6 +25,8 @@ function rosterTrend(a, vh){
   const pts = valueHistoryPoints(a, vh);
   return pts.length >= 2 && pts[0].v ? (pts[pts.length - 1].v / pts[0].v - 1) * 100 : null;
 }
+// The league's starting slot at a spot in Sleeper's lineup (QB, RB, WR, TE, Flex, Superflex...)
+const lineupSlotName = i => { const s = (S.cfg?.rp || []).filter(x => !["BN", "IR", "TAXI"].includes(x))[i]; return { SUPER_FLEX: "Superflex", FLEX: "Flex", WRRB_FLEX: "W/R Flex", REC_FLEX: "W/T Flex" }[s] || s || "Starter"; };
 async function renderRoster(){
   if (!S.league || !S.teams?.size) return;
   syncPicker("rosterTeam");
@@ -59,14 +61,17 @@ async function renderRoster(){
     age: p => p.a.age || 99, nfl: p => p.a.nfl || "", ppg: p => p.ppg ?? -1, snap: p => p.snap ?? -1, value: p => p.a.value, market: p => p.a.market || 0,
     change: p => p.ch, trend: p => p.trend ?? -1e9
   }[rosterSort.key] || (p => p.a.value);
-  const shown = players.filter(p => rosterPos === "ALL" || p.a.pos === rosterPos)
-    .sort((x, y) => { const u = key(x), v = key(y); return (typeof u === "string" ? u.localeCompare(v) : u - v) * rosterSort.dir || y.a.value - x.a.value; });
+  // Current Lineup: the starters set in Sleeper, in the league's lineup order (QB, RB, WR... flex)
+  const lineupOrder = new Map((r?.starters || []).map((pid, i) => [String(pid), i]));
+  const shown = players.filter(p => rosterPos === "ALL" || (rosterPos === "LINEUP" ? p.slot === "Starter" : p.a.pos === rosterPos))
+    .sort((x, y) => { if (rosterPos === "LINEUP" && rosterSort.key === "lineup") return lineupOrder.get(String(x.a.pid)) - lineupOrder.get(String(y.a.pid));
+      const u = key(x), v = key(y); return (typeof u === "string" ? u.localeCompare(v) : u - v) * rosterSort.dir || y.a.value - x.a.value; });
   for (const th of $("rosterTable").querySelectorAll("th[data-sort]")) th.setAttribute("aria-sort", th.dataset.sort === rosterSort.key ? (rosterSort.dir > 0 ? "ascending" : "descending") : "none");
   const pct = (x, d = 0) => x == null ? "–" : `${x > 0 ? "+" : ""}${x.toFixed(d)}%`;
   $("rosterBody").innerHTML = shown.map(({ a, slot, ppg, snap, depth, trend, ch }) => {
     const cliff = CLIFF[a.pos], old = a.age && cliff && a.age >= cliff;
     return `<tr data-id="${esc(a.id)}" tabindex="0">
-      <td><span class="slot s-${slot.toLowerCase()}">${slot}</span></td>
+      <td><span class="slot s-${slot.toLowerCase()}">${rosterPos === "LINEUP" ? esc(lineupSlotName(lineupOrder.get(String(a.pid)))) : slot}</span></td>
       <td><span class="teamcell">${assetPhoto(a, true)}${esc(a.name)}${injTag(a.pid)}${trendTag(a.pid)}</span></td>
       <td class="hide-sm">${esc(a.pos)}</td>
       <td class="rk">${a.lgPosRank ? esc(a.pos) + a.lgPosRank : "–"}</td>
@@ -79,7 +84,7 @@ async function renderRoster(){
       <td class="n hide-sm">${fmt(a.market)}</td>
       <td class="n hide-sm">${Math.abs(ch) < 1 ? "" : `<span class="${ch > 0 ? "up" : "down"}">${pct(ch)}</span>`}</td>
       <td class="n hide-sm">${trend == null || Math.abs(trend) < 0.5 ? "–" : `<span class="${trend > 0 ? "up" : "down"}">${trend > 0 ? "▲" : "▼"} ${Math.abs(trend).toFixed(0)}%</span>`}</td></tr>`;
-  }).join("") || `<tr><td colspan="13" class="empty">No players${rosterPos !== "ALL" ? " at " + esc(rosterPos) : ""}.</td></tr>`;
+  }).join("") || `<tr><td colspan="13" class="empty">${rosterPos === "LINEUP" ? "No starting lineup is set in Sleeper for this team yet." : `No players${rosterPos !== "ALL" ? " at " + esc(rosterPos) : ""}.`}</td></tr>`;
   const posTotals = ["QB", "RB", "WR", "TE"].map(p => { const v = players.filter(x => x.a.pos === p).reduce((s, x) => s + x.a.value, 0); return `${p} ${fmt(Math.round(v))}${prof ? ` <small>(${ordinal(prof.pos[p].rank)})</small>` : ""}`; });
   $("rosterCount").innerHTML = `${shown.length} player${shown.length === 1 ? "" : "s"} · value by position: ${posTotals.join(" · ")}`;
 
@@ -98,6 +103,7 @@ $("rosterTable").querySelector("thead").addEventListener("click", e => {
 $("rosterPos").addEventListener("click", e => {
   const b = e.target.closest("button[data-pos]"); if (!b) return;
   rosterPos = b.dataset.pos;
+  if (rosterPos === "LINEUP") rosterSort = { key: "lineup", dir: 1 }; else if (rosterSort.key === "lineup") rosterSort = { key: "value", dir: -1 };
   for (const x of $("rosterPos").children) x.setAttribute("aria-pressed", x === b);
   renderRoster();
 });

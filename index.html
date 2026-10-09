@@ -120,9 +120,9 @@
     <button class="tab" role="tab" aria-selected="true" data-tab="calc" data-full="Trade Calculator">Calculator</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="finder" data-full="Trade Finder">Trade Finder</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="values" data-full="Rankings">Rankings</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="strategy" data-full="My Team Strategy">Team Strategy</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="roster" data-full="My Roster">My Roster</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="lineup" data-full="Lineup &amp; Waivers">Lineup &amp; Waivers</button>
-    <button class="tab" role="tab" aria-selected="false" data-tab="strategy" data-full="My Team Strategy">Team Strategy</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="history" data-full="Trade History">Trade History</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="standings" data-full="Standings">Standings</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="power" data-full="Power Rankings">Power Rankings</button>
@@ -385,7 +385,7 @@
     <div id="rosterSum"></div>
     <div class="controls">
       <div class="seg" id="rosterPos">
-        <button aria-pressed="true" data-pos="ALL">All</button><button aria-pressed="false" data-pos="QB">QB</button><button aria-pressed="false" data-pos="RB">RB</button><button aria-pressed="false" data-pos="WR">WR</button><button aria-pressed="false" data-pos="TE">TE</button>
+        <button aria-pressed="true" data-pos="ALL">All</button><button aria-pressed="false" data-pos="QB">QB</button><button aria-pressed="false" data-pos="RB">RB</button><button aria-pressed="false" data-pos="WR">WR</button><button aria-pressed="false" data-pos="TE">TE</button><button aria-pressed="false" data-pos="LINEUP" title="The players in your starting lineup in Sleeper right now">Current Lineup</button>
       </div>
     </div>
     <p style="margin:0 0 10px;font-size:14px;color:var(--muted)">Tap any player to open his player card. Click a column heading to sort.</p>
@@ -407,7 +407,7 @@
     <div id="luBody"></div>
     <h3 class="ros-h3">Waiver Help</h3>
     <div id="luWaivers"></div>
-    <p class="note">Weekly projections from Sleeper, scored with your league's settings. Questionable players count at 75% and doubtful at 25% in "Expected"; players ruled out, on bye or on IR count 0. Tap any player to open his card.</p>
+    <p class="note">Weekly projections from Sleeper, scored with your league's settings. Start/sit weighs this week's projection (65%) with each player's overall and position value in your league (35%), so one soft projection doesn't bench a much better player. Questionable players count at 90% and doubtful at 35%; players ruled out, on bye or on IR count 0. Players already in your Sleeper lineup win close calls. Tap any player to open his card.</p>
   </section>
 
   <section class="panel" id="panel-scouting">
@@ -618,8 +618,8 @@
 <script src="js/player-cards.js?v=20261008k"></script>
 <script src="js/settings-tab.js?v=20261007a"></script>
 <script src="js/strategy.js?v=20261007g"></script>
-<script src="js/my-roster.js?v=20261009b"></script>
-<script src="js/lineup.js?v=20261009b"></script>
+<script src="js/my-roster.js?v=20261009c"></script>
+<script src="js/lineup.js?v=20261009c"></script>
 <script src="js/scouting.js?v=20261009c"></script>
 <script src="js/live-scores.js?v=20261007n"></script>
 <script src="js/trade-history.js?v=20261009c"></script>
@@ -633,7 +633,7 @@
 <script src="js/popovers.js?v=20261008w"></script>
 <script src="js/trade-finder.js?v=20261007m"></script>
 <script src="js/pickers.js?v=20261009c"></script>
-<script src="js/nav.js?v=20261009c"></script>
+<script src="js/nav.js?v=20261009d"></script>
 <script src="js/app-shell.js?v=20261008w"></script>
 <script src="js/calc-phone.js?v=20261007m"></script>
 <script src="js/about.js?v=20261008c"></script>
