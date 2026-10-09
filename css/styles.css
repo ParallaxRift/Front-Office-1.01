@@ -18,9 +18,9 @@ button,input,select{font:inherit;color:inherit}
 .wrap{max-width:1440px;margin:0 auto;padding:20px 16px 60px}
 @media (min-width:1100px){.wrap{padding-left:28px;padding-right:28px}}
 /* Overall size on computers: 15% smaller than before (phones unchanged) */
-@media (min-width:1100px){html{zoom:0.918}.wrap{max-width:1333px}}
-@media (min-width:1600px){html{zoom:0.994}}
-@media (min-width:1900px){html{zoom:1.058}}
+@media (min-width:1100px){html{zoom:1.01}.wrap{max-width:1333px}}   /* computers: everything ~10% larger than before (phones untouched) */
+@media (min-width:1600px){html{zoom:1.093}}
+@media (min-width:1900px){html{zoom:1.164}}
 
 /* Connect */
 [hidden]{display:none!important}
@@ -1430,7 +1430,7 @@ body:not(.has-league) .side-switch,body:not(.has-league) #miniBar{display:none!i
 .sb-pts{font-family:var(--display);font-weight:800;font-size:30px;line-height:1;opacity:.75;flex:none}
 .sb-team.lead .sb-pts{opacity:1}
 .sb-vs{font-size:11px;font-weight:700;opacity:.5}
-.mb .sb-bar{height:5px;background:#3FB97A}.mb .sb-bar i{display:block;height:100%;background:#E05A4A;transition:width .4s}
+.mb .sb-bar{height:12px;background:#3FB97A;overflow:hidden}.mb .sb-bar i{display:block;height:100%;background:#E05A4A;transition:width .4s;box-shadow:2px 0 0 #fff}
 .mb details{border-top:1px solid var(--line)}
 .mb summary{cursor:pointer;padding:10px 14px;font-weight:700;font-size:14px;color:var(--field)}
 .bx{padding:0 10px 10px}
@@ -1716,3 +1716,19 @@ body:has(#pcard:not([hidden])) #installTip{display:none!important}   /* the "Get
 }
 #luBody .pj-tiles,#rosterSum .pj-tiles{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
 @media (max-width:600px){#rosterSum .pj-tiles{grid-template-columns:repeat(3,minmax(0,1fr))}#luBody .pj-tiles{grid-template-columns:1fr 1fr}.lu-table td:first-child,.lu-table th:first-child{width:auto}}
+/* footnotes under a page run the full width and wrap evenly */
+.panel > .note,.panel > p.note{max-width:none;text-wrap:pretty}
+@media (min-width:601px){.panel > .note,.panel > p.note{text-wrap:balance}}
+/* Player card tables: numbers centered under their headings; names and labels stay left */
+.pc .pc-pane th,.pc .pc-pane td{text-align:center}
+.pc .pc-pane th:first-child,.pc .pc-pane td:first-child,.pc .pc-pane th.l,.pc .pc-pane td.l{text-align:left}
+.pc .pc-log th:first-child,.pc .pc-log td:first-child,.pc .pc-proj th:first-child,.pc .pc-proj td:first-child{text-align:center}
+.pc .pc-log td.l,.pc .pc-log th.l{padding-left:4px}
+/* Trade Finder: FAAB to even out a deal */
+.tf-faab{display:flex;align-items:center;gap:8px;margin:2px 0 10px;padding:7px 10px;border-radius:10px;background:var(--gold-soft);color:var(--ink);font-size:13.5px;font-weight:600}
+.tf-faab-ic{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--gold);color:#fff;font:800 12px var(--body);flex:none}
+
+/* Live Scores: players open their player card */
+.bx-p.click{cursor:pointer;border-radius:8px;transition:background .12s}
+.bx-p.click:hover,.bx-p.click:focus-visible{background:rgba(127,127,127,.12);outline:none}
+.bx-p.click:hover .bx-nm b{text-decoration:underline;text-underline-offset:2px}

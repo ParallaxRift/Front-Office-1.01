@@ -26,8 +26,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600&family=Big+Shoulders+Display:wght@700;800;900&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=20261009m">
-<link rel="stylesheet" href="css/desktop.css?v=20261009b" media="(min-width: 601px)">
+<link rel="stylesheet" href="css/styles.css?v=20261010q">
+<link rel="stylesheet" href="css/desktop.css?v=20261010d" media="(min-width: 601px)">
 </head>
 <body>
 <div id="pcard" class="pc-backdrop" hidden></div>
@@ -133,7 +133,6 @@
     <button class="tab" role="tab" aria-selected="false" data-tab="statuses" data-full="Team Statuses">Team Statuses</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="settings" data-full="League Settings">League Settings</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="scores" data-full="Live Scores">Live Scores</button>
-    <button class="tab" role="tab" aria-selected="false" data-tab="feedback" data-full="Feedback &amp; Build Notes">Feedback &amp; Build Notes</button>
   </div>
 
   <section class="panel on" id="panel-calc">
@@ -254,44 +253,9 @@
     <div class="trades" id="tradeList"><p class="empty">Open a league to see its trade history.</p></div>
   </section>
 
-  <section class="panel" id="panel-feedback">
-    <div class="fb-wrap">
-      <form class="box fb-form" id="fbForm" novalidate>
-        <h3>Share Feedback</h3>
-        <p class="note" style="margin:0 0 12px">You're testing Front Office while it's in beta. Spotted a bug, have an idea, or love something? Post it here for everyone to see.</p>
-        <div class="field" style="max-width:none"><label for="fbName">Your name or team (optional)</label><input id="fbName" type="text" maxlength="60" autocomplete="nickname"></div>
-        <div class="field" style="max-width:none;margin-top:10px"><span class="fb-label" id="fbTypeLabel">Type</span>
-          <div class="seg" id="fbType" role="radiogroup" aria-labelledby="fbTypeLabel">
-            <button type="button" role="radio" aria-checked="false" data-type="Update">Update</button>
-            <button type="button" role="radio" aria-checked="true" data-type="Idea">Idea</button>
-            <button type="button" role="radio" aria-checked="false" data-type="Bug">Bug</button>
-            <button type="button" role="radio" aria-checked="false" data-type="Other">Other</button>
-          </div></div>
-        <div class="field" style="max-width:none;margin-top:10px"><label for="fbMsg">Feedback</label><textarea id="fbMsg" rows="5" maxlength="1000" placeholder="What happened, or what would you like to see?"></textarea><small class="fb-count" id="fbCount">0 / 1000</small></div>
-        <button class="btn" type="submit" id="fbSend" style="margin-top:12px">Post feedback</button>
-        <p class="status" id="fbStatus" role="status" aria-live="polite"></p>
-        <p class="note" style="margin:8px 0 0">Posts are public to anyone using Front Office. Don't include passwords or private info.</p>
-      </form>
-      <div class="fb-board">
-        <div class="fb-head"><h3>Feedback Board</h3><div class="seg" id="fbFilter">
-          <button aria-pressed="true" data-type="All">All</button><button aria-pressed="false" data-type="Update">Updates</button><button aria-pressed="false" data-type="Idea">Ideas</button><button aria-pressed="false" data-type="Bug">Bugs</button><button aria-pressed="false" data-type="Other">Other</button>
-        </div></div>
-        <div id="fbList" class="fb-list"><p class="empty">Loading feedback...</p></div>
-      </div>
-    </div>
-    <section class="box notes" aria-labelledby="notesTitle">
-      <div class="notes-head"><h3 id="notesTitle">Build Notes</h3><span class="betatag" id="notesVersion"></span>
-        <button class="ghost notes-edit" id="notesEditBtn" type="button">Edit</button></div>
-      <p class="note" style="margin:0 0 10px">What's changed in each beta build, newest first.</p>
-      <div id="notesAuth" hidden></div>
-      <div id="notesEditor" hidden></div>
-      <div id="buildNotes"></div>
-    </section>
-  </section>
-
   <section class="panel" id="panel-scores">
     <div class="scorebar">
-      <div class="field wk-field"><label for="weekSelect">Week</label><div class="wk-step"><button type="button" class="ghost wk-btn" id="weekPrev" aria-label="Previous week">‹</button><select id="weekSelect"></select><button type="button" class="ghost wk-btn" id="weekNext" aria-label="Next week">›</button></div></div>
+      <div class="field wk-field"><label for="weekSelect">Week</label><div class="wk-step"><select id="weekSelect"></select></div></div>
       <button class="ghost" id="refreshScores">Refresh</button>
       <span class="updated" id="scoresUpdated" role="status" aria-live="polite"></span>
     </div>
@@ -410,7 +374,7 @@
     <p class="note sec-sub">Your best starting lineup for the week, compared with the one set in Sleeper.</p>
     <div class="stratHead"><div class="field" style="max-width:240px"><label for="luWeek">Week</label><select id="luWeek"></select></div></div>
     <div id="luBody"></div>
-    <p class="note">Weekly projections from Sleeper, scored with your league's settings. Start/sit weighs this week's projection (65%) with each player's overall and position value in your league (35%), so one soft projection doesn't bench a much better player. Questionable players count at 90% and doubtful at 35%; players ruled out, on bye or on IR count 0. Players already in your Sleeper lineup win close calls. Tap any player to open his card.</p>
+    <p class="note">Start/sit blends Sleeper's weekly projection in your league's scoring (65%) with each player's overall and position value (35%), so one soft projection won't bench a much better player. Questionable counts 90%, doubtful 35%, and out, bye or IR count 0. Players already in your Sleeper lineup win close calls. Tap any player to open his card.</p>
   </section>
 
   <section class="panel" id="panel-waivers">
@@ -506,14 +470,11 @@
   <h2>Third-Party Data and Services</h2>
   <p>Front Office uses league and player data from Sleeper, and links to other sites. Those services have their own terms, and we don't control them or guarantee their accuracy or availability. Front Office isn't affiliated with or endorsed by Sleeper. All team names, player names, and trademarks belong to their owners.</p>
 
-  <h2>Feedback</h2>
-  <p>Feedback you post is shown publicly on the feedback board. Don't post anything private or offensive. We may hide or remove any post, and we may use ideas you share to improve Front Office without owing you anything.</p>
-
   <h2>No Warranty and Limits on Liability</h2>
   <p>Front Office is provided "as is" and "as available," without warranties of any kind. To the fullest extent the law allows, Front Office and its owners are not liable for any indirect, incidental, or consequential damages, or any loss arising from your use of the site.</p>
 
   <h2>Changes</h2>
-  <p>We may update these terms. The date at the top shows when they last changed, and continuing to use the site means you accept the updated terms. Questions? Send them through Feedback &amp; Build Notes.</p>
+  <p>We may update these terms. The date at the top shows when they last changed, and continuing to use the site means you accept the updated terms.</p>
   <a class="back" href="#">Back to Front Office</a>
 </article>
 
@@ -526,7 +487,6 @@
   <ul>
     <li><b>Your Sleeper username:</b> used to look up your leagues on Sleeper's public site. It's saved only in your own browser, so the site remembers you next time. We don't receive or store it.</li>
     <li><b>Your preferences:</b> your last league, tab, and view are saved in your browser too. Clearing your browser's site data removes them.</li>
-    <li><b>Feedback you send:</b> the name and message you submit through Feedback &amp; Build Notes are stored in a Google form and shown publicly on the feedback board.</li>
   </ul>
 
   <h2>What We Don't Do</h2>
@@ -540,7 +500,7 @@
   <p>To show your league, the site loads data straight from Sleeper (league details, photos, and logos), game status from ESPN, and fonts from Google. These services can see your device's internet address, as with any website, under their own privacy policies. The site itself is hosted on GitHub Pages.</p>
 
   <h2>Changes</h2>
-  <p>If we add ads, analytics, or accounts, we'll update this page first. The date at the top shows when it last changed. Questions? Send them through Feedback &amp; Build Notes.</p>
+  <p>If we add ads, analytics, or accounts, we'll update this page first. The date at the top shows when it last changed.</p>
   <a class="back" href="#">Back to Front Office</a>
 </article>
 
@@ -571,7 +531,7 @@
         <li><b>League Locker:</b> standings, power rankings, the season simulator, and what the team statuses mean.</li>
         <li><b>Trophy Room</b> (in League Locker): past champions and weekly high points.</li>
         <li><b>Live Scores</b>: every matchup, refreshing every minute on game days.</li>
-        <li><b>Feedback &amp; Build Notes</b> (its own section, also linked at the bottom of every page): share feedback and see what's new.</li>
+        
       </ul>
     </section>
   </div>
@@ -623,7 +583,7 @@
   <path d="M44 25v14" stroke="#D99A1E" stroke-width="2.3" stroke-linecap="round"/>
   <path d="M40.8 28h6.4M40.8 32h6.4M40.8 36h6.4" stroke="#D99A1E" stroke-width="2" stroke-linecap="round"/>
 </svg><span>Front Office</span></a>
-  <nav><a href="#">Home</a><a href="#about">About</a><a href="#modes">The Basics vs. Freakshow</a><a href="#beta">Sleeper Leagues in Beta</a><a href="#terms">Terms</a><a href="#privacy">Privacy</a><a href="#" id="footStatuses" hidden>Team Statuses</a><a href="#" id="footFeedback" hidden>Feedback &amp; Build Notes</a></nav>
+  <nav><a href="#">Home</a><a href="#about">About</a><a href="#modes">The Basics vs. Freakshow</a><a href="#beta">Sleeper Leagues in Beta</a><a href="#terms">Terms</a><a href="#privacy">Privacy</a><a href="#" id="footStatuses" hidden>Team Statuses</a></nav>
   <span class="ver" id="footVersion"></span><span class="ver" id="footUpdated"></span>
   <p>© 2026 Front Office. All rights reserved. League data from Sleeper. <a href="#about">Credits</a></p>
 </footer>
@@ -640,20 +600,19 @@
 <script src="js/my-roster.js?v=20261009c"></script>
 <script src="js/lineup.js?v=20261009d"></script>
 <script src="js/scouting.js?v=20261009d"></script>
-<script src="js/live-scores.js?v=20261009a"></script>
+<script src="js/live-scores.js?v=20261010a"></script>
 <script src="js/trade-history.js?v=20261009c"></script>
 <script src="js/modes.js?v=20261009d"></script>
-<script src="js/build-notes.js?v=20261007a"></script>
-<script src="js/feedback.js?v=20261007f"></script>
-<script src="js/standings-sim.js?v=20261009a"></script>
+<script src="js/standings-sim.js?v=20261009b"></script>
 <script src="js/calc-browse.js?v=20261007a"></script>
 <script src="js/calc-minibar.js?v=20261007a"></script>
 <script src="js/trophy.js?v=20261007a"></script>
-<script src="js/popovers.js?v=20261009a"></script>
-<script src="js/trade-finder.js?v=20261007m"></script>
-<script src="js/pickers.js?v=20261009d"></script>
-<script src="js/nav.js?v=20261009g"></script>
-<script src="js/app-shell.js?v=20261009a"></script>
+<script src="js/table-sort.js?v=20261009b"></script>
+<script src="js/popovers.js?v=20261009c"></script>
+<script src="js/trade-finder.js?v=20261009a"></script>
+<script src="js/pickers.js?v=20261010d"></script>
+<script src="js/nav.js?v=20261010h"></script>
+<script src="js/app-shell.js?v=20261010a"></script>
 <script src="js/calc-phone.js?v=20261007m"></script>
 <script src="js/about.js?v=20261008c"></script>
 <script src="js/share.js?v=20261008a"></script>

@@ -20,6 +20,10 @@ function showPop(anchor, html){
   let left = Math.min(Math.max(8, r.left), window.innerWidth - w - 8);
   let top = r.bottom + 8; if (top + h > window.innerHeight - 8) top = Math.max(8, r.top - h - 8);
   popEl.style.left = left + "px"; popEl.style.top = top + "px";
+  // the page is zoomed on computers: if the popup lands off by the zoom, scale the spot back so it sits under its button
+  const got = popEl.getBoundingClientRect(), k = left > 0 ? got.left / left : 1;
+  if (Math.abs(k - 1) > 0.01){ popEl.style.left = (left / k) + "px"; popEl.style.top = (top / k) + "px";
+    const g2 = popEl.getBoundingClientRect(); if (g2.right > window.innerWidth - 8) popEl.style.left = ((window.innerWidth - 8 - g2.width) / k) + "px"; }
   popEl.querySelector(".pop-x").focus({ preventScroll: true });
   popScrollY = window.scrollY;
 }
@@ -53,6 +57,7 @@ window.addEventListener("scroll", () => { if (popEl && Math.abs(window.scrollY -
 const COLUMN_INFO = {
   "col-league": ["This League", "The player's value in your league after all of Front Office's adjustments. This is the number the calculator uses."],
   "col-market": ["Market", "The same player's value from Front Office Rankings, before any league adjustments. It shows what he'd be worth in a generic league as a single value."],
+  "col-strength": ["Roster Strength", "The combined Front Office value of the team's best possible starting lineup plus its three most valuable bench players, using your league's values (the same numbers as the Trade Calculator). A top player is worth up to 10,000, so in most leagues teams land somewhere between about 40,000 and 80,000. It measures talent only. Wins, record and draft picks don't count."],
   "col-netv": ["Net Value from Trades", "Everything this manager has received in trades minus everything they've given up, using today's player values (picks already used count as the player they became). A positive number means their trades have aged well; negative means they've given up more than they got. Each trade is graded with the same value adjustment as the Trade Calculator, so a pile of depth doesn't beat a star."],
   "col-change": ["Change", "The % difference between your league's values after all logic is applied and the singular generic market value. It stays blank when the difference is under 1%."]
 };

@@ -7,7 +7,7 @@
 // The section bar picks a section; the row under it (only when a section has more
 // than one tab) picks the tab inside it. The tab buttons themselves are unchanged,
 // so every other part of the site still opens a tab the same way.
-// Feedback & Build Notes is its own section (and also linked from the footer).
+// Team Statuses opens from the footer link (and the phone More menu).
 // ============================================================
 const NAV_GROUPS = [
   { id: "trade",  label: "Trade Tools",   tabs: ["calc", "finder", "history"], always: "calc" },
@@ -15,8 +15,7 @@ const NAV_GROUPS = [
   { id: "team",   label: "My Team",       tabs: ["strategy", "roster", "lineup", "waivers"] },
   { id: "league", label: "League Locker", tabs: ["standings", "power", "scouting", "sim", "trophy", "settings"] },
   { id: "scores", label: "Live Scores",   tabs: ["scores"] },
-  { id: "statusGrp", label: "Team Statuses", tabs: ["statuses"], footer: true },   // opened from the footer link (and the phone More menu)
-  { id: "more",   label: "Feedback & Build Notes", tabs: ["feedback"], footer: true }   // opened from the footer link (and the phone More menu), not the section bar
+  { id: "statusGrp", label: "Team Statuses", tabs: ["statuses"], footer: true }   // opened from the footer link (and the phone More menu)
 ];
 const navGroupOf = tab => NAV_GROUPS.find(g => g.tabs.includes(tab));
 const navTab = tab => $("tabs").querySelector(`[data-tab="${tab}"]`);
@@ -38,25 +37,20 @@ function syncNav(){
   }
   for (const t of $("tabs").children) t.classList.toggle("off-group", !active || t.dataset.group !== active.id);
   $("tabs").classList.toggle("single", !active || visibleIn(active).length < 2);
-  const fb = navTab("feedback"), ts = navTab("statuses");
-  $("footFeedback").hidden = !S.league || !fb || fb.hidden;
+  const ts = navTab("statuses");
   $("footStatuses").hidden = !S.league || !ts || ts.hidden;
-  const fbBtn = $("groups").querySelector('[data-group="more"]'); if (fbBtn) fbBtn.classList.add("group-notes");
 }
 $("groups").addEventListener("click", e => {
   const b = e.target.closest(".group"); if (!b) return;
   const g = NAV_GROUPS.find(x => x.id === b.dataset.group);
-  const pick = [g.always || navLast[g.id], ...g.tabs].map(x => x && navTab(x)).find(t => t && !t.hidden);
+  // on a computer a section always opens on its first (left-most) tab; the phone app reopens the last one you used
+  const desktop = !window.matchMedia("(max-width:600px)").matches;
+  const pick = [g.always || (desktop ? null : navLast[g.id]), ...g.tabs].map(x => x && navTab(x)).find(t => t && !t.hidden);
   if (pick) pick.click(); else syncNav();
 });
 $("footStatuses").addEventListener("click", e => {
   e.preventDefault();
   navTab("statuses")?.click();
-  window.scrollTo({ top: $("groups").offsetTop - 10, behavior: "smooth" });
-});
-$("footFeedback").addEventListener("click", e => {
-  e.preventDefault();
-  navTab("feedback")?.click();
   window.scrollTo({ top: $("groups").offsetTop - 10, behavior: "smooth" });
 });
 // keep the section bar in step with whatever opens a tab (clicks, links, The Basics / Freakshow, reloads)

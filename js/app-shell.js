@@ -30,7 +30,6 @@ moreSheet.innerHTML = `<div class="ms-backdrop" data-close></div>
     <div class="ms-grab" aria-hidden="true"></div>
     <div class="ms-list">
       <button type="button" data-more="statuses"><b>Team Statuses</b><small>Who's contending, in the middle or rebuilding, and why</small></button>
-      <button type="button" data-more="feedback"><b>Feedback &amp; Build Notes</b><small>Report a bug, suggest an idea, see what's new</small></button>
       <button type="button" data-more="modes"><b>The Basics vs. Freakshow</b><small>What each view shows</small></button>
       <button type="button" data-more="about"><b>About Front Office</b><small>What Front Office does, credits, terms and privacy</small></button>
       <button type="button" data-more="getapp" class="ms-getapp"><b>Get the app</b><small>Add Front Office to your home screen</small></button>
@@ -46,7 +45,7 @@ moreSheet.addEventListener("click", e => {
   const m = e.target.closest("#msMode button"); if (m){ applyMode(m.dataset.mode, true); syncModeButtons(); return; }
   const b = e.target.closest("[data-more]"); if (!b) return;
   const go = b.dataset.more; closeMore();
-  if (go === "feedback" || go === "statuses"){ navTab(go)?.click(); window.scrollTo({ top: 0 }); }
+  if (go === "statuses"){ navTab(go)?.click(); window.scrollTo({ top: 0 }); }
   else if (go === "getapp") return openAppGuide();
   else if (go === "modes") location.hash = "#modes";
   else if (go === "about") location.hash = "#about";
@@ -72,7 +71,7 @@ function syncTabbar(){
     b.setAttribute("aria-current", b.dataset.go === cur ? "page" : "false");
     if (b.dataset.go !== "more"){ const gb = $("groups").querySelector(`[data-group="${b.dataset.go}"]`); b.hidden = !gb || gb.hidden; }
   }
-  for (const k of ["feedback", "statuses"]){ const b = moreSheet.querySelector(`[data-more="${k}"]`), t = navTab(k); if (b) b.hidden = !S.league || !t || t.hidden; }
+  for (const k of ["statuses"]){ const b = moreSheet.querySelector(`[data-more="${k}"]`), t = navTab(k); if (b) b.hidden = !S.league || !t || t.hidden; }
 }
 new MutationObserver(syncTabbar).observe($("groups"), { subtree: true, attributes: true, attributeFilter: ["aria-pressed", "hidden"] });
 new MutationObserver(syncTabbar).observe($("tabs"), { subtree: true, attributes: true, attributeFilter: ["hidden"] });

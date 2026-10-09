@@ -47,11 +47,14 @@ function setupScores(){
   if ($("panel-scores").classList.contains("on")) loadScores();
 }
 $("weekSelect").addEventListener("change", () => loadScores());
-for (const [id, d] of [["weekPrev", -1], ["weekNext", 1]]) $(id).addEventListener("click", () => {
-  const sel = $("weekSelect"), w = Math.min(sel.options.length, Math.max(1, Number(sel.value) + d));
-  if (w !== Number(sel.value)){ sel.value = w; loadScores(); }
-});
+
 $("refreshScores").addEventListener("click", () => loadScores());
+// click (or Enter on) a player in a matchup to open his player card
+$("matchups").addEventListener("click", e => { const c = e.target.closest(".bx-p[data-pid]"); if (c) openPlayerCard(c.dataset.pid); });
+$("matchups").addEventListener("keydown", e => {
+  if (e.key !== "Enter" && e.key !== " ") return;
+  const c = e.target.closest(".bx-p[data-pid]"); if (c){ e.preventDefault(); openPlayerCard(c.dataset.pid); }
+});
 document.addEventListener("visibilitychange", () => { if (!document.hidden && $("panel-scores").classList.contains("on")) loadScores(); });
 
 // Exact fantasy points, shown with both decimal places (e.g. 1.52, 18.50) so nothing is cut off
@@ -110,13 +113,13 @@ async function loadScores(){
   if (scoresLeague !== leagueId + ":" + week) $("matchups").innerHTML = `<p class="empty">Loading week ${week}...</p>`;
   try {
     const live0 = week === currentWeek() && S.nflState?.season_type === "regular";
+    const ahead = week >= currentWeek() && S.nflState?.season_type === "regular";   // projections for this week and weeks to come
     const season = Number(S.nflState?.season) || new Date().getFullYear();
     const [data, games, proj] = await Promise.all([getJSON(`/league/${leagueId}/matchups/${week}`), live0 ? loadGameStatus(week) : null,
-      live0 && typeof weekProjections === "function" ? weekProjections(season, week).catch(() => null) : null]);
+      ahead && typeof weekProjections === "function" ? weekProjections(season, week).catch(() => null) : null]);
     S.scoreProj = proj;
     S.gameStatus = games;
     if (S.league.league_id !== leagueId) return; // user switched leagues mid-load
-    $("weekPrev").disabled = week <= 1; $("weekNext").disabled = week >= $("weekSelect").options.length;
     scoresLeague = leagueId + ":" + week;
     renderScores(data || [], week);
     const live = week === currentWeek() && S.nflState?.season_type === "regular";
@@ -152,11 +155,11 @@ function renderScores(data, week){
     return [now ? `<b>${now}</b> playing` : "", left ? `<b>${left}</b> yet to play` : "", !now && !left ? "All done" : ""].filter(Boolean).join(" · ");
   };
   const list = [...groups.values()].sort((a,b) => (b.some(m=>m.roster_id===S.myRid)) - (a.some(m=>m.roster_id===S.myRid)));
-  // Projected final (live week only): points so far, plus Sleeper's projection for starters yet to play
+  // Projected final (this week and upcoming weeks): points so far, plus Sleeper's projection for starters yet to play
   // and half of what's left of the projection for starters playing now
   const final = !live && (week < currentWeek() || S.nflState?.season_type !== "regular");
   const projOf = m => {
-    if (!live || !S.scoreProj) return null;
+    if (final || !S.scoreProj) return null;
     let t = 0, left = 0;
     (m.starters || []).forEach((pid, i) => {
       if (!pid || pid === "0") return;
@@ -171,7 +174,8 @@ function renderScores(data, week){
     if (!pid || pid === "0") return `<span class="bx-p ${side} empty"><span class="bx-nm">Empty</span><b>0.00</b></span>`;
     const pl = playerLabel(pid); if (!pl) return `<span class="bx-p ${side} empty"><span class="bx-nm">Unknown</span><b>–</b></span>`;
     const g = live ? gameOf(pid) : "", v = notStarted(pid) && !Number(raw) ? "–" : ptsText(raw);
-    return `<span class="bx-p ${side}${g === "in" ? " now" : ""}">${scorePhoto(pid, pl)}<span class="bx-nm"><b>${esc(pl.name)}${injTag(pid)}</b><small>${esc([pl.pos, pl.team].filter(Boolean).join(" · "))}</small></span><b class="bx-v">${v}</b></span>`;
+    const canOpen = pl.pos !== "DEF" && !/^[A-Z]{2,3}$/.test(pid) && S.sleeperPlayers?.[pid];
+    return `<span class="bx-p ${side}${g === "in" ? " now" : ""}${canOpen ? ` click" data-pid="${esc(pid)}" role="button" tabindex="0" title="Open ${esc(pl.name)}'s player card` : ""}">${scorePhoto(pid, pl)}<span class="bx-nm"><b>${esc(pl.name)}${injTag(pid)}</b><small>${esc([pl.pos, pl.team].filter(Boolean).join(" · "))}</small></span><b class="bx-v">${v}</b></span>`;
   };
   $("matchups").innerHTML = list.map(pair => {
     const mine = pair.some(m => m.roster_id === S.myRid);
@@ -182,7 +186,9 @@ function renderScores(data, week){
       const res = final && B && any ? (lead && a !== b ? `<span class="sb-res w">W</span>` : a === b ? `<span class="sb-res t">T</span>` : `<span class="sb-res l">L</span>`) : "";
       return `<div class="sb-team ${side}${lead ? " lead" : ""}">${teamPhoto(m.roster_id, "md")}<span class="sb-nm"><b>${esc(t?.name || "Team " + m.roster_id)}</b>${t?.manager && t.manager !== t.name ? `<small>${esc(t.manager)}</small>` : ""}${statusLine(m) ? `<small class="sb-st">${statusLine(m)}</small>` : ""}${pr ? `<small class="sb-proj">Proj ${pr.t.toFixed(1)}${wc != null ? ` · <b>${Math.round(wc * 100)}%</b> to win` : ""}</small>` : ""}</span><span class="sb-pts">${res}${pts(m).toFixed(2)}</span></div>`; };
     if (!B) return `<article class="mb${mine ? " mine" : ""}"><div class="sb">${team(A, "l")}</div></article>`;
-    const share = wA != null ? Math.round(wA * 100) : any ? Math.round(a / (a + b) * 100) : 50;
+    // the bar splits the projected final (once a week is over, the actual final score)
+    const pTot = pA && pB ? pA.t + pB.t : 0;
+    const share = pTot > 0 ? Math.round(pA.t / pTot * 100) : any ? Math.round(a / (a + b) * 100) : 50;
     const rows = slots.map((slot, i) => `<div class="bx-row">${cell(A.starters?.[i], A.starters_points?.[i] ?? A.players_points?.[A.starters?.[i]], "l")}<span class="bx-slot">${esc(slotName[slot] || slot)}</span>${cell(B.starters?.[i], B.starters_points?.[i] ?? B.players_points?.[B.starters?.[i]], "r")}</div>`).join("");
     const benchOf = m => { const st = new Set(m.starters || []);
       return (m.players || []).filter(pid => pid && pid !== "0" && !st.has(pid) && playerLabel(pid)).map(pid => ({ pid, p: Number(m.players_points?.[pid] ?? 0) })).sort((x, y) => y.p - x.p); };
@@ -192,7 +198,7 @@ function renderScores(data, week){
       : `<p class="note">No bench players.</p>`;
     return `<article class="mb${mine ? " mine" : ""}">${mine ? `<div class="mb-tag">Your matchup${final ? " · Final" : live ? " · Live" : ""}</div>` : final ? `<div class="mb-tag quiet">Final</div>` : ""}
       <div class="sb">${team(A, "l")}<span class="sb-vs">vs</span>${team(B, "r")}</div>
-      <div class="sb-bar" role="img" aria-label="${esc(S.teams.get(A.roster_id)?.name || "")} ${wA != null ? `has a ${share}% chance to win` : `has ${share}% of the points`}"><i style="width:${share}%"></i></div>
+      <div class="sb-bar" role="img" aria-label="${esc(S.teams.get(A.roster_id)?.name || "")} ${pTot > 0 ? `has ${share}% of the projected points` : `has ${share}% of the points`}"><i style="width:${share}%"></i></div>
       <details${mine ? " open" : ""}><summary>Box score</summary><div class="bx">${rows}</div></details>
       <details><summary>Bench</summary><div class="bx">${bench}</div></details>
     </article>`;

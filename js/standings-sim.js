@@ -57,7 +57,7 @@ function renderStandings(){
   const maxStr = byStrength[0]?.strength || 1;
   const standRank = new Map(rows.map((r, i) => [r.rid, i + 1]));
   const recOf = new Map(rows.map(r => [r.rid, `${r.w}-${r.l}${r.ti ? "-" + r.ti : ""}`]));
-  $("powerTable").innerHTML = `<thead><tr><th class="n">#</th><th>Team</th><th class="n">Roster strength</th><th class="hide-sm">Best players</th><th class="n">Record</th><th class="n hide-sm">Standing</th><th class="hide-sm">Record vs. roster</th><th>Status</th></tr></thead>
+  $("powerTable").innerHTML = `<thead><tr><th class="n">#</th><th>Team</th><th class="n">Roster strength <button type="button" class="info-btn" data-info="col-strength" aria-label="What does Roster strength mean?">?</button></th><th class="hide-sm">Best players</th><th class="n">Record</th><th class="n hide-sm">Standing</th><th class="hide-sm">Record vs. roster</th><th>Status</th></tr></thead>
     <tbody>${byStrength.map((t, i) => {
       const top = teamAssets(t.rid).filter(a => a.kind === "player").slice(0, 3).map(a => a.name);
       const diff = (standRank.get(t.rid) || 0) - (i + 1);   // positive = standings rank worse than power rank

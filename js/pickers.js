@@ -77,7 +77,6 @@ $("tabs").addEventListener("click", e => {
   for (const t of $("tabs").children) t.setAttribute("aria-selected", t === b);
   for (const p of document.querySelectorAll("#appView section.panel")) p.classList.toggle("on", p.id === "panel-" + b.dataset.tab);
   if (b.dataset.tab === "scores") loadScores();
-  if (b.dataset.tab === "feedback") loadFeedback();
   if (b.dataset.tab === "finder") renderFinder();
   if (["standings", "power", "sim"].includes(b.dataset.tab)) renderStandings();
   if (b.dataset.tab === "trophy") loadTrophyRoom();

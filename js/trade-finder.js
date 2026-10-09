@@ -154,6 +154,20 @@ function renderRecs(me){
     : `<p class="empty">No affordable targets${want !== "fit" && want !== "PICK" ? " at that position" : ""}${partner !== "any" ? " on that team" : ""} right now. Your bench and picks may not stretch that far.</p>`;
 }
 
+// FAAB to even out a deal that's a little off: the side coming out ahead adds FAAB (as much as it has
+// left), valued the same way as in the calculator. Only offered when it actually makes the deal fair.
+function tfFaab(me, rid, getV, sendV){
+  const B = faabBudget(); if (!B) return null;
+  const gap = getV - sendV; if (tradeCall(gap, Math.max(getV, sendV)) === "fair") return null;
+  const perDollar = pickValue(24, 0) * FAAB_SHARE / B; if (!(perDollar > 0)) return null;
+  const mine = gap > 0, left = faabLeft(mine ? me : rid), need = Math.ceil(Math.abs(gap) / perDollar);
+  const amt = Math.min(left, need); if (amt < 1) return null;
+  const after = mine ? getV - (sendV + faabValue(amt)) : (getV + faabValue(amt)) - sendV;
+  if (tradeCall(after, Math.max(getV, sendV)) !== "fair") return null;
+  return { side: mine ? "send" : "get", amt, text: mine ? `Add $${amt} of your FAAB to make it fair` : `Ask for $${amt} of their FAAB to make it fair` };
+}
+const tfFaabHTML = f => f ? `<p class="tf-faab"><span class="tf-faab-ic">$</span>${esc(f.text)}</p>` : "";
+const tfFaabData = f => f ? ` data-faab-side="${f.side}" data-faab="${f.amt}"` : "";
 // Reverse search: what could you send to land one specific player?
 function targetPackages(me, target, C = finderContext(me)){
   const T = target.value, rid = target.owner, th = C.prof.get(rid);
@@ -216,15 +230,15 @@ function findForTarget(me, target){
   note.textContent = top.length ? "Packages from your roster that match their value, easiest on your lineup first." : "";
   if (!top.length){ out.innerHTML = `<p class="empty">No fair packages of up to 3 pieces found for ${esc(target.name)}. They may be worth more than your tradeable pieces.</p>`; return; }
   out.innerHTML = top.map((r, i) => {
-    const verdict = tfVerdict(T, r.S2), why = packageWhy(r, C, th);
+    const verdict = tfVerdict(T, r.S2), why = packageWhy(r, C, th), fb = tfFaab(me, rid, T, r.S2);
     return `<article class="tf-card${i === 0 ? " best" : ""}">
       <div class="tf-card-head"><span class="tf-rank" title="Rank ${i + 1} of ${top.length}">${i === 0 ? "#1 Best trade" : "#" + (i + 1)}</span>${teamPhoto(rid, "md")}<span class="nm"><b>${esc(th.team.name)}</b><small>${statusText[th.team.status]}</small></span></div>
       <div class="tf-get"><div class="lbl">You send</div>
         ${r.pack.map(tfRowHTML).join("")}
       </div>
-      <ul class="tf-why">${why.slice(0, 3).map(w => `<li>${esc(w)}</li>`).join("")}</ul>
+      <ul class="tf-why">${why.slice(0, 3).map(w => `<li>${esc(w)}</li>`).join("")}</ul>${tfFaabHTML(fb)}
       <div class="tf-foot"><span class="tf-verdict" style="color:${verdict[1]}">${verdict[0]}</span>
-        <button type="button" class="btn tf-open" data-rid="${rid}" data-send="${esc(r.pack.map(a => a.id).join(","))}" data-get="${esc(target.id)}">Open in calculator</button></div>
+        <button type="button" class="btn tf-open" data-rid="${rid}" data-send="${esc(r.pack.map(a => a.id).join(","))}" data-get="${esc(target.id)}"${tfFaabData(fb)}>Open in calculator</button></div>
     </article>`;
   }).join("");
 }
@@ -242,14 +256,14 @@ function suggestDefault(me){
   note.textContent = cards.length ? "The best deal for each of your top recommended players. Or pick players from your roster to see what they could bring back." : "";
   if (!cards.length){ out.innerHTML = `<p class="empty">Choose who you'd trade away and Front Office will find fair deals that fit your team.</p>`; return; }
   out.innerHTML = cards.map(({ target, r, th, T, rid }, i) => {
-    const verdict = tfVerdict(T, r.S2), why = packageWhy(r, C, th);
+    const verdict = tfVerdict(T, r.S2), why = packageWhy(r, C, th), fb = tfFaab(me, rid, T, r.S2);
     return `<article class="tf-card${i === 0 ? " best" : ""}">
       <div class="tf-card-head"><span class="tf-rank">${i === 0 ? "#1 Best trade" : "#" + (i + 1)}</span>${teamPhoto(rid, "md")}<span class="nm"><b>${esc(th.team.name)}</b><small>${statusText[th.team.status]}</small></span></div>
       <div class="tf-get"><div class="lbl">You get</div>${tfRowHTML(target)}</div>
       <div class="tf-get"><div class="lbl">You send</div>${r.pack.map(tfRowHTML).join("")}</div>
-      <ul class="tf-why">${why.slice(0, 3).map(w => `<li>${esc(w)}</li>`).join("")}</ul>
+      <ul class="tf-why">${why.slice(0, 3).map(w => `<li>${esc(w)}</li>`).join("")}</ul>${tfFaabHTML(fb)}
       <div class="tf-foot"><span class="tf-verdict" style="color:${verdict[1]}">${verdict[0]}</span>
-        <button type="button" class="btn tf-open" data-rid="${rid}" data-send="${esc(r.pack.map(a => a.id).join(","))}" data-get="${esc(target.id)}">Open in calculator</button></div>
+        <button type="button" class="btn tf-open" data-rid="${rid}" data-send="${esc(r.pack.map(a => a.id).join(","))}" data-get="${esc(target.id)}"${tfFaabData(fb)}>Open in calculator</button></div>
     </article>`;
   }).join("");
 }
@@ -355,14 +369,15 @@ function findTrades(me, sending, V){
       if (hb && hb.length) why.push(`${th.name} tends to buy ${andList(hb.map(catWord))} in trades.`);
       else if (h && h.active) why.push(`${th.name} trades often (${h.recent} trades in the last year).`); }
     if (!why.length) why.push("Close in value and keeps your lineup balanced.");
+    const fb = tfFaab(me, r.rid, r.R, V);
     return `<article class="tf-card${i === 0 ? " best" : ""}">
       <div class="tf-card-head"><span class="tf-rank" title="Rank ${i + 1} of ${picks.length}">${i === 0 ? "#1 Best trade" : "#" + (i + 1)}</span>${teamPhoto(r.rid, "md")}<span class="nm"><b>${esc(th.name)}</b><small>${statusText[th.status]}</small></span></div>
       <div class="tf-get"><div class="lbl">You get</div>
         ${r.pack.map(a => `<div class="tf-row">${assetPhoto(a, "md")}<span class="tn"><b>${esc(a.name)}${injTag(a.pid)}</b><small>${esc(a.kind === "player" ? [a.pos + (a.lgPosRank || ""), a.nfl, a.age ? "age " + ageText(a.age) : ""].filter(Boolean).join(", ") : a.nfl)}</small></span><span class="v">${fmt(a.value)}</span></div>`).join("")}
       </div>
-      <ul class="tf-why">${why.slice(0, 3).map(w => `<li>${esc(w)}</li>`).join("")}</ul>
+      <ul class="tf-why">${why.slice(0, 3).map(w => `<li>${esc(w)}</li>`).join("")}</ul>${tfFaabHTML(fb)}
       <div class="tf-foot"><span class="tf-verdict" style="color:${verdict[1]}">${verdict[0]}</span>
-        <button type="button" class="btn tf-open" data-rid="${r.rid}" data-get="${esc(r.pack.map(a => a.id).join(","))}">Open in calculator</button></div>
+        <button type="button" class="btn tf-open" data-rid="${r.rid}" data-get="${esc(r.pack.map(a => a.id).join(","))}"${tfFaabData(fb)}>Open in calculator</button></div>
     </article>`;
   }).join("");
 }
@@ -395,6 +410,8 @@ $("tfResults").addEventListener("click", e => {
   const b = e.target.closest(".tf-open"); if (!b) return;
   $("teamA").value = $("tfTeam").value; $("teamB").value = b.dataset.rid;
   S.sendIds = new Set(b.dataset.send ? b.dataset.send.split(",") : tfSend); S.getIds = new Set(b.dataset.get.split(","));
+  S.faab = { send: 0, get: 0 }; S.faabOn = { send: false, get: false };
+  if (b.dataset.faab){ S.faab[b.dataset.faabSide] = Number(b.dataset.faab); S.faabOn[b.dataset.faabSide] = true; }
   renderCalc();
   $("tabs").querySelector('[data-tab="calc"]').click();
   window.scrollTo({ top: $("groups").offsetTop, behavior: "smooth" });

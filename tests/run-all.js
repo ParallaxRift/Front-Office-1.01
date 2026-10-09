@@ -18,8 +18,7 @@ async function openLeague(browser, viewport, opts){
   const page = await browser.newPage({ serviceWorkers: 'block', viewport, isMobile: viewport.width < 500, hasTouch: viewport.width < 500 });
   page.errors = []; page.missing = [];
   page.on('pageerror', e => page.errors.push(e.message));
-  // data/build-notes.json is optional: it only exists after build notes are saved from the site
-  const OPTIONAL = ['data/build-notes.json', 'data/my-rankings.json', 'data/value-history.json'];
+  const OPTIONAL = ['data/my-rankings.json', 'data/value-history.json'];
   page.on('response', r => { const u = r.url(); if (u.startsWith(`http://localhost:${PORT}`) && r.status() >= 400 && !OPTIONAL.some(o => u.includes(o))) page.missing.push(u); });
   await setup(page, opts);
   await page.goto(`http://localhost:${PORT}/index.html`);
@@ -42,18 +41,18 @@ async function openLeague(browser, viewport, opts){
       check(`${vp.name}: values loaded`, info.players > 100 && info.picks > 0, `${info.src}, ${info.players} players, ${info.picks} picks`);
       for (const mode of ['basics', 'freakshow']){
         await page.evaluate(m => applyMode(m, true), mode); await page.waitForTimeout(150);
-        // every tab this mode offers, opened the way a visitor would: section first, then the tab (Feedback is in the footer)
+        // every tab this mode offers, opened the way a visitor would: section first, then the tab (Team Statuses is in the footer)
         const tabs = await page.$$eval('#tabs [data-tab]', x => x.filter(e => !e.hidden).map(e => e.dataset.tab));
         const bad = [];
         for (const t of tabs){
           const before = page.errors.length;
           const group = await page.evaluate(t => navGroupOf(t).id, t);
           {
-            if (vp.width < 500){ // phones navigate with the bottom tab bar; Live Scores and Feedback live in the More sheet
+            if (vp.width < 500){ // phones navigate with the bottom tab bar; Live Scores and Team Statuses live in the More sheet
               const bar = { trade: 'trade', values: 'values', team: 'team', league: 'league', scores: 'scores' }[group];
               if (bar) await page.tap(`#tabbar [data-go="${bar}"]`).catch(() => bad.push(`${t} tab bar button missing`));
               else { await page.tap('#tabbar [data-go="more"]'); await page.waitForTimeout(250); await page.tap(`#moreSheet [data-more="${t}"]`).catch(() => bad.push(`${t} More item missing`)); await page.waitForTimeout(250); }
-            } else if (group === "more" || group === "statusGrp") await page.click(group === "more" ? '#footFeedback' : '#footStatuses').catch(() => bad.push(`${t} footer link missing`));   // these open from the footer
+            } else if (group === "statusGrp") await page.click('#footStatuses').catch(() => bad.push(`${t} footer link missing`));   // these open from the footer
             else await page.click(`#groups [data-group="${group}"]`).catch(() => bad.push(`${t} section button missing`));
             if (await page.$eval(`[data-tab="${t}"]`, e => e.offsetParent !== null)) await page.click(`[data-tab="${t}"]`);
           }
@@ -149,14 +148,6 @@ async function openLeague(browser, viewport, opts){
     });
     check('player list: saved copy when fresh, Sleeper when stale', /^copy:1600,sleeper:\d+$/.test(src) && !src.endsWith(':1600'), src);
 
-    // Feedback board: with an Official column, typing "Pat" no longer earns the crown; only rows marked yes do
-    const crowns = await page.evaluate(async () => {
-      const realFetch = window.fetch;
-      window.fetch = async url => String(url).includes('docs.google.com') ? new Response('Timestamp,Name,Message,Official\n1,Pat,[Update] fake,\n2,Dev,real note,yes\n3,Sam,[Update] sneaky,\n', { status: 200 }) : realFetch(url);
-      await loadFeedback(); window.fetch = realFetch;
-      return [...document.querySelectorAll('#fbList .fb-item')].map(e => e.querySelector('.fb-name').firstChild.textContent.trim() + ':' + (e.querySelector('.crown') ? 'crown' : '-') + ':' + e.querySelector('.fb-type').textContent).join(',');
-    });
-    check('feedback: only Official rows get the crown', crowns === 'Sam:-:Other,Dev:crown:Update,Pat:-:Other', crowns);
 
     // Depth-chart floor: an unranked starting QB gets a real value; a 3rd-stringer doesn't; experts' ranks are never overridden
     const floor = await page.evaluate(() => {
