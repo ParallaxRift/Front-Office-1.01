@@ -467,26 +467,31 @@ $("teamB").addEventListener("change", renderCalc);
 
 const marketWord = () => "Front Office Rankings";
 // Green light = league tuning active, yellow = not active yet, grey = still checking
+// Computers: "Values updated …" sits at the end of the tuning chips (next to Picks ×…) instead of under the filters
+function syncTuningUpdated(){
+  const src = $("valuesUpdated"); if (!src) return;
+  for (const el of document.querySelectorAll("#tuningLight [data-upd]")){ el.textContent = src.textContent; el.classList.toggle("stale", src.classList.contains("stale")); el.title = src.title; }
+}
 function renderTuningLight(){
   const el = $("tuningLight"); if (!el || !S.league) return;
   const link = "";
   if (S.historyError){
-    el.innerHTML = `<span class="light off" aria-hidden="true"></span><div class="tuning-text"><b>League Tuning Is Off</b><p>Couldn't check your league's trade history, so values use ${marketWord()} and your league settings only. Reopen the league to try again.</p>${link}</div>`;
+    el.innerHTML = `<span class="light off" aria-hidden="true"></span><div class="tuning-text"><b>League Tuning Is Off</b><p>Couldn't check your league's trade history, so values use ${marketWord()} and your league settings only. Reopen the league to try again.</p><p class="tuning-upd dt-only" data-upd></p>${link}</div>`; syncTuningUpdated();
     return;
   }
   if (!S.history){
-    el.innerHTML = `<span class="light wait" aria-hidden="true"></span><div class="tuning-text"><b>Checking Your League's Trade History...</b><p>Values may adjust slightly in a moment.</p>${link}</div>`;
+    el.innerHTML = `<span class="light wait" aria-hidden="true"></span><div class="tuning-text"><b>Checking Your League's Trade History...</b><p>Values may adjust slightly in a moment.</p><p class="tuning-upd dt-only" data-upd></p>${link}</div>`; syncTuningUpdated();
     return;
   }
   const twoTeam = S.history.trades.filter(t => t.sides.length >= 2).length;
   if (S.nudge){
     const adj = ["QB","RB","WR","TE","PICK"].map(k => ({ k, m: S.nudge[k] }))
       .map(x => `<span class="chip">${x.k === "PICK" ? "Picks" : x.k + "s"} ×${(Math.round(x.m*100)/100).toFixed(2)}</span>`).join("");
-    el.innerHTML = `<span class="light on" aria-hidden="true"></span><div class="tuning-text"><b>League Tuning Is On</b><p>These values include your league's trade habits, learned from ${S.nudge.n} trades, along with ${marketWord()}.</p><div class="chips">${adj}</div>${link}</div>`;
+    el.innerHTML = `<span class="light on" aria-hidden="true"></span><div class="tuning-text"><b>League Tuning Is On</b><p>These values include your league's trade habits, learned from ${S.nudge.n} trades, along with ${marketWord()}.</p><div class="chips">${adj}<span class="tuning-upd dt-only" data-upd></span></div>${link}</div>`; syncTuningUpdated();
   } else {
     const left = Math.max(0, NUDGE_MIN_TRADES - twoTeam);
     const pct = Math.min(100, Math.round(twoTeam / NUDGE_MIN_TRADES * 100));
-    el.innerHTML = `<span class="light off" aria-hidden="true"></span><div class="tuning-text"><b>League Tuning Is Off for Now: ${left} More Trade${left === 1 ? "" : "s"} to Go</b><p>Your league has ${twoTeam} of the ${NUDGE_MIN_TRADES} trades needed. Until then, values use ${marketWord()} and your league settings only.</p><div class="tprog" role="progressbar" aria-valuemin="0" aria-valuemax="${NUDGE_MIN_TRADES}" aria-valuenow="${twoTeam}" aria-label="Trades toward league tuning"><span style="width:${pct}%"></span></div><small class="tprog-label">${twoTeam} / ${NUDGE_MIN_TRADES} trades</small>${link}</div>`;
+    el.innerHTML = `<span class="light off" aria-hidden="true"></span><div class="tuning-text"><b>League Tuning Is Off for Now: ${left} More Trade${left === 1 ? "" : "s"} to Go</b><p>Your league has ${twoTeam} of the ${NUDGE_MIN_TRADES} trades needed. Until then, values use ${marketWord()} and your league settings only.</p><div class="tprog" role="progressbar" aria-valuemin="0" aria-valuemax="${NUDGE_MIN_TRADES}" aria-valuenow="${twoTeam}" aria-label="Trades toward league tuning"><span style="width:${pct}%"></span></div><small class="tprog-label">${twoTeam} / ${NUDGE_MIN_TRADES} trades</small><p class="tuning-upd dt-only" data-upd style="margin:6px 0 0"></p>${link}</div>`; syncTuningUpdated();
   }
 }
 
@@ -504,6 +509,7 @@ function renderUpdated(){
   const stale = ago && Date.now() - Date.parse(iso) > 36 * 3600000;   // the update runs 3 times a day, so 36 hours means it's stuck
   const txt = !ago ? "" : stale ? `Values may be out of date: last updated ${ago}.` : `Values updated ${ago}.`;
   for (const id of ["valuesUpdated", "footUpdated"]){ const el = $(id); if (el){ el.textContent = txt; el.classList.toggle("stale", !!stale); el.title = iso ? new Date(iso).toLocaleString() : ""; } }
+  syncTuningUpdated();
 }
 // Player Values shows 50 rows at a time ("Show 50 more"), sorted by any column heading
 const VALUES_PAGE = 50;

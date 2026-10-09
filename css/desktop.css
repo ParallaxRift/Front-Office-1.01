@@ -372,3 +372,16 @@ body:not(.has-league) .connect{border-bottom:0!important}
 .tf-find-out .tf-results{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
 /* Trade Finder (desktop): no team status under the team names on trade cards */
 #panel-finder .tf-card-head .nm small{display:none}
+/* Rankings (desktop): player photos use the normal pointer, not a magnifying glass; "Values updated" sits with the tuning chips */
+.av.pl[data-pid]{cursor:pointer}
+.tuning .chips{align-items:center}
+.tuning-upd{font-size:13px;color:var(--bc-muted);margin-left:8px}
+.tuning-upd.stale{color:var(--bc-neg)}
+p.tuning-upd{margin:6px 0 0;margin-left:0}
+/* Team Strategy, Lineup, Waivers (desktop): no page title; the description sits beside the dropdown */
+.stratHead{justify-content:flex-start!important;align-items:flex-end!important;gap:12px 24px!important}
+.stratHead .head-sub{margin:0 0 11px;font-size:15px;color:var(--bc-muted);max-width:640px}
+/* Team Strategy (desktop): the cards sit on one board, stacked in columns so there are no gaps */
+#strategy > .grid2{display:block!important;columns:3 320px;column-gap:18px;background:var(--bc-card);border:1px solid var(--bc-line);border-radius:12px;padding:20px;box-shadow:var(--bc-lift)}
+#strategy > .grid2 > .box{break-inside:avoid;display:inline-block;width:100%;margin:0 0 18px!important;box-shadow:none!important;border:1px solid var(--bc-line)!important;border-radius:10px!important}
+#strategy > .grid2 > .box:last-child{margin-bottom:0!important}
