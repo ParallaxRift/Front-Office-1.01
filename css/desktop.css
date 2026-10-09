@@ -646,3 +646,12 @@ p.tuning-upd{margin:6px 0 0;margin-left:0}
   color:#fff!important;border:1.5px dashed rgba(242,179,61,.6)!important;border-radius:10px!important}
 .board .kt-search input::placeholder{color:#C9B27A}
 .board .kt-search input:focus{border-style:solid!important;border-color:#F2B33D!important}
+/* Trade Calculator (desktop): no colored stripe across the top; the scoreboard sits a little higher */
+.board::before{display:none!important}
+#panel-calc .board{margin-top:0!important}
+#panel-calc.panel{padding-top:8px}
+/* Trade Calculator team dropdowns: readable menu (white names on dark) */
+.board .kt-team select option{background:#1E2A35!important;color:#fff!important}
+.board .kt-team select option:checked{background:#2E4A63!important;color:#fff!important}
+/* Trade Calculator: the suggestions row and the breakdown panel are solid too (no stripes showing through) */
+.board .brow,.board > #hint,.board .ta-panel{background:#16212B!important;border:1px solid rgba(255,255,255,.10)!important}

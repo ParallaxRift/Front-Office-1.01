@@ -1899,3 +1899,29 @@ body:has(#pcard:not([hidden])) #installTip{display:none!important}   /* the "Get
 }
 
 .r-word{display:none}
+
+/* PHONES / APP: the bottom of the Trade Calculator (verdict, bar, math, suggestions, breakdown) in the desktop style.
+   The team boxes on top are unchanged. The board stays dark in dark mode too, so the gold and white text stay readable. */
+@media (max-width:600px){
+  .board{background:var(--ink-board,#10171D)!important;color:#fff!important}
+  .board .verdict{color:#F7D58A!important;text-transform:uppercase;letter-spacing:.03em;font-family:"Big Shoulders Display","Barlow Condensed",Impact,sans-serif!important;font-weight:900!important}
+  .board .track{background:#3A4652!important;border-radius:999px!important;overflow:hidden;position:relative}
+  .board .track .fill{display:none!important}
+  .board .track .tilt{display:block!important;position:absolute;top:0;bottom:0;left:50%;width:0;background:linear-gradient(90deg,#C98A16,#F2B33D 50%,#FFD77A);box-shadow:0 0 10px rgba(242,179,61,.55);transition:left .45s,width .45s}
+  .board .track .mid{z-index:1;background:#fff!important}
+  .board:has(.fill.even) .track{background:linear-gradient(90deg,#2E9A63,#3FB97A 50%,#2E9A63)!important}
+  .board:has(.fill.even) .track .tilt{opacity:0}
+  .board .tm-grid{color:#fff}
+  .board .tm-grid > div:not(.tm-lbl):not(.tm-head){font-family:"Big Shoulders Display","Barlow Condensed",Impact,sans-serif!important;font-weight:800!important;font-size:24px!important;color:#fff}
+  .board .tm-grid div.tot:not(.tm-lbl){font-size:32px!important;font-weight:900!important}
+  .board .tm-grid .adj{color:#5FD39A!important}
+  .board .tm-lbl{color:#9DB0BE!important;opacity:1!important;font-weight:700}
+  .board .tm-grid .tot{border-top-color:rgba(255,255,255,.35)!important}
+  .board .suggest .hint{color:#C9D4DC!important}
+  .board .suggest button{background:rgba(242,179,61,.12)!important;color:#F7D58A!important;border:1px solid rgba(242,179,61,.35)!important}
+  .board .share-btns .icon-btn{background:transparent!important;color:#fff!important;border:1px solid rgba(255,255,255,.25)!important}
+  .board .ta-btn{color:#fff!important;border-color:rgba(255,255,255,.3)!important}
+  .board .ta-panel{background:#16212B!important;border:1px solid rgba(255,255,255,.10)!important;color:#E9EEF2!important}
+  .board .ta-list b{color:#F7D58A}
+  .board .ta-list span{color:#C9D4DC}
+}
