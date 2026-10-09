@@ -5,7 +5,7 @@
 // so each team <select> gets a custom button and list with photos.
 // The hidden <select> still holds the value, so nothing else changes.
 // ============================================================
-const PICKERS = ["teamA", "teamB", "stratTeam", "tfTeam"];
+const PICKERS = ["teamA", "teamB", "stratTeam", "tfTeam", "rosterTeam"];
 const CHEVRON_DOWN = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:var(--muted)"><path d="M6 9l6 6 6-6"/></svg>`;
 function makePicker(id){
   const sel = $(id);
@@ -81,6 +81,9 @@ $("tabs").addEventListener("click", e => {
   if (b.dataset.tab === "finder") renderFinder();
   if (["standings", "power", "sim"].includes(b.dataset.tab)) renderStandings();
   if (b.dataset.tab === "trophy") loadTrophyRoom();
+  if (b.dataset.tab === "roster") renderRoster();
+  if (b.dataset.tab === "scouting") renderScouting();
+  if (b.dataset.tab === "lineup") renderLineup();
   store.set("tr_tab", b.dataset.tab);
   $("settingsBtn").setAttribute("aria-pressed", String(b.dataset.tab === "settings"));
 });

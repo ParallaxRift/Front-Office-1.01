@@ -39,6 +39,7 @@ function renderLeague(){
   $("board").style.display = "block"; $("sides").style.display = "grid";
   $("stratTeam").innerHTML = opts; $("stratTeam").value = S.myRid;
   $("tfTeam").innerHTML = opts; $("tfTeam").value = S.myRid;
+  $("rosterTeam").innerHTML = opts; $("rosterTeam").value = S.myRid;
   renderCalc(); renderValues(); renderSettings(); renderStrategy(); setupScores();
   if (S.history) renderHistory();
 }

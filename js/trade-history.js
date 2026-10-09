@@ -10,6 +10,27 @@ const HISTORY_SEASONS = 4;      // this season plus up to 3 earlier ones
 const NUDGE_MIN_TRADES = 15;    // fewer trades than this = no value adjustment
 // (The league's weight now grows with evidence: see shrinkWeight. Each position stays within ±7.5%.)
 
+// One Sleeper trade transaction -> { id, created, season, status, sides: [{ rid, owner, name, photo, gets, faab }] }
+function parseTradeTx(t, rosters, users, season){
+  const ownerOf = new Map((rosters || []).map(r => [r.roster_id, r.owner_id]));
+  const sides = (t.roster_ids || []).map(rid => {
+    const owner = ownerOf.get(rid);
+    const now = [...S.teams.values()].find(x => x.owner === owner);
+    const u = (users || []).find(x => x.user_id === owner);
+    return { rid, owner, curRid: now?.rid ?? null,
+      name: now?.name || u?.metadata?.team_name || u?.display_name || `Team ${rid}`,
+      photo: now ? now.photo : (u?.metadata?.avatar || u?.avatar || null), gets: [], faab: 0 };
+  });
+  const side = rid => sides.find(x => x.rid === rid);
+  // "from" = the team that gave the item up (Sleeper lists it under drops / previous_owner_id)
+  const other = rid => sides.length === 2 ? sides.find(x => x.rid !== rid)?.rid : null;
+  for (const [pid, rid] of Object.entries(t.adds || {}))
+    side(rid)?.gets.push({ kind: "player", pid, from: (t.drops || {})[pid] ?? other(rid) });
+  for (const pk of t.draft_picks || [])
+    side(pk.owner_id)?.gets.push({ kind: "pick", season: Number(pk.season), round: pk.round, orig: pk.roster_id, from: pk.previous_owner_id ?? other(pk.owner_id) });
+  for (const w of t.waiver_budget || []) { const x = side(w.receiver); if (x) x.faab += w.amount || 0; }
+  return sides.length >= 2 ? { id: t.transaction_id, created: t.created, season, status: t.status, sides } : null;
+}
 async function loadHistory(league){
   $("tradeList").innerHTML = `<p class="empty">Loading your league's trade history...</p>`;
   $("histStats").innerHTML = ""; $("histNote").textContent = "";
@@ -55,31 +76,16 @@ async function loadHistory(league){
       }
     }
 
-    const trades = [], seen = new Set();
+    const trades = [], seen = new Set(), pending = [];
     for (const sd of perSeason){
-      const ownerOf = new Map(sd.rosters.map(r => [r.roster_id, r.owner_id]));
       for (const t of sd.tx){
-        if (t?.type !== "trade" || t.status !== "complete" || seen.has(t.transaction_id)) continue;
+        if (t?.type !== "trade" || !["complete", "pending"].includes(t.status) || seen.has(t.transaction_id)) continue;
         seen.add(t.transaction_id);
-        const sides = (t.roster_ids || []).map(rid => {
-          const owner = ownerOf.get(rid);
-          const now = [...S.teams.values()].find(x => x.owner === owner);
-          const u = sd.users.find(x => x.user_id === owner);
-          return { rid, owner, curRid: now?.rid ?? null,
-            name: now?.name || u?.metadata?.team_name || u?.display_name || `Team ${rid}`,
-            photo: now ? now.photo : (u?.metadata?.avatar || u?.avatar || null), gets: [], faab: 0 };
-        });
-        const side = rid => sides.find(x => x.rid === rid);
-        // "from" = the team that gave the item up (Sleeper lists it under drops / previous_owner_id)
-        const other = rid => sides.length === 2 ? sides.find(x => x.rid !== rid)?.rid : null;
-        for (const [pid, rid] of Object.entries(t.adds || {}))
-          side(rid)?.gets.push({ kind: "player", pid, from: (t.drops || {})[pid] ?? other(rid) });
-        for (const pk of t.draft_picks || [])
-          side(pk.owner_id)?.gets.push({ kind: "pick", season: Number(pk.season), round: pk.round, orig: pk.roster_id, from: pk.previous_owner_id ?? other(pk.owner_id) });
-        for (const w of t.waiver_budget || []) { const x = side(w.receiver); if (x) x.faab += w.amount || 0; }
-        if (sides.length >= 2) trades.push({ id: t.transaction_id, created: t.created, season: Number(sd.L.season), sides });
+        const tr = parseTradeTx(t, sd.rosters, sd.users, Number(sd.L.season));
+        if (tr) (t.status === "pending" ? pending : trades).push(tr);
       }
     }
+    S.pendingTrades = pending.sort((a, b) => b.created - a.created);
     trades.sort((a, b) => b.created - a.created);
     // A traded pick whose slot couldn't be matched: follow it to the last team that got it in a trade.
     // If that team made exactly one pick in that round of that draft, that's the player it became.
@@ -345,6 +351,8 @@ const fmtDate = ms => new Date(ms).toLocaleDateString([], { month: "short", day:
 let histSort = { key: "net", dir: -1 };   // records table sort
 function renderHistory(){
   const H = S.history;
+  // tabs built on the trade history refresh once it arrives
+  setTimeout(() => { if ($("panel-scouting")?.classList.contains("on")) renderScouting(); });
   if (!H){ return; }
   const ownerTeam = o => [...S.teams.values()].find(t => t.owner === o);
   // ---- Filter controls ----

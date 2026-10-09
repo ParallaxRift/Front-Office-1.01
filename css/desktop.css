@@ -83,13 +83,13 @@ input[type=search]:focus,input[type=text]:focus,select:focus,textarea:focus{bord
 
 /* ---------- Stat tables: dark heads, quiet rows, tabular numbers ---------- */
 .tablewrap{border:1px solid var(--bc-line)!important;border-radius:10px!important;overflow:hidden;background:var(--bc-card)}
-table.stand,#valuesTable,#histTable{font-family:var(--bc-text);font-variant-numeric:tabular-nums;border-collapse:collapse}
-table.stand thead th,#valuesTable thead th,#histTable thead th{background:var(--bc-deck)!important;color:#C9D4DC!important;font:600 12px var(--bc-text)!important;letter-spacing:.03em;border:0!important;padding-top:11px!important;padding-bottom:11px!important}
-table.stand thead th button,#valuesTable thead th button,#histTable thead th button{color:inherit!important;font:inherit!important}
-table.stand thead th[aria-sort=ascending],table.stand thead th[aria-sort=descending],#valuesTable thead th[aria-sort=ascending],#valuesTable thead th[aria-sort=descending]{color:var(--bc-gold)!important}
-table.stand tbody td,#valuesTable tbody td,#histTable tbody td{border-color:var(--bc-line2)!important}
-table.stand tbody tr:hover td,#valuesTable tbody tr:hover td{background:rgba(242,179,61,.07)}
-table.stand tr.me td,#valuesTable tr.me td{background:rgba(63,185,122,.10)!important}
+table.stand,#valuesTable,#histTable,#rosterTable,.ros-picks,.lu-table{font-family:var(--bc-text);font-variant-numeric:tabular-nums;border-collapse:collapse}
+table.stand thead th,#valuesTable thead th,#histTable thead th,#rosterTable thead th,.ros-picks thead th,.lu-table thead th{background:var(--bc-deck)!important;color:#C9D4DC!important;font:600 12px var(--bc-text)!important;letter-spacing:.03em;border:0!important;padding-top:11px!important;padding-bottom:11px!important}
+table.stand thead th button,#valuesTable thead th button,#histTable thead th button,#rosterTable thead th button,.ros-picks thead th button{color:inherit!important;font:inherit!important}
+table.stand thead th[aria-sort=ascending],table.stand thead th[aria-sort=descending],#valuesTable thead th[aria-sort=ascending],#valuesTable thead th[aria-sort=descending],#rosterTable thead th[aria-sort=ascending],#rosterTable thead th[aria-sort=descending],.ros-picks thead th[aria-sort=ascending],.ros-picks thead th[aria-sort=descending]{color:var(--bc-gold)!important}
+table.stand tbody td,#valuesTable tbody td,#histTable tbody td,#rosterTable tbody td,.ros-picks tbody td{border-color:var(--bc-line2)!important}
+table.stand tbody tr:hover td,#valuesTable tbody tr:hover td,#rosterTable tbody tr:hover td,.ros-picks tbody tr:hover td{background:rgba(242,179,61,.07)}
+table.stand tr.me td,#valuesTable tr.me td,#rosterTable tr.me td,.ros-picks tr.me td{background:rgba(63,185,122,.10)!important}
 table.stand tr.cut td{border-bottom:2px solid var(--bc-gold)!important}
 .info-btn{border-color:currentColor!important;color:inherit!important}
 

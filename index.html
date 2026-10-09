@@ -26,8 +26,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600&family=Big+Shoulders+Display:wght@700;800;900&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=20261009a">
-<link rel="stylesheet" href="css/desktop.css?v=20261008b" media="(min-width: 601px)">
+<link rel="stylesheet" href="css/styles.css?v=20261009d">
+<link rel="stylesheet" href="css/desktop.css?v=20261009a" media="(min-width: 601px)">
 </head>
 <body>
 <div id="pcard" class="pc-backdrop" hidden></div>
@@ -120,6 +120,8 @@
     <button class="tab" role="tab" aria-selected="true" data-tab="calc" data-full="Trade Calculator">Calculator</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="finder" data-full="Trade Finder">Trade Finder</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="values" data-full="Rankings">Rankings</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="roster" data-full="My Roster">My Roster</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="lineup" data-full="Lineup &amp; Waivers">Lineup &amp; Waivers</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="strategy" data-full="My Team Strategy">Team Strategy</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="history" data-full="Trade History">Trade History</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="standings" data-full="Standings">Standings</button>
@@ -127,6 +129,7 @@
     <button class="tab" role="tab" aria-selected="false" data-tab="sim" data-full="Season Simulator">Season Simulator</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="trophy" data-full="Trophy Room">Trophy Room</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="statuses" data-full="Team Statuses">Team Statuses</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="scouting" data-full="Scouting Reports">Scouting Reports</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="settings" data-full="League Settings">League Settings</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="scores" data-full="Live Scores">Live Scores</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="feedback" data-full="Feedback &amp; Build Notes">Feedback &amp; Build Notes</button>
@@ -375,6 +378,44 @@
     </div>
   </section>
 
+  <section class="panel" id="panel-roster">
+    <div class="stratHead">
+      <div class="field" style="max-width:320px"><label for="rosterTeam">Team</label><select id="rosterTeam"></select></div>
+    </div>
+    <div id="rosterSum"></div>
+    <div class="controls">
+      <div class="seg" id="rosterPos">
+        <button aria-pressed="true" data-pos="ALL">All</button><button aria-pressed="false" data-pos="QB">QB</button><button aria-pressed="false" data-pos="RB">RB</button><button aria-pressed="false" data-pos="WR">WR</button><button aria-pressed="false" data-pos="TE">TE</button>
+      </div>
+    </div>
+    <p style="margin:0 0 10px;font-size:14px;color:var(--muted)">Tap any player to open his player card. Click a column heading to sort.</p>
+    <div class="tablewrap">
+      <table id="rosterTable">
+        <thead><tr><th class="sortable" data-sort="slot" aria-sort="none">Slot</th><th class="sortable" data-sort="name" aria-sort="none">Player</th><th class="sortable hide-sm" data-sort="pos" aria-sort="none">Pos</th><th class="rk sortable" data-sort="posrank" aria-sort="none"><span class="lbl-full">Position Ranking</span><span class="lbl-short" aria-hidden="true">Pos Rank</span></th><th class="rk sortable hide-sm" data-sort="rank" aria-sort="none">Overall Ranking</th><th class="n sortable" data-sort="age" aria-sort="none">Age</th><th class="sortable hide-sm" data-sort="nfl" aria-sort="none">NFL team</th><th class="n sortable hide-sm" data-sort="ppg" aria-sort="none" title="This season's points per game, full PPR">Pts/G</th><th class="n sortable hide-sm" data-sort="snap" aria-sort="none" title="Share of his team's offensive snaps, last 3 weeks">Snap %</th><th class="n sortable" data-sort="value" aria-sort="descending" title="His value in this league after all of Front Office's adjustments">This league</th><th class="n sortable hide-sm" data-sort="market" aria-sort="none" title="Front Office Rankings value before this league's adjustments">Market</th><th class="n sortable hide-sm" data-sort="change" aria-sort="none" title="How much this league's settings move his value">Change</th><th class="n sortable hide-sm" data-sort="trend" aria-sort="none" title="How his value has moved since Front Office started saving value history">Trend</th></tr></thead>
+        <tbody id="rosterBody"></tbody>
+      </table>
+    </div>
+    <div class="vmore"><span id="rosterCount"></span></div>
+    <h3 class="ros-h3">Draft Picks</h3>
+    <div id="rosterPicks"></div>
+    <p class="note">Slot is where he sits on your Sleeper roster right now. Pts/G is full-PPR scoring this season; the Game Log on his card shows your league's scoring. Trend compares his value today with the first saved snapshot in Value History.</p>
+  </section>
+
+  <section class="panel" id="panel-lineup">
+    <div class="stratHead"><div class="field" style="max-width:240px"><label for="luWeek">Week</label><select id="luWeek"></select></div></div>
+    <h3 class="ros-h3" style="margin-top:6px">Start / Sit</h3>
+    <div id="luBody"></div>
+    <h3 class="ros-h3">Waiver Help</h3>
+    <div id="luWaivers"></div>
+    <p class="note">Weekly projections from Sleeper, scored with your league's settings. Questionable players count at 75% and doubtful at 25% in "Expected"; players ruled out, on bye or on IR count 0. Tap any player to open his card.</p>
+  </section>
+
+  <section class="panel" id="panel-scouting">
+    <p class="note" style="margin:0 0 12px">Every manager's trading habits, from your league's trade history and graded with today's values. Pick a manager to see the full report and how to pitch them.</p>
+    <div class="tablewrap"><table id="scoutTable" class="stand"></table></div>
+    <div id="scoutBody" style="margin-top:16px"></div>
+  </section>
+
   <section class="panel" id="panel-strategy">
     <div class="stratHead">
       <div class="field" style="max-width:320px"><label for="stratTeam">Team</label><select id="stratTeam"></select></div>
@@ -573,13 +614,16 @@
 <script src="js/league-load.js?v=20261008l"></script>
 <script src="js/draft-classes.js?v=20261007t"></script>
 <script src="js/values-engine.js?v=20261008r"></script>
-<script src="js/render.js?v=20261008m"></script>
+<script src="js/render.js?v=20261009c"></script>
 <script src="js/player-cards.js?v=20261008k"></script>
 <script src="js/settings-tab.js?v=20261007a"></script>
 <script src="js/strategy.js?v=20261007g"></script>
+<script src="js/my-roster.js?v=20261009b"></script>
+<script src="js/lineup.js?v=20261009b"></script>
+<script src="js/scouting.js?v=20261009c"></script>
 <script src="js/live-scores.js?v=20261007n"></script>
-<script src="js/trade-history.js?v=20261008a"></script>
-<script src="js/modes.js?v=20261007n"></script>
+<script src="js/trade-history.js?v=20261009c"></script>
+<script src="js/modes.js?v=20261009c"></script>
 <script src="js/build-notes.js?v=20261007a"></script>
 <script src="js/feedback.js?v=20261007f"></script>
 <script src="js/standings-sim.js?v=20261008u"></script>
@@ -588,8 +632,8 @@
 <script src="js/trophy.js?v=20261007a"></script>
 <script src="js/popovers.js?v=20261008w"></script>
 <script src="js/trade-finder.js?v=20261007m"></script>
-<script src="js/pickers.js?v=20261007p"></script>
-<script src="js/nav.js?v=20261008r"></script>
+<script src="js/pickers.js?v=20261009c"></script>
+<script src="js/nav.js?v=20261009c"></script>
 <script src="js/app-shell.js?v=20261008w"></script>
 <script src="js/calc-phone.js?v=20261007m"></script>
 <script src="js/about.js?v=20261008c"></script>

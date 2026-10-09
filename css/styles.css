@@ -1532,3 +1532,86 @@ body:has(#pcard:not([hidden])) #installTip{display:none!important}   /* the "Get
 .pc-proj td.l i{color:var(--muted)}
 .pc-proj .pc-pts{font-weight:700}
 @media (max-width:600px){.pj-tiles{grid-template-columns:1fr 1fr}.pj-tile b{font-size:24px}}
+/* My Roster tab */
+.ros-head{display:flex;align-items:center;gap:12px;margin:4px 0 12px}
+.ros-head b{display:block;font:700 24px var(--display)}
+.ros-head .badge{margin-top:2px}
+#rosterSum .pj-tiles{margin-bottom:14px}
+#rosterTable td .slot{display:inline-block;font:600 11px var(--body);text-transform:uppercase;letter-spacing:.03em;padding:2px 7px;border-radius:999px;background:var(--paper);color:var(--muted);border:1px solid var(--line)}
+#rosterTable td .slot.s-starter{background:var(--field-soft);color:var(--field);border-color:transparent}
+#rosterTable td .slot.s-ir{background:var(--loss-soft);color:var(--loss);border-color:transparent}
+#rosterTable td .slot.s-taxi{background:var(--gold-soft);color:var(--gold);border-color:transparent}
+#rosterTable td.old{color:var(--loss);font-weight:600}
+#rosterTable .dc{color:var(--muted);font-size:12px;margin-left:4px}
+#rosterTable tbody tr{cursor:pointer}
+#rosterTable .up{color:var(--field);font-weight:600}#rosterTable .down{color:var(--loss);font-weight:600}
+#rosterCount small{color:var(--muted)}
+.ros-h3{font:700 20px var(--display);margin:22px 0 10px}
+.ros-picks{width:100%}
+#rosterTable th.rk,#rosterTable td.rk{text-align:center;width:1%;white-space:nowrap;padding-left:10px;padding-right:10px;font-variant-numeric:tabular-nums}
+@media (max-width:600px){#rosterTable thead th.rk{white-space:normal;padding-left:4px;padding-right:4px}#rosterTable td.rk{padding-left:4px;padding-right:4px}}
+#rosterTable th .lbl-short{display:none}
+#rosterTable thead th{white-space:nowrap}
+@media (max-width:600px){
+  #rosterTable{font-size:14px}
+  #rosterTable td,#rosterTable th{padding-left:5px;padding-right:5px}
+  #rosterTable th .lbl-full{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  #rosterTable th .lbl-short{display:inline}
+  #rosterTable td:nth-child(2){white-space:normal;line-height:1.25}
+  #rosterSum .pj-tiles{grid-template-columns:1fr 1fr}
+}
+@media (max-width:600px){
+  #rosterSum .ros-head{display:none}
+  #rosterSum .pj-tiles{grid-template-columns:repeat(3,1fr);gap:6px}
+  #rosterSum .pj-tile{padding:7px 8px}
+  #rosterSum .pj-tile b{font-size:19px}
+  #rosterSum .pj-tile small{font-size:10px}
+  #rosterSum .pj-tile span{font-size:11px;line-height:1.25;display:block}
+}
+/* Trade Grader */
+.gr-box{margin-bottom:16px}
+.gr-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.gr-top h3{margin:0}
+.gr-sides{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px 0}
+@media (max-width:600px){.gr-sides{grid-template-columns:1fr}}
+.gr-side h4{margin:0 0 6px;font:600 15px var(--body)}
+.gr-pick{position:relative}
+.gr-pick input{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font:15px var(--body);background:var(--card);color:var(--ink)}
+.gr-list{position:absolute;z-index:20;left:0;right:0;top:calc(100% + 4px);background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.15);max-height:320px;overflow:auto}
+.gr-list button{display:flex;align-items:center;gap:8px;width:100%;border:0;background:none;padding:7px 10px;text-align:left;cursor:pointer;font:14px var(--body);color:var(--ink)}
+.gr-list button:hover{background:var(--paper)}
+.gr-list button .gr-txt{flex:1;min-width:0}.gr-list small{display:block;color:var(--muted);font-size:12px}
+.gr-chips{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.gr-chip{display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid var(--line);border-radius:10px;background:var(--paper);font-size:14px}
+.gr-chip>.gr-txt{flex:1;min-width:0}.gr-chip small{display:block;color:var(--muted);font-size:12px}
+.gr-chip button{border:0;background:none;font-size:20px;line-height:1;color:var(--muted);cursor:pointer;padding:0 4px}
+.gr-empty{margin:0;color:var(--muted);font-size:14px;font-style:italic}
+.gr-verdict{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:6px 0 12px}
+.gr-verdict p{margin:0;font-size:15px}
+.gr-verdict .verdict-tag{font-size:15px;padding:5px 12px}
+.gr-advice{margin:0;padding:8px 14px;font-size:14px;background:var(--paper);border-top:1px solid var(--line)}
+.pj-tile b.up{color:var(--field)}.pj-tile b.down{color:var(--loss)}
+/* Scouting Reports */
+#scoutTable tbody tr{cursor:pointer}
+#scoutTable tr.sel td{background:var(--field-soft)}
+.sc-traits{white-space:normal}
+.sc-tag{display:inline-block;margin:2px 4px 2px 0;padding:2px 8px;border-radius:999px;background:var(--paper);border:1px solid var(--line);font:600 12px var(--body);color:var(--ink);white-space:nowrap}
+.sc-tags{margin:0 0 12px}
+.sc-facts{margin-bottom:14px}
+.sc-report h3{margin-top:4px}
+/* Lineup & Waivers */
+.lu-table{width:100%}
+.lu-table .lu-slot{font:700 12px var(--body);color:var(--muted);text-transform:uppercase;white-space:nowrap}
+.lu-table .lu-sub{display:block;color:var(--muted);font-size:12px;margin-left:40px}
+.lu-table tbody tr[data-id]{cursor:pointer}
+.lu-bench th{text-align:left;background:var(--paper);font-size:12px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted)}
+.lu-st{display:inline-block;margin-left:6px;padding:0 6px;border-radius:6px;font:700 11px var(--body)}
+.lu-st.s-q{background:var(--gold-soft);color:var(--gold)}.lu-st.s-o{background:var(--loss-soft);color:var(--loss)}
+.lu-ok{color:var(--field);font-weight:600;font-size:13px}
+.lu-change{display:inline-block;padding:2px 8px;border-radius:999px;background:var(--field);color:#fff;font:700 11px var(--body);text-transform:uppercase;letter-spacing:.03em;white-space:nowrap}
+.lu-moves{margin:10px 0 14px}
+.lu-sit{display:inline-block;padding:2px 8px;border-radius:999px;background:var(--loss-soft);color:var(--loss);font:700 11px var(--body);text-transform:uppercase;letter-spacing:.03em}
+.sc-facts{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));overflow:visible!important}
+.sc-facts div{min-width:0!important}
+.sc-facts dd,.sc-facts dt{white-space:normal!important}
+@media (max-width:600px){.sc-facts{grid-template-columns:1fr 1fr}.sc-tag{white-space:normal}#scoutTable td.sc-traits .sc-tag:nth-child(n+3){display:none}}

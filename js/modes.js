@@ -98,7 +98,7 @@ function leagueSignature(league, rosters, traded){
 }
 // Re-draw every tab after new data, keeping the teams, week, and trade you had picked
 function rerenderKeepingPlace(){
-  const keep = { a: $("teamA").value, b: $("teamB").value, st: $("stratTeam").value, tf: $("tfTeam").value, wk: $("weekSelect").value };
+  const keep = { a: $("teamA").value, b: $("teamB").value, st: $("stratTeam").value, tf: $("tfTeam").value, ro: $("rosterTeam").value, wk: $("weekSelect").value };
   // keep the trade being built: renderLeague briefly resets the teams, which would otherwise drop its pieces
   const keepTrade = { send: new Set(S.sendIds), get: new Set(S.getIds) };
   const scoresOpen = $("panel-scores").classList.contains("on");
@@ -109,6 +109,10 @@ function rerenderKeepingPlace(){
   if (has(keep.b)) $("teamB").value = keep.b;
   if (has(keep.st)) $("stratTeam").value = keep.st;
   if (has(keep.tf)) $("tfTeam").value = keep.tf;
+  if (has(keep.ro)) $("rosterTeam").value = keep.ro;
+  if ($("panel-roster").classList.contains("on")) renderRoster();
+  if ($("panel-scouting").classList.contains("on")) renderScouting();
+  if ($("panel-lineup").classList.contains("on")) renderLineup();
   if (keep.wk && [...$("weekSelect").options].some(o => o.value === keep.wk)) $("weekSelect").value = keep.wk;
   renderCalc(); renderStrategy();
   if ($("panel-finder").classList.contains("on")) renderFinder();
