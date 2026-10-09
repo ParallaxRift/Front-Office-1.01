@@ -278,6 +278,110 @@ function valueHistoryBlock(a, vh){
     </svg></div>
     <p class="pc-note">His value in your league each time the Front Office Rankings changed, using your league's settings as they are today. ${matchMedia("(hover:none)").matches ? "Tap" : "Hover over"} a dot for the date and value.</p>`;
 }
+// ---------- Game log and usage history (week by week, from Sleeper) ----------
+const PC_TABS = [["status", "Current Status", "Status"], ["log", "Game Log", "Games"], ["career", "Career Stats", "Career"], ["usage", "Usage", "Usage"], ["value", "Value History", "Value"]];   // [key, label, short label for phones]
+const PC = { pid: null, pos: "", tab: "status", season: null, seasons: null };
+const weekCache = new Map();
+async function sleeperWeeks(pid, season){
+  const k = pid + "|" + season;
+  if (weekCache.has(k)) return weekCache.get(k);
+  try {
+    const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 8000);
+    const r = await fetch(`https://api.sleeper.com/stats/nfl/player/${encodeURIComponent(pid)}?season_type=regular&season=${season}&grouping=week`, { signal: ctl.signal });
+    clearTimeout(t);
+    if (!r.ok) return null;
+    const d = await r.json();
+    const list = Array.isArray(d) ? d.map(e => [e?.week, e]) : Object.entries(d || {});
+    const rows = list.map(([wk, e]) => e && e.stats ? { wk: Number(e.week ?? wk), opp: e.opponent || "", team: e.team || "", st: e.stats } : null)
+      .filter(x => x && x.wk >= 1 && x.wk <= 18).sort((x, y) => x.wk - y.wk);
+    weekCache.set(k, rows);
+    return rows;
+  } catch(e){ return null; }
+}
+// Fantasy points under THIS league's scoring: every scoring rule times his matching stat
+function leaguePoints(st, pos){
+  const sc = S.league?.scoring_settings;
+  if (!sc) return Number(st.pts_ppr) || 0;
+  let t = 0;
+  for (const [k, v] of Object.entries(sc)){ const x = Number(st[k]); if (x && Number(v)) t += x * Number(v); }
+  const bonus = { TE: "bonus_rec_te", RB: "bonus_rec_rb", WR: "bonus_rec_wr" }[pos];
+  if (bonus && Number(sc[bonus]) && st[bonus] == null) t += (Number(st.rec) || 0) * Number(sc[bonus]);   // per-catch bonus by position
+  return Math.round(t * 100) / 100;
+}
+const played = st => Number(st.gp) > 0 || Number(st.off_snp) > 0;
+function seasonPicker(){
+  const ss = PC.seasons || [];
+  if (ss.length < 2) return ss.length ? `<span class="pc-season-one">${ss[0]} season</span>` : "";
+  return `<label class="pc-season-lab">Season <select class="pc-season">${ss.map(y => `<option value="${y}"${y === PC.season ? " selected" : ""}>${y}</option>`).join("")}</select></label>`;
+}
+async function renderWeekPanes(){
+  const pid = PC.pid, season = PC.season;
+  if (!PC.seasons){ if ($("pcLog")) $("pcLog").innerHTML = `<p class="pc-loading">Loading game log…</p>`; return; }   // filled once career stats load
+  if (!PC.seasons.length){
+    const none = `<p class="empty">No NFL regular-season games yet.</p>`;
+    $("pcLog").innerHTML = none; $("pcUseHist").innerHTML = ""; return;
+  }
+  const box = PC.tab === "usage" ? $("pcUseHist") : $("pcLog");
+  if (box && !box.querySelector("table")) box.innerHTML = `<p class="pc-loading">Loading ${season} games…</p>`;
+  const rows = await sleeperWeeks(pid, season);
+  if ($("pcard").hidden || PC.pid !== pid || PC.season !== season) return;
+  $("pcLog").innerHTML = gameLogTable(rows, PC.pos, season);
+  $("pcUseHist").innerHTML = usageHistory(rows, season);
+}
+function gameLogTable(rows, pos, season){
+  if (!rows) return `${seasonPicker()}<p class="empty">The game log isn't available right now. Try again in a minute.</p>`;
+  const games = rows.filter(r => played(r.st));
+  if (!games.length) return `${seasonPicker()}<p class="empty">No games played in ${season}.</p>`;
+  const v = (st, k) => Number(st[k]) || 0, n = x => (x || 0).toLocaleString();
+  const C = {
+    ca: ["Cmp/Att", st => `${v(st, "pass_cmp")}/${v(st, "pass_att")}`], py: ["Pass Yds", st => n(v(st, "pass_yd"))], ptd: ["Pass TD", st => v(st, "pass_td")], int: ["INT", st => v(st, "pass_int")],
+    car: ["Car", st => v(st, "rush_att")], ry: ["Rush Yds", st => n(v(st, "rush_yd"))], rtd: ["Rush TD", st => v(st, "rush_td")],
+    tgt: ["Tgt", st => v(st, "rec_tgt")], rec: ["Rec", st => v(st, "rec")], recy: ["Rec Yds", st => n(v(st, "rec_yd"))], rectd: ["Rec TD", st => v(st, "rec_td")],
+    fl: ["FL", st => v(st, "fum_lost")]
+  };
+  const cols = pos === "QB" ? ["ca", "py", "ptd", "int", "car", "ry", "rtd", "fl"]
+             : pos === "RB" ? ["car", "ry", "rtd", "tgt", "rec", "recy", "rectd", "fl"]
+             : ["tgt", "rec", "recy", "rectd", "car", "ry", "fl"];
+  const pts = games.map(g => leaguePoints(g.st, pos)), best = Math.max(...pts), total = pts.reduce((a, b) => a + b, 0);
+  const tot = {}; for (const g of games) for (const [k, x] of Object.entries(g.st)) tot[k] = (tot[k] || 0) + (Number(x) || 0);
+  const byWeek = new Map(rows.map(r => [r.wk, r]));
+  const last = Math.max(...rows.map(r => r.wk));
+  const lines = [];
+  for (let w = 1; w <= last; w++){
+    const g = byWeek.get(w);
+    if (!g || !played(g.st)){ lines.push(`<tr class="pc-dnp"><td>${w}</td><td class="l">${g?.opp ? esc(g.opp) : ""}</td><td colspan="${cols.length + 2}" class="l">${g ? "Did not play" : "Bye or no game"}</td></tr>`); continue; }
+    const p = leaguePoints(g.st, pos), snap = g.st.tm_off_snp ? Math.round(g.st.off_snp / g.st.tm_off_snp * 100) + "%" : "–";
+    lines.push(`<tr><td>${w}</td><td class="l">${g.opp ? esc(g.opp) : "–"}</td>${cols.map(k => `<td>${C[k][1](g.st)}</td>`).join("")}<td>${snap}</td><td class="pc-pts${p === best && games.length > 1 ? " best" : ""}">${p.toFixed(1)}</td></tr>`);
+  }
+  return `<div class="pc-log-top">${seasonPicker()}<p class="pc-log-sum"><b>${total.toFixed(1)}</b> points in ${games.length} game${games.length > 1 ? "s" : ""} · <b>${(total / games.length).toFixed(1)}</b> per game · best ${best.toFixed(1)}</p></div>
+    <div class="pc-scroll"><table class="pc-log"><thead><tr><th>Wk</th><th class="l">Opp</th>${cols.map(k => `<th>${C[k][0]}</th>`).join("")}<th>Snap %</th><th>Pts</th></tr></thead>
+    <tbody>${lines.join("")}<tr class="tot"><td colspan="2" class="l">Total</td>${cols.map(k => `<td>${C[k][1](tot)}</td>`).join("")}<td>${tot.tm_off_snp ? Math.round(tot.off_snp / tot.tm_off_snp * 100) + "%" : "–"}</td><td class="pc-pts">${total.toFixed(1)}</td></tr></tbody></table></div>
+    <p class="pc-note">Points use your league's scoring settings. Week-by-week stats from Sleeper, regular season only.</p>`;
+}
+// Usage history: snap share each week as bars, with targets, carries and touches underneath
+function usageHistory(rows, season){
+  if (!rows) return "";
+  const games = rows.filter(r => played(r.st));
+  if (!games.length) return "";
+  const v = (st, k) => Number(st[k]) || 0;
+  const W = Math.max(games.length * 34, 280), H = 120, top = 16, base = 96;
+  const bars = games.map((g, i) => {
+    const sh = g.st.tm_off_snp ? v(g.st, "off_snp") / v(g.st, "tm_off_snp") : null, h = sh == null ? 0 : sh * (base - top), x = i * 34 + 6;
+    return `<g><rect x="${x}" y="${(base - h).toFixed(1)}" width="22" height="${h.toFixed(1)}" rx="3" class="uh-bar"><title>Week ${g.wk}: ${sh == null ? "snaps not reported" : Math.round(sh * 100) + "% of snaps"}</title></rect>
+      <text x="${x + 11}" y="${(base - h - 4).toFixed(1)}" text-anchor="middle" class="uh-val">${sh == null ? "" : Math.round(sh * 100)}</text><text x="${x + 11}" y="${base + 16}" text-anchor="middle" class="uh-wk">${g.wk}</text></g>`;
+  }).join("");
+  const row = (label, f) => `<tr><td class="l">${label}</td>${games.map(g => `<td>${f(g.st)}</td>`).join("")}</tr>`;
+  return `<h4 class="pc-h4">Week by week · ${season} ${seasonPicker()}</h4>
+    <div class="pc-scroll"><svg class="uh-chart" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Snap share by week">${bars}</svg></div>
+    <p class="pc-note" style="margin-top:2px">Bars: share of his team's offensive snaps each week (%).</p>
+    <div class="pc-scroll"><table class="pc-uh"><thead><tr><th class="l">Week</th>${games.map(g => `<th>${g.wk}</th>`).join("")}</tr></thead><tbody>
+      ${row("Snaps", st => st.off_snp != null ? v(st, "off_snp") : "–")}
+      ${row("Targets", st => v(st, "rec_tgt"))}
+      ${row("Carries", st => v(st, "rush_att"))}
+      ${row("Touches", st => v(st, "rush_att") + v(st, "rec"))}
+      ${PC.pos === "QB" ? row("Pass att", st => v(st, "pass_att")) : ""}
+    </tbody></table></div>`;
+}
 async function openPlayerCard(pid){
   const sp = S.sleeperPlayers?.[pid] || {}, a = S.assets?.get("p:" + pid);
   const name = a?.name || sp.full_name || `${sp.first_name || ""} ${sp.last_name || ""}`.trim() || "Player";
@@ -300,12 +404,14 @@ async function openPlayerCard(pid){
     </header>
     <div class="pc-body">
       <dl class="pc-facts">${facts.map(([k, v]) => `<div${k === "Fantasy team" || k === "College" ? ' class="wide"' : ""}><dt>${esc(k)}</dt><dd>${k === "Fantasy team" && a?.owner != null ? `<span class="pc-ft">${teamPhoto(a.owner, "sm")}${esc(v)}</span>` : esc(v)}</dd></div>`).join("")}</dl>
-      ${a ? `<h3>Value History</h3><div id="pcHist"><p class="pc-loading">Loading value history…</p></div>` : ""}
-      <h3>Current Status</h3><div id="pcNow">${currentStatus(sp)}</div>
-      <h3>Usage</h3><div id="pcUse"><p class="pc-loading">Loading usage…</p></div>
-      <h3>Career Stats</h3><div id="pcStats"><p class="pc-loading">Loading stats…</p></div>
-      <p class="pc-note">Current status and career stats from Sleeper. Regular season only. Fantasy points use standard full-PPR scoring.</p>
+      <div class="pc-tabs" role="tablist" aria-label="Player details">${PC_TABS.filter(([k]) => k !== "value" || a).map(([k, l, sh], i) => `<button type="button" role="tab" data-pctab="${k}" aria-selected="${i === 0}" aria-label="${l}"><span class="t-full">${l}</span><span class="t-short">${sh}</span></button>`).join("")}</div>
+      <section class="pc-pane" data-pane="status"><div id="pcNow">${currentStatus(sp)}</div><p class="pc-note">Current status from Sleeper.</p></section>
+      <section class="pc-pane" data-pane="log" hidden><div id="pcLog"><p class="pc-loading">Loading game log…</p></div></section>
+      <section class="pc-pane" data-pane="career" hidden><div id="pcStats"><p class="pc-loading">Loading stats…</p></div><p class="pc-note">Career stats from Sleeper. Regular season only. Fantasy points here use standard full-PPR scoring; the Game Log uses your league's scoring.</p></section>
+      <section class="pc-pane" data-pane="usage" hidden><div id="pcUse"><p class="pc-loading">Loading usage…</p></div><div id="pcUseHist"></div></section>
+      ${a ? `<section class="pc-pane" data-pane="value" hidden><div id="pcHist"><p class="pc-loading">Loading value history…</p></div></section>` : ""}
     </div></div>`;
+  PC.pid = pid; PC.pos = pos; PC.tab = "status"; PC.season = null; PC.seasons = null;
   $("pcard").hidden = false; document.body.style.overflow = "hidden";
   $("pcard").querySelector(".pc-close").focus();
   if (a) loadValueHistory().then(vh => { const box = $("pcHist"); if (box && !$("pcard").hidden){ box.innerHTML = valueHistoryBlock(a, vh); box.dataset.pid = pid; } });
@@ -321,6 +427,9 @@ async function openPlayerCard(pid){
   $("pcStats").innerHTML = data || live.ok ? statsTable(rec, pos, season) : `<p class="empty">Stats aren't available right now. Try again in a minute.</p>`;
   $("pcNow").innerHTML = currentStatus(sp, { ...rec, c: rec0?.c }, rec0?.n || []);
   $("pcUse").innerHTML = usageBlock(rec0?.u);
+  PC.seasons = [...new Set([...rec.s.filter(r => r[2] > 0).map(r => r[0]), ...(S.nflState?.season_type === "regular" ? [season] : [])])].sort((x, y) => y - x);
+  if (!PC.seasons.includes(PC.season)) PC.season = PC.seasons[0] || season;
+  if (PC.tab === "log" || PC.tab === "usage") renderWeekPanes();
   const dm = depthMoveText(pid); if (dm){ const dd = [...$("pcard").querySelectorAll(".pc-facts dt")].find(x => x.textContent === "Depth chart"); if (dd && !dd.nextElementSibling.textContent.includes(dm)) dd.nextElementSibling.textContent += " · " + dm; }
 }
 function closePlayerCard(){ $("pcard").hidden = true; $("pcard").innerHTML = ""; document.body.style.overflow = ""; }
@@ -329,6 +438,22 @@ document.addEventListener("click", e => {
   const ph = e.target.closest(".av.pl[data-pid]");
   if (ph && !e.target.closest("#pcard")){ e.preventDefault(); e.stopPropagation(); openPlayerCard(ph.dataset.pid); }
 }, true);
+$("pcard").addEventListener("click", e => {
+  const t = e.target.closest("[data-pctab]"); if (!t) return;
+  PC.tab = t.dataset.pctab;
+  for (const b of $("pcard").querySelectorAll("[data-pctab]")) b.setAttribute("aria-selected", b === t);
+  for (const pane of $("pcard").querySelectorAll(".pc-pane")) pane.hidden = pane.dataset.pane !== PC.tab;
+  if (PC.tab === "log" || PC.tab === "usage") renderWeekPanes();
+});
+$("pcard").addEventListener("keydown", e => {   // arrow keys move between tabs
+  const t = e.target.closest("[data-pctab]"); if (!t || !["ArrowLeft", "ArrowRight"].includes(e.key)) return;
+  const all = [...$("pcard").querySelectorAll("[data-pctab]")], n = all[(all.indexOf(t) + (e.key === "ArrowRight" ? 1 : all.length - 1)) % all.length];
+  n.focus(); n.click();
+});
+$("pcard").addEventListener("change", e => {
+  if (!e.target.classList.contains("pc-season")) return;
+  PC.season = Number(e.target.value); renderWeekPanes();
+});
 $("pcard").addEventListener("click", async e => {
   const b = e.target.closest("[data-vh]"); if (!b) return;
   vhRange = b.dataset.vh; const box = $("pcHist"), a = S.assets?.get("p:" + box?.dataset.pid);

@@ -1492,3 +1492,27 @@ body:not(.has-league) .side-switch,body:not(.has-league) #miniBar{display:none!i
 .vh-line{fill:none;stroke:var(--field);stroke-width:2.5;stroke-linejoin:round}
 .vh-dot{fill:var(--card);stroke:var(--field);stroke-width:2}
 .vh-now{fill:var(--field);stroke:var(--card);stroke-width:2}
+/* Player card tabs: Current Status, Game Log, Career Stats, Usage, Value History */
+.pc-tabs{display:flex;gap:4px;margin:18px 0 14px;border-bottom:1px solid var(--line);overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.pc-tabs::-webkit-scrollbar{display:none}
+.pc-tabs button{flex:0 0 auto;border:0;background:none;padding:9px 12px 10px;font:600 14px var(--body);color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-1px;white-space:nowrap}
+.pc-tabs button:hover{color:var(--ink)}
+.pc-tabs button[aria-selected=true]{color:var(--ink);border-bottom-color:var(--field)}
+.pc-tabs button:focus-visible{outline:2px solid var(--field);outline-offset:-2px;border-radius:6px}
+.pc-log-top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.pc-log-sum{margin:0;font-size:14px;color:var(--muted)}.pc-log-sum b{color:var(--ink)}
+.pc-season-lab{font-size:13px;color:var(--muted);display:inline-flex;align-items:center;gap:6px}
+.pc-season{font:600 14px var(--body);padding:5px 8px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)}
+.pc-season-one{font-size:13px;color:var(--muted)}
+.pc-log .pc-pts{font-weight:700}
+.pc-log .pc-pts.best{color:var(--field)}
+.pc-log tr.pc-dnp td{color:var(--muted);font-style:italic}
+.pc-h4{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;font:600 15px var(--body);margin:18px 0 8px}
+.uh-chart{display:block;font:11px var(--body);margin:6px 0}
+.uh-bar{fill:var(--field);opacity:.85}
+.uh-val{fill:var(--ink);font-weight:600}
+.uh-wk{fill:var(--muted)}
+.pc-scroll:has(.uh-chart){border:0;border-radius:0}
+body:has(#pcard:not([hidden])) #installTip{display:none!important}   /* the "Get the app" tip never covers an open player card */
+.pc-tabs .t-short{display:none}
+@media (max-width:600px){.pc-tabs .t-full{display:none}.pc-tabs .t-short{display:inline}.pc-tabs button{padding:9px 10px 10px;flex:1 1 auto}.pc-tabs{gap:0}}
