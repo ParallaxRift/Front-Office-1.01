@@ -30,19 +30,28 @@ async function loadHistory(league){
         getJSON(`/league/${L.league_id}/drafts`).catch(() => []),
         Promise.all(Array.from({length: 19}, (_, w) => getJSON(`/league/${L.league_id}/transactions/${w}`).catch(() => [])))
       ]);
+      // (one retry: Sleeper sometimes turns a request away while the transactions are loading)
+      const picksOf = d => getJSON(`/draft/${d.draft_id}/picks`).catch(() => new Promise(ok => setTimeout(ok, 1200)).then(() => getJSON(`/draft/${d.draft_id}/picks`)));
       const draftPicks = await Promise.all((drafts || []).filter(d => d.status === "complete")
-        .map(d => getJSON(`/draft/${d.draft_id}/picks`).then(ps => ({ d, ps })).catch(() => null)));
+        .map(d => picksOf(d).then(ps => ({ d, ps })).catch(() => null)));
       return { L, rosters: rosters || [], users: users || [], draftPicks: draftPicks.filter(Boolean), tx: weeks.flat() };
     }));
     if (S.league?.league_id !== league.league_id) return; // switched leagues mid-load
 
     // What each traded pick turned into: "season-round-originalRoster" -> player id
-    const pickResult = new Map();
+    const pickResult = new Map(), madeBy = [];   // madeBy: every pick with the team that actually made it
     for (const sd of perSeason) for (const { d, ps } of sd.draftPicks){
-      const slotMap = d.slot_to_roster_id || {};
+      // The original owner of each draft slot: Sleeper's slot list, or else its draft order (manager -> slot)
+      const slotMap = { ...(d.slot_to_roster_id || {}) };
+      for (const [uid, slot] of Object.entries(d.draft_order || {})){
+        if (slotMap[slot] != null) continue;
+        const r = sd.rosters.find(x => x.owner_id === uid || (x.co_owners || []).includes(uid)); if (r) slotMap[slot] = r.roster_id;
+      }
       for (const pk of ps || []){
-        const orig = slotMap[pk.draft_slot];
-        if (orig != null && pk.player_id) pickResult.set(`${d.season}-${pk.round}-${orig}`, { pid: pk.player_id, slot: pk.draft_slot, no: pk.pick_no });
+        if (!pk.player_id) continue;
+        const orig = slotMap[pk.draft_slot], res = { pid: pk.player_id, slot: pk.draft_slot, no: pk.pick_no };
+        if (orig != null) pickResult.set(`${d.season}-${pk.round}-${orig}`, res);
+        madeBy.push({ season: Number(d.season), round: Number(pk.round), by: pk.roster_id, res });
       }
     }
 
@@ -72,6 +81,16 @@ async function loadHistory(league){
       }
     }
     trades.sort((a, b) => b.created - a.created);
+    // A traded pick whose slot couldn't be matched: follow it to the last team that got it in a trade.
+    // If that team made exactly one pick in that round of that draft, that's the player it became.
+    for (const t of trades) for (const sd of t.sides) for (const it of sd.gets){
+      if (it.kind !== "pick") continue;
+      const key = `${it.season}-${it.round}-${it.orig}`; if (pickResult.has(key)) continue;
+      const last = trades.find(x => x.sides.some(y => y.gets.some(g => g.kind === "pick" && `${g.season}-${g.round}-${g.orig}` === key)));   // newest first
+      const holder = last.sides.find(y => y.gets.some(g => g.kind === "pick" && `${g.season}-${g.round}-${g.orig}` === key)).rid;
+      const made = madeBy.filter(m => m.season === it.season && m.round === Number(it.round) && m.by === holder);
+      if (made.length === 1) pickResult.set(key, made[0].res);
+    }
     S.history = { trades, pickResult, seasons: seasons.map(x => Number(x.season)) };
     S.historyError = false;
 
