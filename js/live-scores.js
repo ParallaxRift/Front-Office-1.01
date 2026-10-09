@@ -267,15 +267,32 @@ function matchupOfWeek(list, X){
     return { A, B, s, why, pa, pb, w };
   }).sort((x, y) => y.s - x.s);
   const g = scored[0]; if (!g) return;
+  const A = g.A, B = g.B, ra = A.roster_id, rb = B.roster_id;
   const nm = r => esc(S.teams.get(r)?.name || "Team " + r), recTxt = r => { const x = rec(r); return `${x.w}-${x.l}${x.t ? "-" + x.t : ""}`; };
-  const side = (m, p, wc) => `<div class="motw-team">${teamPhoto(m.roster_id, "md")}<span class="motw-nm"><b>${nm(m.roster_id)}</b><small>${recTxt(m.roster_id)} · ${ordinal(place.get(m.roster_id))} · Power ${ordinal(pr(m.roster_id))}</small></span>
-    <span class="motw-pts"><b>${X.pts(m).toFixed(2)}</b>${p ? `<small>Proj ${p.t.toFixed(1)}${wc != null ? ` · ${Math.round(wc * 100)}%` : ""}</small>` : ""}</span></div>`;
-  const share = g.w != null ? Math.round(g.w * 100) : (X.pts(g.A) + X.pts(g.B) > 0 ? Math.round(X.pts(g.A) / (X.pts(g.A) + X.pts(g.B)) * 100) : 50);
-  const html = `<article class="mb motw" aria-label="Matchup of the Week"><div class="mb-tag">Matchup of the Week</div>
-    <div class="motw-body">${side(g.A, g.pa, g.w)}<div class="motw-vs">vs</div>${side(g.B, g.pb, g.w == null ? null : 1 - g.w)}
-    <div class="sb-bar"><i style="width:${share}%"></i></div>
-    <ul class="motw-why">${(g.why.length ? g.why : ["The best mix of rankings, projections and star power this week"]).slice(0, 3).map(x => `<li>${x}</li>`).join("")}</ul>
-    <button type="button" class="ghost motw-go" data-mid="${g.A.matchup_id}">See the box score</button></div></article>`;
+  const wa = g.w, wb = wa == null ? null : 1 - wa;
+  const share = wa != null ? Math.round(wa * 100) : (X.pts(A) + X.pts(B) > 0 ? Math.round(X.pts(A) / (X.pts(A) + X.pts(B)) * 100) : 50);
+  // a star to watch on each side: his most valuable starter
+  const star = m => { const p = (m.starters || []).map(pid => S.assets.get("p:" + pid)).filter(Boolean).sort((x, y) => y.value - x.value)[0]; if (!p) return "";
+    const pr2 = S.scoreProj?.get(String(p.pid)), pp = pr2 ? leaguePoints(pr2.st, p.pos) : null;
+    return `<div class="motw-star">${assetPhoto(p, "md")}<span><small>Star to watch</small><b>${esc(p.name)}</b><em>${esc(p.pos + (p.lgPosRank || ""))}${pp != null ? ` · ${pp.toFixed(1)} proj` : ""}</em></span></div>`; };
+  // tale of the tape: the better side of each row is lit up
+  const tape = [
+    ["Record", recTxt(ra), recTxt(rb), (rec(ra).w + rec(ra).t / 2) - (rec(rb).w + rec(rb).t / 2)],
+    ["Standing", ordinal(place.get(ra)), ordinal(place.get(rb)), place.get(rb) - place.get(ra)],
+    ["Power", ordinal(pr(ra)), ordinal(pr(rb)), pr(rb) - pr(ra)],
+    ...(g.pa && g.pb ? [["Projected", g.pa.t.toFixed(1), g.pb.t.toFixed(1), g.pa.t - g.pb.t]] : []),
+    ["Top-" + elite + " starters", String(stars(A)), String(stars(B)), stars(A) - stars(B)]
+  ].map(([k, l, r, d]) => `<div class="tape-row"><span class="${d > 0 ? "up" : ""}">${l}</span><em>${k}</em><span class="${d < 0 ? "up" : ""}">${r}</span></div>`).join("");
+  const side = (m, wc, cls) => `<div class="motw-side ${cls}">${teamPhoto(m.roster_id, "xl")}<b class="motw-name">${nm(m.roster_id)}</b>
+    <span class="motw-score">${X.pts(m).toFixed(2)}</span>${wc != null ? `<span class="motw-wc">${Math.round(wc * 100)}% to win</span>` : ""}</div>`;
+  const html = `<article class="mb motw" aria-label="Matchup of the Week">
+    <div class="motw-banner"><span class="motw-kicker">Prime Time · Week ${X.week}</span><h3>Matchup of the Week</h3></div>
+    <div class="motw-faceoff">${side(A, wa, "l")}<div class="motw-vs"><span>VS</span></div>${side(B, wb, "r")}</div>
+    <div class="motw-bar"><span>${share}%</span><div class="sb-bar"><i style="width:${share}%"></i></div><span>${100 - share}%</span></div>
+    <div class="motw-tape">${tape}</div>
+    <div class="motw-stars">${star(A)}${star(B)}</div>
+    <div class="motw-tags">${(g.why.length ? g.why : ["The best mix of rankings, projections and star power this week"]).slice(0, 3).map(x => `<span>${x}</span>`).join("")}</div>
+    <button type="button" class="ghost motw-go" data-mid="${A.matchup_id}">See the box score</button></article>`;
   const mine = $("matchups").querySelector(".mb.mine");
   if (mine) mine.insertAdjacentHTML("afterend", html); else $("matchups").insertAdjacentHTML("afterbegin", html);
   for (const card of $("matchups").querySelectorAll(".mb:not(.motw)")) if (!card.dataset.mid){ const i = [...$("matchups").querySelectorAll(".mb:not(.motw)")].indexOf(card); card.dataset.mid = list[i]?.[0]?.matchup_id ?? ""; }

@@ -27,7 +27,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600&family=Big+Shoulders+Display:wght@700;800;900&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/styles.css?v=20261016q">
-<link rel="stylesheet" href="css/desktop.css?v=20261032d" media="(min-width: 601px)">
+<link rel="stylesheet" href="css/desktop.css?v=20261040d" media="(min-width: 601px)">
 </head>
 <body>
 <div id="pcard" class="pc-backdrop" hidden></div>
@@ -194,14 +194,15 @@
   </section>
 
   <section class="panel" id="panel-standings">
-    <h3 class="sec-h">Standings</h3>
+    <h3 class="sec-h mob-only">Standings</h3>
     <div class="tablewrap"><table id="standTable" class="stand"></table></div>
     <div class="note sec-sub" id="standNote" style="margin:10px 0 0"></div>
 
   </section>
   <section class="panel" id="panel-power">
-    <h3 class="sec-h">Power Rankings <button type="button" class="info-btn" data-info="pg-power" aria-label="How Power Rankings work">?</button></h3>
+    <h3 class="sec-h mob-only">Power Rankings <button type="button" class="info-btn" data-info="pg-power" aria-label="How Power Rankings work">?</button></h3>
     <div class="tablewrap"><table id="powerTable" class="stand"></table></div>
+    <p class="note pw-foot dt-only">Power blends roster strength (the value of each team’s best starting lineup plus its three best bench players) with title odds, which add record, injuries, points scored and trend. Results count for more as the season goes on.</p>
 
   </section>
   <section class="panel" id="panel-sim">
@@ -397,7 +398,7 @@
   </section>
 
   <section class="panel" id="panel-scouting">
-    <h3 class="sec-h">Scouting Reports <button type="button" class="info-btn" data-info="pg-scout" aria-label="What Scouting Reports show">?</button></h3>
+    <h3 class="sec-h mob-only">Scouting Reports <button type="button" class="info-btn" data-info="pg-scout" aria-label="What Scouting Reports show">?</button></h3>
     <div class="controls sc-filters">
       <div class="field"><label for="scTrait">Style</label><select id="scTrait"></select></div>
       <div class="field"><label for="scActivity">Activity</label><select id="scActivity"><option value="all">All managers</option><option value="traded">Has made a trade</option><option value="active">Active (3+ trades this year)</option><option value="none">No trades yet</option></select></div>
@@ -407,6 +408,7 @@
     </div>
     <div class="tablewrap"><table id="scoutTable" class="stand"></table></div>
     <div id="scoutBody" style="margin-top:16px"></div>
+    <p class="note pw-foot dt-only">How every manager in your league trades, graded with today's values. Click a manager to see their full report and how to pitch them a trade.</p>
   </section>
 
   <section class="panel" id="panel-strategy">
@@ -607,12 +609,12 @@
 <script src="js/render.js?v=20261013c"></script>
 <script src="js/player-cards.js?v=20261009b"></script>
 <script src="js/settings-tab.js?v=20261007a"></script>
-<script src="js/strategy.js?v=20261009g"></script>
+<script src="js/strategy.js?v=20261010g"></script>
 <script src="js/my-roster.js?v=20261009c"></script>
 <script src="js/lineup.js?v=20261010d"></script>
 <script src="js/scouting.js?v=20261010d"></script>
-<script src="js/live-scores.js?v=20261014a"></script>
-<script src="js/trade-history.js?v=20261009c"></script>
+<script src="js/live-scores.js?v=20261015a"></script>
+<script src="js/trade-history.js?v=20261010c"></script>
 <script src="js/modes.js?v=20261009d"></script>
 <script src="js/standings-sim.js?v=20261011b"></script>
 <script src="js/calc-browse.js?v=20261007a"></script>

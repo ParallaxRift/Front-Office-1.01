@@ -569,7 +569,7 @@ function historyInsightsHTML(rid){
   if (seller) lines.push(`${nameOf(seller[0])} has traded away ${seller[1]} of their own draft picks. They may part with picks for the right player.`);
   const giver = Object.entries(losses).filter(([o, n]) => nameOf(o) && n >= 2 && n / trades[o] >= 0.6).sort((a,b) => b[1]-a[1])[0];
   if (giver) lines.push(`${nameOf(giver[0])} has come out behind in ${giver[1]} of ${trades[giver[0]]} trades by today's values. Worth checking in with.`);
-  return `<div class="box"><h3>From Your League's Trade History</h3><ul class="moves">${lines.map(l => `<li>${esc(l)}</li>`).join("")}</ul></div>`;
+  return `<div class="box" data-k="history"><h3>From Your League's Trade History</h3><ul class="moves">${lines.map(l => `<li>${esc(l)}</li>`).join("")}</ul></div>`;
 }
 
 // League Settings is a page under League Locker; the league name also opens it

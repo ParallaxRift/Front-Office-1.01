@@ -86,7 +86,7 @@ function renderStrategy(){
   POS.forEach(p => byVal.filter(a => a.pos === p).slice(0, Math.ceil(need[p] || 0)).forEach(a => coreIds.add(a.id)));
   let sellRows = sells.map(a => ({ a, why: null }));
   if (desk && buying){
-    const extra = surplus.flatMap(p => byVal.filter(a => a.pos === p && !coreIds.has(a.id) && a.value > 800).slice(0, 3)).map(a => ({ a, why: `Surplus ${a.pos}: you're deep here and he isn't a starter` }));
+    const extra = surplus.flatMap(p => byVal.filter(a => a.pos === p && !coreIds.has(a.id) && a.value > 800).slice(0, 3)).map(a => ({ a, why: `Surplus ${a.pos}, not a starter` }));
     const seen = new Set(); sellRows = [...extra, ...sellRows].filter(r => !seen.has(r.a.id) && seen.add(r.a.id)).sort((x, y) => y.a.value - x.a.value).slice(0, 6);
   }
   // Computers: core players to build around, young and elite-level (top ~3 per team overall, or near the top at his position)
@@ -144,20 +144,20 @@ function renderStrategy(){
     <p class="plan">${esc(plan)}</p></div></div>
     <p class="facts">${esc(why)}</p>
     <div class="posgrid">${POS.map(cell).join("")}<div class="pg ${pickCls}"><b>Picks</b><span>${ordinal(me.pickRank)}</span><small>${fmt(me.picks)} value</small></div></div>
-    <p class="facts" style="margin-bottom:14px">Starter ranks out of ${N} teams. Roster age ranks ${ordinal(me.ageRank)} youngest (value-weighted average ${me.age ? me.age.toFixed(1) : "?"}).</p></div>
+    <p class="facts" style="margin-bottom:14px"><span class="mob-only">Starter ranks out of ${N} teams. </span>Roster age ranks ${ordinal(me.ageRank)} youngest (value-weighted average ${me.age ? me.age.toFixed(1) : "?"}).</p></div>
     <div class="grid2">
-      <div class="box"><h3>Recommended Moves</h3><ul class="moves">${moves.concat(tips).map(m=>`<li>${esc(m)}</li>`).join("") || "<li>Your roster is balanced. Look for value trades rather than filling holes.</li>"}</ul></div>
-      ${needs.map(p => { const list = targetsFor(p); return `<div class="box"><h3>${buying ? "Targets" : "Young Targets"} at ${p}</h3>${list.length ? `<p class="note" style="margin:0">${buying ? "Proven players on non-contending teams. Tap to open in the trade calculator." : "Young players with upside. Tap to open in the trade calculator."}</p><div class="targets">${list.map(tgtBtn).join("")}</div>` : `<p class="note">No clear targets in range.</p>`}</div>`; }).join("")}
-      ${corePlayers.length ? `<div class="box dt-only"><h3>Core Players</h3><p class="note" style="margin:0">Young, elite-level players to build around. Hold them, or only sell for a premium. Tap to open his player card.</p><div class="targets">${corePlayers.map(a => `<button class="tgt core" data-card="${esc(a.pid)}"><span class="info">
+      <div class="box" data-k="moves"><h3>Recommended Moves</h3><ul class="moves">${moves.concat(tips).map(m=>`<li>${esc(m)}</li>`).join("") || "<li>Your roster is balanced. Look for value trades rather than filling holes.</li>"}</ul></div>
+      ${needs.map(p => { const list = targetsFor(p); return `<div class="box" data-k="targets"><h3>${buying ? "Targets" : "Young Targets"} at ${p}</h3>${list.length ? `<p class="note" style="margin:0">${buying ? "Proven players on non-contending teams. Tap to open in the trade calculator." : "Young players with upside. Tap to open in the trade calculator."}</p><div class="targets">${list.map(tgtBtn).join("")}</div>` : `<p class="note">No clear targets in range.</p>`}</div>`; }).join("")}
+      ${corePlayers.length ? `<div class="box dt-only" data-k="core"><h3>Core Players</h3><p class="note" style="margin:0">Young, elite-level players to build around. Hold them, or only sell for a premium. Tap to open his player card.</p><div class="targets">${corePlayers.map(a => `<button class="tgt core" data-card="${esc(a.pid)}"><span class="info">
       <span class="l1">${esc(a.name)}${injTag(a.pid)}<small>${esc(a.pos)}${a.lgPosRank ? a.lgPosRank : ""}, ${esc(ageText(a.age)||"?")}</small></span>
       <span class="l2"><span>Hold. Only sell for ${fmt(Math.round(a.value * 1.3 / 100) * 100)}+ in value</span></span>
     </span><span class="val">${fmt(a.value)}</span></button>`).join("")}</div></div>` : ""}
-      ${sellRows.length ? `<div class="box"><h3>${buying ? "Sell for Help Now" : "Sell Before They Decline"}</h3>${desk ? `<p class="note" style="margin:0">Tap a player to find trades for him in the Trade Finder.</p>` : ""}<div class="targets">${sellRows.map(({ a, why }) => { const buyers = !buying ? buyersFor(a) : []; const tag = desk ? "button" : "div"; return `<${tag} class="tgt"${desk ? ` data-sell="${esc(a.id)}"` : ` style="cursor:default"`}><span class="info">
+      ${sellRows.length ? `<div class="box" data-k="sell"><h3>${buying ? "Sell for Help Now" : "Sell Before They Decline"}</h3>${desk ? `<p class="note" style="margin:0">Tap a player to find trades for him in the Trade Finder.</p>` : ""}<div class="targets">${sellRows.map(({ a, why }) => { const buyers = !buying ? buyersFor(a) : []; const tag = desk ? "button" : "div"; return `<${tag} class="tgt"${desk ? ` data-sell="${esc(a.id)}"` : ` style="cursor:default"`}><span class="info">
       <span class="l1">${esc(a.name)}${injTag(a.pid)}<small>${esc(a.pos)}, ${esc(ageText(a.age)||"?")}</small></span>
       <span class="l2">${buyers.length ? `<span>Possible buyers: ${esc(buyers.join(", "))}</span>` : `<span>${why || (buying ? "Bench piece to package" : "Aging, sell soon")}</span>`}</span>
     </span><span class="val">${fmt(a.value)}</span></${tag}>`; }).join("")}</div></div>` : ""}
       ${historyInsightsHTML(t.rid)}
-      ${partners.length ? `<div class="box"><h3>Best Trade Partners</h3><ul class="moves">${partners.map(p => `<li><span class="teamcell" style="vertical-align:middle">${teamPhoto(p.x.team.rid, true)}<b>${esc(p.x.team.name)}</b></span> (${statusText[p.x.team.status].toLowerCase()})${p.fit.length ? `: deep at ${andList(p.fit)}` : ""}${p.give.length ? `${p.fit.length?",":":"} needs ${andList(p.give)}, where you're deep` : ""}.${S.history ? ` <small class="habit">Trade habits: ${esc(habitText(p.h))}.</small>` : ""}</li>`).join("")}</ul></div>` : ""}
+      ${partners.length ? `<div class="box" data-k="partners"><h3>Best Trade Partners</h3><ul class="moves">${partners.map(p => `<li><span class="teamcell" style="vertical-align:middle">${teamPhoto(p.x.team.rid, true)}<b>${esc(p.x.team.name)}</b></span> (${statusText[p.x.team.status].toLowerCase()})${p.fit.length ? `: deep at ${andList(p.fit)}` : ""}${p.give.length ? `${p.fit.length?",":":"} needs ${andList(p.give)}, where you're deep` : ""}.${S.history ? ` <small class="habit">Trade habits: ${esc(habitText(p.h))}.</small>` : ""}</li>`).join("")}</ul></div>` : ""}
     </div>`;
 }
 $("stratTeam").addEventListener("change", renderStrategy);

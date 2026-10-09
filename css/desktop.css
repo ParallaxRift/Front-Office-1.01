@@ -382,9 +382,8 @@ p.tuning-upd{margin:6px 0 0;margin-left:0}
 .stratHead{justify-content:flex-start!important;align-items:flex-end!important;gap:12px 24px!important}
 .stratHead .head-sub{margin:0 0 11px;font-size:15px;color:var(--bc-muted);max-width:640px}
 /* Team Strategy (desktop): the cards sit on one board, stacked in columns so there are no gaps */
-#strategy > .grid2{display:block!important;columns:3 320px;column-gap:18px;background:var(--bc-card);border:1px solid var(--bc-line);border-radius:12px;padding:20px;box-shadow:var(--bc-lift)}
-#strategy > .grid2 > .box{break-inside:avoid;display:inline-block;width:100%;margin:0 0 18px!important;box-shadow:none!important;border:1px solid var(--bc-line)!important;border-radius:10px!important}
-#strategy > .grid2 > .box:last-child{margin-bottom:0!important}
+#strategy > .grid2{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:18px!important;align-items:stretch!important;background:var(--bc-card);border:1px solid var(--bc-line);border-radius:12px;padding:20px;box-shadow:var(--bc-lift)}
+#strategy > .grid2 > .box{display:flex;flex-direction:column;width:auto;margin:0!important;box-shadow:none!important;border:1px solid var(--bc-line)!important;border-radius:10px!important}
 /* Team Strategy band (desktop): a bit smaller */
 .strat-hero{padding:18px 22px 14px!important}
 .strat-hero .stratTop{gap:16px}
@@ -426,12 +425,12 @@ p.tuning-upd{margin:6px 0 0;margin-left:0}
 #panel-settings .kv{gap:3px 12px;font-size:14px}
 #panel-settings .kv dd{font-size:15px}
 #panel-settings .slot{font-size:14px;padding:1px 7px}
-#panel-settings .grid2{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;grid-template-rows:auto auto auto;align-items:start}
-#panel-settings .grid2 > .box:nth-child(1){grid-column:1;grid-row:1 / span 2}
+#panel-settings .grid2{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;grid-template-rows:auto auto auto;align-items:stretch}
+#panel-settings .grid2 > .box:nth-child(1){grid-column:1;grid-row:1}
 #panel-settings .grid2 > .box:nth-child(2){grid-column:2;grid-row:1}
-#panel-settings .grid2 > .box:nth-child(3){grid-column:2;grid-row:2}
+#panel-settings .grid2 > .box:nth-child(3){grid-column:1 / -1;grid-row:2}
 #panel-settings .grid2 > .box:nth-child(4){grid-column:1 / -1;grid-row:3}
-#panel-settings .grid2 > .box:nth-child(5){grid-column:3;grid-row:1 / span 2}
+#panel-settings .grid2 > .box:nth-child(5){grid-column:3;grid-row:1}
 #panel-settings #setRules{display:block;columns:3;column-gap:28px}
 #panel-settings #setRules li{break-inside:avoid}
 #panel-settings .rules li{padding:6px 0;gap:10px}
@@ -440,23 +439,68 @@ p.tuning-upd{margin:6px 0 0;margin-left:0}
 #panel-settings .rules .why small{font-size:12px}
 #panel-settings .share{font-size:13px;gap:4px 10px}
 #panel-settings .note{font-size:13px}
-/* Scores: Matchup of the Week, to the right of your matchup */
-#matchups .mb.motw{background:var(--bc-deck)!important;color:#fff;border:0!important;border-top:4px solid var(--bc-gold)!important}
-#matchups .mb.motw .mb-tag{background:var(--bc-gold);color:#121B24}
-.motw-body{padding:26px 18px 16px;display:flex;flex-direction:column;gap:10px}
-.motw-team{display:flex;align-items:center;gap:10px;min-width:0}
-.motw-nm{flex:1;min-width:0}
-.motw-nm b{display:block;font-size:16px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.motw-nm small{display:block;font-size:12px;color:#9DB0BE}
-.motw-pts{text-align:right;flex:none}
-.motw-pts b{display:block;font-family:var(--bc-num);font-weight:900;font-size:34px;line-height:1;color:#fff}
-.motw-pts small{display:block;font-size:12px;color:#C9D4DC;margin-top:2px}
-.motw-vs{font:700 11px var(--bc-text);letter-spacing:.08em;text-transform:uppercase;color:#7D8C98;padding-left:52px}
-.motw .sb-bar{height:16px;border-radius:4px;margin:4px 0 2px}
-.motw-why{list-style:none;margin:4px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
-.motw-why li{position:relative;padding-left:18px;font-size:13.5px;color:#DCE3E8;line-height:1.4}
-.motw-why li::before{content:"";position:absolute;left:2px;top:.55em;width:7px;height:7px;border-radius:2px;background:var(--bc-gold)}
-.motw-go{align-self:flex-start;margin-top:6px;background:transparent!important;color:#fff!important;border:1px solid #3A4A58!important}
-.motw-go:hover{border-color:var(--bc-gold)!important}
+/* Scores: Matchup of the Week, to the right of your matchup. A prime-time face-off card. */
+#matchups .mb.motw{align-self:start;position:relative;overflow:hidden;border:0!important;border-radius:14px!important;color:#fff;
+  background:radial-gradient(120% 70% at 0% 0%,rgba(224,90,74,.28),transparent 55%),radial-gradient(120% 70% at 100% 0%,rgba(63,185,122,.26),transparent 55%),
+  repeating-linear-gradient(135deg,rgba(255,255,255,.025) 0 2px,transparent 2px 14px),linear-gradient(180deg,#1B2835,#0F1820)!important;
+  box-shadow:0 0 0 1px rgba(242,179,61,.55),0 18px 40px -18px rgba(0,0,0,.7)!important}
+#matchups .mb.motw::before{content:"";position:absolute;inset:0 0 auto 0;height:4px;background:linear-gradient(90deg,var(--bc-send),var(--bc-gold) 50%,var(--bc-get))}
+.motw-banner{text-align:center;padding:20px 16px 6px}
+.motw-kicker{display:inline-block;font:800 11px var(--bc-text);letter-spacing:.18em;text-transform:uppercase;color:#121B24;background:var(--bc-gold);padding:3px 10px;border-radius:999px}
+.motw-banner h3{margin:8px 0 0!important;font:900 34px/1 var(--bc-num)!important;letter-spacing:.04em;text-transform:uppercase;color:#fff;
+  background:linear-gradient(180deg,#FFF 30%,#F7D58A);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;text-shadow:none}
+.motw-faceoff{display:grid;grid-template-columns:minmax(0,1fr) 64px minmax(0,1fr);align-items:center;padding:14px 18px 6px}
+.motw-side{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;min-width:0}
+.motw-side .av{width:76px!important;height:76px!important;box-shadow:0 0 0 3px #0F1820,0 0 0 5px var(--bc-send),0 10px 24px -8px rgba(0,0,0,.8)}
+.motw-side.r .av{box-shadow:0 0 0 3px #0F1820,0 0 0 5px var(--bc-get),0 10px 24px -8px rgba(0,0,0,.8)}
+.motw-name{font:700 15px var(--bc-text);color:#fff;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.motw-score{font:900 44px/1 var(--bc-num);color:#fff;letter-spacing:.01em}
+.motw-wc{font:700 12px var(--bc-text);color:#C9D4DC;text-transform:uppercase;letter-spacing:.06em}
+.motw-vs{display:grid;place-items:center}
+.motw-vs span{display:grid;place-items:center;width:52px;height:52px;border-radius:50%;font:900 22px var(--bc-num);color:#121B24;
+  background:radial-gradient(circle at 35% 30%,#FFE6A8,var(--bc-gold) 60%,#C98A16);box-shadow:0 0 0 4px rgba(242,179,61,.18),0 0 26px rgba(242,179,61,.55);animation:motwGlow 2.6s ease-in-out infinite}
+@keyframes motwGlow{50%{box-shadow:0 0 0 7px rgba(242,179,61,.12),0 0 38px rgba(242,179,61,.75)}}
+@media (prefers-reduced-motion:reduce){.motw-vs span{animation:none}}
+.motw-bar{display:grid;grid-template-columns:40px 1fr 40px;align-items:center;gap:8px;padding:10px 18px 4px;font:800 13px var(--bc-num)}
+.motw-bar span:first-child{color:#FF8A78;text-align:right}.motw-bar span:last-child{color:#5FD39A}
+.motw .sb-bar{height:16px;border-radius:999px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+.motw-tape{margin:10px 18px 4px;border-top:1px solid rgba(255,255,255,.08)}
+.tape-row{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:6px 2px;border-bottom:1px solid rgba(255,255,255,.06);font-size:14px;color:#AAB8C3}
+.tape-row span:first-child{text-align:left}.tape-row span:last-child{text-align:right}
+.tape-row em{font:700 10.5px var(--bc-text);font-style:normal;letter-spacing:.12em;text-transform:uppercase;color:#7D8C98;padding:0 10px}
+.tape-row span.up{color:var(--bc-gold);font-weight:800}
+.motw-stars{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:10px 18px 2px}
+.motw-star{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:8px 10px;min-width:0}
+.motw-star span{min-width:0;display:flex;flex-direction:column}
+.motw-star small{font:700 10px var(--bc-text);letter-spacing:.12em;text-transform:uppercase;color:var(--bc-gold)}
+.motw-star b{font-size:14px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.motw-star em{font-style:normal;font-size:12px;color:#9DB0BE}
+.motw-tags{display:flex;flex-wrap:wrap;gap:6px;padding:12px 18px 2px;justify-content:center}
+.motw-tags span{font:700 12px var(--bc-text);color:#F7D58A;background:rgba(242,179,61,.12);border:1px solid rgba(242,179,61,.35);border-radius:999px;padding:4px 10px}
+.motw-go{display:block;margin:12px auto 18px!important;background:var(--bc-gold)!important;color:#121B24!important;border:0!important;font-weight:800!important;padding:8px 18px!important}
+.motw-go:hover{filter:brightness(1.08)}
 #matchups .mb.flash{outline:3px solid var(--bc-gold);outline-offset:2px;transition:outline-color .3s}
-#matchups .mb.motw{align-self:start}
+
+/* Team Strategy cards line up in rows of three, in a set order: moves, core players, trade history, then targets, selling, partners */
+#strategy > .grid2 > [data-k="moves"]{order:1}
+#strategy > .grid2 > [data-k="core"]{order:2}
+#strategy > .grid2 > [data-k="history"]{order:3}
+#strategy > .grid2 > [data-k="targets"]{order:4}
+#strategy > .grid2 > [data-k="sell"]{order:5}
+#strategy > .grid2 > [data-k="partners"]{order:6}
+/* My Roster: the team dropdown sits at the right edge */
+#panel-roster.on > .stratHead{justify-self:end}
+#panel-roster.on > .stratHead .field{width:320px;max-width:none!important}
+/* Team Strategy, Lineup, Waivers (desktop): no "Team"/"Week" label over the dropdown; the description lines up beside it */
+#panel-strategy .stratHead .field label,#panel-lineup .stratHead .field label,#panel-waivers .stratHead .field label{display:none!important}
+#panel-strategy .stratHead,#panel-lineup .stratHead,#panel-waivers .stratHead{align-items:center!important}
+#panel-strategy .stratHead .head-sub,#panel-lineup .stratHead .head-sub,#panel-waivers .stratHead .head-sub{margin:0!important}
+/* League Settings: Scoring runs full width, its rows in four columns */
+#panel-settings #setScoring{grid-template-columns:repeat(4,minmax(0,1fr) auto);column-gap:14px}
+#panel-settings #setScoring dd{padding-right:22px;border-right:1px solid var(--bc-line2)}
+#panel-settings #setScoring dd:nth-of-type(4n){padding-right:0;border-right:0}
+/* Power Rankings (desktop): the explanation sits under the table, lined up with it */
+#panel-power .pw-foot,#panel-scouting .pw-foot{margin:12px 0 0;padding:0 2px;font-size:13px;line-height:1.5;color:var(--bc-muted);max-width:none!important;text-wrap:pretty!important}
+/* Scouting Reports (desktop): no title; the filter dropdowns need no labels ("All styles", "All managers", "All teams") */
+#panel-scouting .sc-filters .field label{display:none!important}
+#panel-scouting .sc-filters{align-items:center!important}
