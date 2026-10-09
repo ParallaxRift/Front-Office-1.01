@@ -63,7 +63,7 @@ syncNav();
 // browser history, so the Back button returns to the tab you came from instead of leaving the page.
 function jumpToTab(tab){
   const cur = $("tabs").querySelector('[aria-selected="true"]')?.dataset.tab;
-  if (!isPhoneView() && cur && cur !== tab){
+  if (cur && cur !== tab){
     try { history.replaceState({ ...(history.state || {}), foTab: cur }, ""); history.pushState({ foTab: tab }, ""); } catch(e){}
   }
   navTab(tab)?.click();

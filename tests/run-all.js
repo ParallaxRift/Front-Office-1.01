@@ -118,7 +118,9 @@ async function openLeague(browser, viewport, opts){
 
     // 3) Calculator builds a trade and grades it
     await page.click('#groups [data-group=trade]'); await page.click('[data-tab=calc]');
-    await page.click('#listA .asset .nm >> nth=0'); await page.click('#listB .asset .nm >> nth=1'); await page.click('#listB .asset .nm >> nth=3'); await page.waitForTimeout(300);
+    // pick players from the search box inside the calculator (click the box, then a player)
+    const ktPick = async (side, n) => { await page.click('#ktQ' + side); await page.click('#ktDrop' + side + ' .kt-opt[data-id] >> nth=' + n); await page.waitForTimeout(120); };
+    await ktPick('A', 0); await ktPick('B', 1); await ktPick('B', 3); await page.waitForTimeout(300);
     const verdict = (await page.textContent('#verdict')).trim();
     check('calculator grades a trade', /win|fair|overpay|one-sided/i.test(verdict), verdict);
     // fairness rules: a gap of 600 or less (or within 5% on big trades) is fair; one side getting 15%+ more is lopsided
@@ -288,7 +290,7 @@ async function openLeague(browser, viewport, opts){
     // FAAB counts in the calculator
     await page.evaluate(() => { const A = teamAssets(Number($("teamA").value)).filter(a => a.kind === 'player'), B = teamAssets(Number($("teamB").value)).filter(a => a.kind === 'player'); S.sendIds = new Set([A[3].id]); S.getIds = new Set([B[2].id]); S.faab = { send: 0, get: 0 }; S.faabOn = { send: false, get: false }; renderCalc(); });
     const before = await page.evaluate(() => Number($("sendNum").textContent.replace(/,/g, '')));
-    await page.click('#listA .faab-asset'); await page.waitForTimeout(150); await page.fill('#listA .faab-amt', '50'); await page.waitForTimeout(150);
+    await page.click('#ktQA'); await page.click('#ktDropA [data-faab]'); await page.waitForTimeout(150);
     const after = await page.evaluate(() => Number($("sendNum").textContent.replace(/,/g, '')));
     check('FAAB adds value to a side', after > before, `${before} -> ${after}`);
     // Shared trade link reopens the same trade in a fresh browser

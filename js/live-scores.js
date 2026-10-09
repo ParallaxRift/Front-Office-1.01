@@ -177,7 +177,7 @@ function renderScores(data, week){
     const canOpen = pl.pos !== "DEF" && !/^[A-Z]{2,3}$/.test(pid) && S.sleeperPlayers?.[pid];
     return `<span class="bx-p ${side}${g === "in" ? " now" : ""}${canOpen ? ` click" data-pid="${esc(pid)}" role="button" tabindex="0" title="Open ${esc(pl.name)}'s player card` : ""}">${scorePhoto(pid, pl)}<span class="bx-nm"><b>${esc(pl.name)}${injTag(pid)}</b><small>${esc([pl.pos, pl.team].filter(Boolean).join(" · "))}</small></span><b class="bx-v">${v}</b></span>`;
   };
-  const boxOpen = !window.matchMedia("(max-width:600px)").matches;   // computers show every box score, two matchups side by side; phones open only yours
+  const boxOpen = true;   // computers show every box score, two matchups side by side; phones open only yours
   $("matchups").innerHTML = list.map(pair => {
     const mine = pair.some(m => m.roster_id === S.myRid);
     if (mine) pair.sort((a,b) => (b.roster_id===S.myRid) - (a.roster_id===S.myRid));
@@ -293,8 +293,9 @@ function matchupOfWeek(list, X){
     <div class="motw-stars">${star(A)}${star(B)}</div>
     <div class="motw-tags">${(g.why.length ? g.why : ["The best mix of rankings, projections and star power this week"]).slice(0, 3).map(x => `<span>${x}</span>`).join("")}</div>
     <button type="button" class="ghost motw-go" data-mid="${A.matchup_id}">See the box score</button></article>`;
-  const mine = $("matchups").querySelector(".mb.mine");
-  if (mine) mine.insertAdjacentHTML("afterend", html); else $("matchups").insertAdjacentHTML("afterbegin", html);
+  if (isPhoneView()){ $("motwBox").innerHTML = html; }                 // phones: its own view under "Matchup of the Week"
+  else { const mine = $("matchups").querySelector(".mb.mine");
+    if (mine) mine.insertAdjacentHTML("afterend", html); else $("matchups").insertAdjacentHTML("afterbegin", html); }
   for (const card of $("matchups").querySelectorAll(".mb:not(.motw)")) if (!card.dataset.mid){ const i = [...$("matchups").querySelectorAll(".mb:not(.motw)")].indexOf(card); card.dataset.mid = list[i]?.[0]?.matchup_id ?? ""; }
 }
 $("matchups").addEventListener("click", e => {
@@ -302,4 +303,20 @@ $("matchups").addEventListener("click", e => {
   const card = $("matchups").querySelector(`.mb:not(.motw)[data-mid="${b.dataset.mid}"]`); if (!card) return;
   card.querySelector("details")?.setAttribute("open", "");
   card.scrollIntoView({ behavior: "smooth", block: "center" }); card.classList.add("flash"); setTimeout(() => card.classList.remove("flash"), 1600);
+});
+
+// Phones: switch between every matchup and the Matchup of the Week
+function scoresView(v){
+  for (const b of $("scSwitch").children) b.setAttribute("aria-pressed", String(b.dataset.v === v));
+  const motw = v === "motw" && isPhoneView();
+  $("matchups").hidden = motw; $("scoresRecap").hidden = motw; $("motwBox").hidden = !motw;
+  if (motw && !$("motwBox").innerHTML) $("motwBox").innerHTML = `<p class="empty">No other matchups this week.</p>`;
+}
+$("scSwitch").addEventListener("click", e => { const b = e.target.closest("button[data-v]"); if (b){ scoresView(b.dataset.v); window.scrollTo({ top: 0, behavior: "instant" }); } });
+$("motwBox").addEventListener("click", e => {
+  const b = e.target.closest(".motw-go"); if (!b) return;
+  scoresView("all");
+  const card = $("matchups").querySelector(`.mb:not(.motw)[data-mid="${b.dataset.mid}"]`); if (!card) return;
+  card.querySelector("details")?.setAttribute("open", "");
+  card.scrollIntoView({ behavior: "smooth", block: "start" }); card.classList.add("flash"); setTimeout(() => card.classList.remove("flash"), 1600);
 });

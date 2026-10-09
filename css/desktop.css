@@ -588,3 +588,50 @@ p.tuning-upd{margin:6px 0 0;margin-left:0}
 /* keep the gold advantage bar (and green when fair) on the new dark board */
 .board .track{background:#3A4652!important}
 .board:has(.fill.even) .track{background:linear-gradient(90deg,#2E9A63,#3FB97A 50%,#2E9A63)!important}
+/* Trade analysis breakdown: light text on the dark scoreboard */
+.board > #hint,.board .ta-panel{color:#E9EEF2!important;margin-left:16px!important;margin-right:16px!important}
+.board .ta-list b{color:#F7D58A}
+.board .ta-list span{color:#C9D4DC}
+/* Trade Calculator: "Reset" in words, at the top right of the scoreboard */
+.board .brow,.board .share-btns{position:static!important}
+.board #resetTrade{position:absolute!important;top:14px;right:16px;z-index:3;width:auto!important;height:auto!important;padding:6px 14px!important;border-radius:999px!important;
+  background:rgba(255,255,255,.06)!important;border:1px solid rgba(255,255,255,.25)!important;color:#fff!important;font:700 13px var(--bc-text)!important;letter-spacing:.03em}
+.board #resetTrade:hover{border-color:var(--bc-gold)!important;color:var(--bc-gold)!important}
+.board #resetTrade .r-letter{display:none}
+.board #resetTrade .r-word{display:inline}
+.board #resetTrade[data-tip]::after,.board #resetTrade[data-tip]::before{display:none!important}
+/* Trade Calculator (desktop): pick players right inside the scoreboard. Each side has its team dropdown and an
+   "Add a player or pick" box; clicking the box lists that team's players and picks, highest value first.
+   The separate roster lists under the calculator are no longer needed. */
+#panel-calc #sides{display:none!important}
+.board .bplayers,.board .bplayers[hidden]{display:grid!important}
+.board .bplayers .bcol{min-height:0;padding:12px 14px!important;overflow:visible}
+.board .kt-top{display:flex;gap:10px;align-items:center;margin:0 0 6px}
+.board .kt-team{display:flex;align-items:center;gap:8px;flex:0 0 44%;min-width:0}
+.board .kt-av .av{width:32px!important;height:32px!important}
+.board .kt-av:empty{display:none}
+.board .kt-team select{flex:1;min-width:0;font:600 14px var(--bc-text);padding:9px 10px;border-radius:9px!important;background:rgba(255,255,255,.06)!important;color:#fff;border:1px solid rgba(255,255,255,.18)!important}
+.board .kt-team select option{color:#121B24}
+.board .kt-search{position:relative;flex:1;min-width:0}
+.board .kt-search input{width:100%;font:500 14.5px var(--bc-text);padding:10px 12px 10px 36px;border-radius:9px!important;color:#fff;background:rgba(255,255,255,.06) no-repeat 11px center/16px!important;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23F2B33D' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E")!important;
+  border:1px solid rgba(242,179,61,.45)!important}
+.board .kt-search input::placeholder{color:#9DB0BE}
+.board .kt-search input:focus{border-color:var(--bc-gold)!important;box-shadow:0 0 0 3px rgba(242,179,61,.25)!important}
+.board .kt-drop{position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:40;max-height:420px;overflow-y:auto;background:#16212B;border:1px solid rgba(242,179,61,.4);border-radius:12px;box-shadow:0 18px 40px rgba(0,0,0,.55);padding:4px}
+.board .kt-drop[hidden]{display:none}
+.board .kt-opt{display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;border:0;border-radius:8px;background:none;color:#fff;font:inherit;text-align:left;cursor:pointer}
+.board .kt-opt + .kt-opt{border-top:1px solid rgba(255,255,255,.06)}
+.board .kt-opt:hover{background:rgba(242,179,61,.10)}
+.board .kt-opt.on{background:rgba(63,185,122,.16)}
+.board .kt-opt.on .kt-v::after{content:" ✓";color:#5FD39A}
+.board .kt-pos{flex:none;width:38px;font:800 11px var(--bc-text);color:#9DB0BE}
+.board .kt-nm{flex:1;min-width:0;display:flex;flex-direction:column}
+.board .kt-nm b{font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.board .kt-nm small{font-size:12px;color:#9DB0BE}
+.board .kt-v{flex:none;font:800 18px var(--bc-num);color:#fff}
+.board .kt-none{margin:10px;color:#9DB0BE;font-size:14px}
+.board .kt-total{display:none!important}
+.board .bplayers .bitems:empty::after{content:"Nothing added yet";display:block;padding:10px 2px;color:#7D8C98;font-size:13px}
+.board{overflow:visible!important}
+.board::before{border-radius:14px 14px 0 0}

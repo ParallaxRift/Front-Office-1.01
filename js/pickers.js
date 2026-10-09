@@ -83,6 +83,7 @@ $("tabs").addEventListener("click", e => {
   if (b.dataset.tab === "roster") renderRoster();
   if (b.dataset.tab === "scouting") renderScouting();
   if (b.dataset.tab === "lineup" || b.dataset.tab === "waivers") renderLineup();
+  if (e.isTrusted && isPhoneView()) window.scrollTo({ top: 0, behavior: "instant" });   // phones: open every tab at the top
   store.set("tr_tab", b.dataset.tab);
   $("settingsBtn").setAttribute("aria-pressed", String(b.dataset.tab === "settings"));
 });

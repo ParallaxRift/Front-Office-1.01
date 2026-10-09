@@ -1766,3 +1766,156 @@ body:has(#pcard:not([hidden])) #installTip{display:none!important}   /* the "Get
 /* an even game (50/50): a grey bar */
 .mb .sb-bar.even{background:#9AA5AF}.mb .sb-bar.even i{background:#7D8893}
 .track .tilt{display:none}
+
+/* ============================================================
+   PHONES / APP: desktop features brought over (Matchup of the Week, trophy wall, calculator look)
+   ============================================================ */
+@media (max-width:600px){
+/* Scores: Matchup of the Week, to the right of your matchup. A prime-time face-off card. */
+.mb.motw{align-self:start;position:relative;overflow:hidden;border:0!important;border-radius:14px!important;color:#fff;
+  background:radial-gradient(120% 70% at 0% 0%,rgba(224,90,74,.28),transparent 55%),radial-gradient(120% 70% at 100% 0%,rgba(63,185,122,.26),transparent 55%),
+  repeating-linear-gradient(135deg,rgba(255,255,255,.025) 0 2px,transparent 2px 14px),linear-gradient(180deg,#1B2835,#0F1820)!important;
+  box-shadow:0 0 0 1px rgba(242,179,61,.55),0 18px 40px -18px rgba(0,0,0,.7)!important}
+.mb.motw::before{content:"";position:absolute;inset:0 0 auto 0;height:4px;background:linear-gradient(90deg,#E05A4A,#F2B33D 50%,#3FB97A)}
+.motw-banner{text-align:center;padding:20px 16px 6px}
+.motw-kicker{display:inline-block;font:800 11px "Inter Tight","Inter",system-ui,sans-serif;letter-spacing:.18em;text-transform:uppercase;color:#121B24;background:#F2B33D;padding:3px 10px;border-radius:999px}
+.motw-banner h3{margin:8px 0 0!important;font:900 34px/1 "Big Shoulders Display","Barlow Condensed",Impact,sans-serif!important;letter-spacing:.04em;text-transform:uppercase;color:#fff;
+  background:linear-gradient(180deg,#FFF 30%,#F7D58A);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;text-shadow:none}
+.motw-faceoff{display:grid;grid-template-columns:minmax(0,1fr) 64px minmax(0,1fr);align-items:center;padding:14px 18px 6px}
+.motw-side{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;min-width:0}
+.motw-side .av{width:76px!important;height:76px!important;box-shadow:0 0 0 3px #0F1820,0 0 0 5px #E05A4A,0 10px 24px -8px rgba(0,0,0,.8)}
+.motw-side.r .av{box-shadow:0 0 0 3px #0F1820,0 0 0 5px #3FB97A,0 10px 24px -8px rgba(0,0,0,.8)}
+.motw-name{font:700 15px "Inter Tight","Inter",system-ui,sans-serif;color:#fff;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.motw-score{font:900 44px/1 "Big Shoulders Display","Barlow Condensed",Impact,sans-serif;color:#fff;letter-spacing:.01em}
+.motw-wc{font:700 12px "Inter Tight","Inter",system-ui,sans-serif;color:#C9D4DC;text-transform:uppercase;letter-spacing:.06em}
+.motw-vs{display:grid;place-items:center}
+.motw-vs span{display:grid;place-items:center;width:52px;height:52px;border-radius:50%;font:900 22px "Big Shoulders Display","Barlow Condensed",Impact,sans-serif;color:#121B24;
+  background:radial-gradient(circle at 35% 30%,#FFE6A8,#F2B33D 60%,#C98A16);box-shadow:0 0 0 4px rgba(242,179,61,.18),0 0 26px rgba(242,179,61,.55);animation:motwGlow 2.6s ease-in-out infinite}
+@keyframes motwGlow{50%{box-shadow:0 0 0 7px rgba(242,179,61,.12),0 0 38px rgba(242,179,61,.75)}}
+@media (prefers-reduced-motion:reduce){.motw-vs span{animation:none}}
+.motw-bar{display:grid;grid-template-columns:40px 1fr 40px;align-items:center;gap:8px;padding:10px 18px 4px;font:800 13px "Big Shoulders Display","Barlow Condensed",Impact,sans-serif}
+.motw-bar span:first-child{color:#FF8A78;text-align:right}.motw-bar span:last-child{color:#5FD39A}
+.motw .sb-bar{height:16px;border-radius:999px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+.motw-tape{margin:10px 18px 4px;border-top:1px solid rgba(255,255,255,.08)}
+.tape-row{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:6px 2px;border-bottom:1px solid rgba(255,255,255,.06);font-size:14px;color:#AAB8C3}
+.tape-row span:first-child{text-align:left}.tape-row span:last-child{text-align:right}
+.tape-row em{font:700 10.5px "Inter Tight","Inter",system-ui,sans-serif;font-style:normal;letter-spacing:.12em;text-transform:uppercase;color:#7D8C98;padding:0 10px}
+.tape-row span.up{color:#F2B33D;font-weight:800}
+.motw-stars{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:10px 18px 2px}
+.motw-star{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:8px 10px;min-width:0}
+.motw-star span{min-width:0;display:flex;flex-direction:column}
+.motw-star small{font:700 10px "Inter Tight","Inter",system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#F2B33D}
+.motw-star b{font-size:14px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.motw-star em{font-style:normal;font-size:12px;color:#9DB0BE}
+.motw-tags{display:flex;flex-wrap:wrap;gap:6px;padding:12px 18px 2px;justify-content:center}
+.motw-tags span{font:700 12px "Inter Tight","Inter",system-ui,sans-serif;color:#F7D58A;background:rgba(242,179,61,.12);border:1px solid rgba(242,179,61,.35);border-radius:999px;padding:4px 10px}
+.motw-go{display:block;margin:12px auto 18px!important;background:#F2B33D!important;color:#121B24!important;border:0!important;font-weight:800!important;padding:8px 18px!important}
+.motw-go:hover{filter:brightness(1.08)}
+.mb.flash{outline:3px solid #F2B33D;outline-offset:2px;transition:outline-color .3s}
+.motw-rec{font:800 14px "Big Shoulders Display","Barlow Condensed",Impact,sans-serif;letter-spacing:.06em;color:#9DB0BE;margin-top:-4px}
+.motw-bar.fav-l span:first-child{color:#5FD39A}.motw-bar.fav-l span:last-child{color:#FF8A78}
+.motw-faceoff.fav-l .motw-side.l .av{box-shadow:0 0 0 3px #0F1820,0 0 0 5px #3FB97A,0 10px 24px -8px rgba(0,0,0,.8)}
+.motw-faceoff.fav-l .motw-side.r .av{box-shadow:0 0 0 3px #0F1820,0 0 0 5px #E05A4A,0 10px 24px -8px rgba(0,0,0,.8)}
+.motw-bar.even span{color:#C9D4DC!important}
+.motw-faceoff.even .motw-side .av{box-shadow:0 0 0 3px #0F1820,0 0 0 5px #8A97A3,0 10px 24px -8px rgba(0,0,0,.8)!important}
+/* Trophy Room (desktop): the League Champions wall */
+.champ-wall{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
+.cw-card{position:relative;overflow:hidden;border-radius:14px;background:linear-gradient(180deg,#141E28,#0C141B);color:#fff;
+  box-shadow:0 0 0 1px rgba(242,179,61,.45),0 8px 24px -12px rgba(18,27,36,.35);display:flex;flex-direction:column}
+.cw-trophy{position:relative;display:grid;place-items:center;padding:22px 18px 4px;
+  background:radial-gradient(60% 55% at 50% 45%,rgba(242,179,61,.38),rgba(242,179,61,.08) 55%,transparent 75%)}
+.cw-trophy img{height:210px;width:auto;max-width:100%;display:block;filter:drop-shadow(0 12px 18px rgba(0,0,0,.6)) drop-shadow(0 0 22px rgba(242,179,61,.25));transition:transform .5s ease}
+.cw-card:hover .cw-trophy img{transform:translateY(-4px) scale(1.04)}
+.cw-year{display:block;text-align:center;margin:2px 0 8px;font:900 38px/1 "Big Shoulders Display","Barlow Condensed",Impact,sans-serif;letter-spacing:.04em;
+  background:linear-gradient(180deg,#FFF3CF,#F2B33D 70%,#B97E12);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.cw-champ{display:flex;align-items:center;gap:10px;padding:12px 14px 10px;border-top:1px solid rgba(242,179,61,.25)}
+.cw-champ .av{width:44px!important;height:44px!important;box-shadow:0 0 0 2px #F2B33D}
+.cw-champ span{min-width:0;display:flex;flex-direction:column}
+.cw-champ small{font:800 10px "Inter Tight","Inter",system-ui,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#F2B33D}
+.cw-champ b{font-size:16px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cw-champ em{font-style:normal;font-size:12px;color:#9DB0BE}
+.cw-rest{display:flex;flex-direction:column;gap:6px;padding:0 14px 14px}
+.cw-place{display:flex;align-items:center;gap:8px;font-size:12.5px;color:#C9D4DC;min-width:0}
+.cw-place .av{width:22px!important;height:22px!important}
+.cw-place em{font:800 11px "Big Shoulders Display","Barlow Condensed",Impact,sans-serif;font-style:normal;color:#9DB0BE;min-width:24px}
+.cw-place b{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cw-live{margin:12px 0 0;font-size:13px}
+@media (prefers-reduced-motion:reduce){.cw-trophy img{transition:none}}
+.cw-trophy{position:relative;display:grid;place-items:center;padding:22px 18px 4px;
+  background:radial-gradient(60% 55% at 50% 45%,rgba(242,179,61,.38),rgba(242,179,61,.08) 55%,transparent 75%)}
+.cw-trophy img{height:210px;width:auto;max-width:100%;display:block;filter:drop-shadow(0 12px 18px rgba(0,0,0,.6)) drop-shadow(0 0 22px rgba(242,179,61,.25));transition:transform .5s ease}
+.cw-card:hover .cw-trophy img{transform:translateY(-4px) scale(1.04)}
+.cw-year{display:block;text-align:center;margin:2px 0 8px;font:900 38px/1 "Big Shoulders Display","Barlow Condensed",Impact,sans-serif;letter-spacing:.04em;
+  background:linear-gradient(180deg,#FFF3CF,#F2B33D 70%,#B97E12);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+/* Trophy Room: the season in progress card */
+.cw-live-card .cw-trophy img{filter:grayscale(.15) brightness(.82) drop-shadow(0 12px 18px rgba(0,0,0,.6))}
+.cw-status{display:flex;align-items:center;justify-content:center;gap:8px;margin:-2px 0 10px;font:800 12px "Inter Tight","Inter",system-ui,sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#F7D58A}
+.cw-dot{width:8px;height:8px;border-radius:50%;background:#3FB97A;box-shadow:0 0 0 0 rgba(63,185,122,.7);animation:cwPulse 1.8s ease-out infinite}
+@keyframes cwPulse{70%{box-shadow:0 0 0 8px rgba(63,185,122,0)}100%{box-shadow:0 0 0 0 rgba(63,185,122,0)}}
+@media (prefers-reduced-motion:reduce){.cw-dot{animation:none}}
+.cw-live-card .cw-champ .av{box-shadow:0 0 0 2px #7D8C98}
+  /* Matchup of the Week, phone sizing */
+  .sc-switch{margin:4px 0 12px}.sc-switch button{flex:1 1 0}
+  .motw-phone[hidden]{display:none}
+  .motw-banner h3{font-size:26px!important}
+  .motw-faceoff{grid-template-columns:minmax(0,1fr) 46px minmax(0,1fr);padding:10px 10px 4px}
+  .motw-side .av{width:58px!important;height:58px!important}
+  .motw-name{font-size:13px;white-space:normal;line-height:1.2}
+  .motw-score{font-size:32px}
+  .motw-vs span{width:40px;height:40px;font-size:17px}
+  .motw-bar{padding:8px 12px 2px;grid-template-columns:34px 1fr 34px}
+  .motw-tape{margin:8px 12px 2px}
+  .tape-row{font-size:13px}
+  .motw-stars{grid-template-columns:1fr;padding:8px 12px 2px}
+  .motw-tags{padding:10px 12px 2px}
+  /* Trophy wall, phone sizing: two across */
+  #champList.champ-list{display:block!important}
+  .champ-wall{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}
+  .cw-trophy{padding:14px 8px 2px!important}
+  .cw-trophy img{height:120px!important}
+  .cw-year{font-size:26px!important;margin:0 0 6px!important}
+  .cw-status{font-size:9.5px!important;letter-spacing:.1em!important;margin:-2px 0 8px!important}
+  .cw-champ{padding:8px 10px 6px!important;gap:8px!important}
+  .cw-champ .av{width:32px!important;height:32px!important}
+  .cw-champ b{font-size:13.5px!important;white-space:normal!important;line-height:1.2}
+  .cw-champ small{font-size:9px!important}
+  .cw-champ em{font-size:11px!important}
+  .cw-rest{padding:0 10px 10px!important;gap:4px!important}
+  .cw-place{font-size:11.5px!important;gap:6px!important}
+  .cw-place b{white-space:normal!important}
+  .cw-place .av{width:18px!important;height:18px!important}
+  .cw-card:hover .cw-trophy img{transform:none}
+  /* Rankings: "Value" and "Market" (Change is on desktop) */
+  #valuesTable th:nth-child(8),#valuesTable td:nth-child(8){display:table-cell!important}
+  #valuesTable th:nth-child(9),#valuesTable td:nth-child(9){display:none!important}
+  /* Calculator: the Matchup of the Week look, same layout */
+  .board{background:radial-gradient(120% 45% at 0% 0%,rgba(224,90,74,.28),transparent 60%),radial-gradient(120% 45% at 100% 0%,rgba(63,185,122,.26),transparent 60%),
+    repeating-linear-gradient(135deg,rgba(255,255,255,.025) 0 2px,transparent 2px 14px),linear-gradient(180deg,#1B2835,#0F1820)!important;
+    box-shadow:0 0 0 1px rgba(242,179,61,.55),0 14px 30px -16px rgba(0,0,0,.7)!important;overflow:hidden}
+  .board::before{content:"";position:absolute;inset:0 0 auto 0;height:4px;background:linear-gradient(90deg,#E05A4A,#F2B33D 50%,#3FB97A);z-index:2}
+  .board .bplayers .bcol{position:relative;border-top:3px solid #E05A4A}
+  .board .bplayers .bcol + .bcol{border-top-color:#3FB97A}
+  .board .bplayers .bcol:first-child::after{content:"VS";position:absolute;left:50%;bottom:-27px;transform:translateX(-50%);z-index:3;width:38px;height:38px;border-radius:50%;
+    display:grid;place-items:center;font:900 16px "Big Shoulders Display","Barlow Condensed",Impact,sans-serif;color:#121B24;
+    background:radial-gradient(circle at 35% 30%,#FFE6A8,#F2B33D 60%,#C98A16);box-shadow:0 0 0 4px rgba(242,179,61,.18),0 0 18px rgba(242,179,61,.6)}
+  .board .bplayers .bcol + .bcol{margin-top:6px}
+  .board .verdict{color:#F7D58A!important;text-transform:uppercase;letter-spacing:.03em;font-family:"Big Shoulders Display","Barlow Condensed",Impact,sans-serif!important;font-weight:900!important}
+  .board .track{background:#3A4652!important;border-radius:999px!important;overflow:hidden;position:relative}
+  .board .track .fill{display:none!important}
+  .board .track .tilt{display:block!important;position:absolute;top:0;bottom:0;left:50%;width:0;background:linear-gradient(90deg,#C98A16,#F2B33D 50%,#FFD77A);box-shadow:0 0 10px rgba(242,179,61,.55);transition:left .45s,width .45s}
+  .board .track .mid{z-index:1}
+  .board:has(.fill.even) .track{background:linear-gradient(90deg,#2E9A63,#3FB97A 50%,#2E9A63)!important}
+  .board:has(.fill.even) .track .tilt{opacity:0}
+  .board .suggest button{background:rgba(242,179,61,.12)!important;color:#F7D58A!important;border:1px solid rgba(242,179,61,.35)!important}
+}
+@media (max-width:600px){
+  /* My Team: like desktop, no "Team"/"Week" label over the dropdown; strategy cards in the desktop order */
+  #panel-strategy .stratHead .field label,#panel-roster .stratHead .field label,#panel-lineup .stratHead .field label,#panel-waivers .stratHead .field label{display:none}
+  .stratHead .head-sub{margin:0;font-size:13.5px;line-height:1.45}
+  #strategy > .grid2{display:flex!important;flex-direction:column}
+  #strategy > .grid2 > [data-k="moves"]{order:1}#strategy > .grid2 > [data-k="core"]{order:2}#strategy > .grid2 > [data-k="history"]{order:3}
+  #strategy > .grid2 > [data-k="targets"]{order:4}#strategy > .grid2 > [data-k="sell"]{order:5}#strategy > .grid2 > [data-k="partners"]{order:6}
+}
+@media (max-width:600px){ .board .ta-panel{color:#E9EEF2!important} .board .ta-list b{color:#F7D58A} .board .ta-list span{color:#C9D4DC} }
+
+.r-word{display:none}

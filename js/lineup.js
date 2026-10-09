@@ -145,8 +145,8 @@ async function renderLineup(){
   // ---- two more tiles (computers): this week's matchup and the top waiver pickup ----
   const tilesEl = $("luBody").querySelector(".pj-tiles"); if (!tilesEl) return;
   const pick = stream.find(would) || stream[0];
-  const pickTile = pick ? `<div class="pj-tile dt-only"><small>Top pickup</small><b>${pick.pts.toFixed(1)}</b><span>${esc(pick.a.name)} (${esc(pick.a.pos)}), ${would(pick) ? "would start for you" : "best free agent this week"}</span></div>` : "";
-  tilesEl.insertAdjacentHTML("beforeend", `<div class="pj-tile dt-only lu-opp"><small>This week's matchup</small><b>…</b><span>Loading</span></div>${pickTile}`);
+  const pickTile = pick ? `<div class="pj-tile"><small>Top pickup</small><b>${pick.pts.toFixed(1)}</b><span>${esc(pick.a.name)} (${esc(pick.a.pos)}), ${would(pick) ? "would start for you" : "best free agent this week"}</span></div>` : "";
+  tilesEl.insertAdjacentHTML("beforeend", `<div class="pj-tile lu-opp"><small>This week's matchup</small><b>…</b><span>Loading</span></div>${pickTile}`);
   try {
     const ms = await getJSON(`/league/${S.league.league_id}/matchups/${week}`);
     if (LU.week !== week) return;

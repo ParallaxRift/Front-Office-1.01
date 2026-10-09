@@ -61,7 +61,6 @@ for (const side of ["A", "B"]){
 document.addEventListener("pointerdown", e => { for (const side of ["A", "B"]) if (!e.target.closest(`#ktDrop${side}, #ktQ${side}`) && !$("ktDrop" + side).hidden) ktClose(side); });
 // FAAB on the board: tap the amount to change it
 $("bPlayers").addEventListener("click", e => {
-  if (!isPhoneView()) return;
   const it = e.target.closest(".bitem"), x = it?.querySelector(".bi-x[data-faab]");
   if (!x || e.target.closest(".bi-x")) return;
   const side = x.dataset.faab, rid = Number($(side === "send" ? "teamA" : "teamB").value), max = faabLeft(rid);

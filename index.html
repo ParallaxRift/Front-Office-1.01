@@ -26,8 +26,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600&family=Big+Shoulders+Display:wght@700;800;900&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=20261019q">
-<link rel="stylesheet" href="css/desktop.css?v=20261053d" media="(min-width: 601px)">
+<link rel="stylesheet" href="css/styles.css?v=20261023q">
+<link rel="stylesheet" href="css/desktop.css?v=20261058d" media="(min-width: 601px)">
 </head>
 <body>
 <div id="pcard" class="pc-backdrop" hidden></div>
@@ -154,7 +154,7 @@
           <button type="button" class="ta-btn icon-btn" id="analysisBtn" aria-label="Trade analysis breakdown" data-tip="Trade analysis breakdown: why the calculator graded this trade the way it did" aria-expanded="false" aria-controls="hint" hidden><svg class="brain" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.2 12.6C3.4 9 5.6 5.4 9.4 4.6c2.2-.5 3.8 0 5 .7 1.6-.3 3.5.3 4.6 1.9 1.2 1.6 1.4 3.6.6 5.3-.5 1.2-1.6 2-2.9 2.2H11l-1.3 2.1H7.2l.4-2.3c-1.6-.3-3-1.1-3.4-1.9z"/><path d="M13.8 14.7c.6 1.1 1.7 1.7 3 1.6 1-.1 1.8-.7 2.2-1.6"/><path d="M8.6 7.6c1.1.1 1.9.9 2 2M12.9 6.2c-.3 1.2.3 2.3 1.5 2.7M16.6 8.6c-.9.5-1.2 1.6-.7 2.5M7 11.2c1-.6 2.3-.4 3 .5M12.4 11.6c.7-.7 1.9-.8 2.7-.2"/></svg></button>
           <button type="button" class="reset-btn icon-btn" id="shareLink" disabled aria-label="Copy link" data-tip="Copy link: copies a link that opens this exact trade for anyone you send it to"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1.2 1.2"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1.2-1.2"/></svg></button>
           <button type="button" class="reset-btn icon-btn" id="shareImage" disabled aria-label="Save image" data-tip="Save image: downloads a picture of this trade to post in your league chat"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="8.5" cy="10" r="1.6"/><path d="M21 16l-5-5-8 8"/></svg></button>
-          <button type="button" class="reset-btn icon-btn" id="resetTrade" aria-label="Reset" data-tip="Reset: clears both sides and starts a new trade"><span class="r-letter" aria-hidden="true">R</span></button>
+          <button type="button" class="reset-btn icon-btn" id="resetTrade" aria-label="Reset" data-tip="Reset: clears both sides and starts a new trade"><span class="r-letter" aria-hidden="true">R</span><span class="r-word" aria-hidden="true">Reset</span></button>
         </div>
       </div>
       <div class="hint ta-panel" id="hint" hidden></div>
@@ -183,7 +183,7 @@
   </section>
 
   <section class="panel" id="panel-trophy">
-    <h3 class="sec-h"><span class="mob-only">🏆 </span>League Champions</h3>
+    <h3 class="sec-h">League Champions</h3>
     <div id="champList" class="champ-list"><p class="empty">Open this tab to load your league's history.</p></div>
     <h3 class="sec-h" style="margin-top:28px">Weekly High Points</h3>
     <div class="trophy-bar"><div class="seg" id="hsSeasons"></div></div>
@@ -261,8 +261,10 @@
       <button class="ghost" id="refreshScores">Refresh</button>
       <span class="updated" id="scoresUpdated" role="status" aria-live="polite"></span>
     </div>
+    <div class="seg sc-switch mob-only" id="scSwitch" role="tablist" aria-label="Scores view"><button type="button" data-v="all" aria-pressed="true">Matchups</button><button type="button" data-v="motw" aria-pressed="false">Matchup of the Week</button></div>
     <div class="recap" id="scoresRecap"></div>
     <div class="matchups" id="matchups"></div>
+    <div class="motw-phone" id="motwBox" hidden></div>
   </section>
 
   <section class="panel" id="panel-finder">
@@ -332,7 +334,7 @@
     <p style="margin:0 0 10px;font-size:14px;color:var(--muted)">Tap any player to open his player card.<span class="mob-only"> On other tabs, tap a player's photo. <span id="valuesUpdated"></span></span></p>
     <div class="tablewrap" id="valuesWrap">
       <table id="valuesTable">
-        <thead><tr><th class="rk sortable" data-sort="rank" aria-sort="none"><span class="lbl-full">Overall Ranking</span><span class="lbl-short" aria-hidden="true">Ovr Rank</span></th><th class="rk sortable" data-sort="posrank" aria-sort="none"><span class="lbl-full">Position Ranking</span><span class="lbl-short" aria-hidden="true">Pos Rank</span></th><th class="sortable" data-sort="name" aria-sort="none">Player</th><th class="sortable hide-sm" data-sort="pos" aria-sort="none">Pos</th><th class="n sortable" data-sort="age" aria-sort="none">Age</th><th class="hide-sm">League team</th><th class="n sortable" data-sort="value" aria-sort="descending" title="This League: The player's value in your league after all of Front Office's adjustments. This is the number the calculator uses.">This league<button type="button" class="info-btn" data-info="col-league" aria-label="What does This league mean?">?</button></th><th class="n hide-sm sortable" data-sort="market" aria-sort="none" title="Market: The same player's value from Front Office Rankings, before any league adjustments. It shows what he'd be worth in a generic league as a single value.">Market<button type="button" class="info-btn" data-info="col-market" aria-label="What does Market mean?">?</button></th><th class="n sortable" data-sort="change" aria-sort="none" title="Change: The % difference between your league's values after all logic is applied and the singular generic market value. It stays blank when the difference is under 1%.">Change<button type="button" class="info-btn" data-info="col-change" aria-label="What does Change mean?">?</button></th></tr></thead>
+        <thead><tr><th class="rk sortable" data-sort="rank" aria-sort="none"><span class="lbl-full">Overall Ranking</span><span class="lbl-short" aria-hidden="true">Ovr Rank</span></th><th class="rk sortable" data-sort="posrank" aria-sort="none"><span class="lbl-full">Position Ranking</span><span class="lbl-short" aria-hidden="true">Pos Rank</span></th><th class="sortable" data-sort="name" aria-sort="none">Player</th><th class="sortable hide-sm" data-sort="pos" aria-sort="none">Pos</th><th class="n sortable" data-sort="age" aria-sort="none">Age</th><th class="hide-sm">League team</th><th class="n sortable" data-sort="value" aria-sort="descending" title="This League: The player's value in your league after all of Front Office's adjustments. This is the number the calculator uses."><span class="lbl-full">This league</span><span class="lbl-short" aria-hidden="true">Value</span><button type="button" class="info-btn" data-info="col-league" aria-label="What does This league mean?">?</button></th><th class="n hide-sm sortable" data-sort="market" aria-sort="none" title="Market: The same player's value from Front Office Rankings, before any league adjustments. It shows what he'd be worth in a generic league as a single value.">Market<button type="button" class="info-btn" data-info="col-market" aria-label="What does Market mean?">?</button></th><th class="n sortable" data-sort="change" aria-sort="none" title="Change: The % difference between your league's values after all logic is applied and the singular generic market value. It stays blank when the difference is under 1%.">Change<button type="button" class="info-btn" data-info="col-change" aria-label="What does Change mean?">?</button></th></tr></thead>
         <tbody id="valuesBody"></tbody>
       </table>
     </div>
@@ -357,8 +359,6 @@
   </section>
 
   <section class="panel" id="panel-roster">
-    <h3 class="sec-h mob-only">My Roster</h3>
-    <p class="note sec-sub mob-only">Every player and pick on a team, with the same detail as Rankings. Pick any team; it opens on yours.</p>
     <div class="stratHead">
       <div class="field" style="max-width:320px"><label for="rosterTeam">Team</label><select id="rosterTeam"></select></div>
     </div>
@@ -382,17 +382,13 @@
   </section>
 
   <section class="panel" id="panel-lineup">
-    <h3 class="sec-h mob-only">Lineup</h3>
-    <p class="note sec-sub mob-only">Your best starting lineup for the week, compared with the one set in Sleeper.</p>
-    <div class="stratHead"><div class="field" style="max-width:240px"><label for="luWeek">Week</label><select id="luWeek"></select></div><p class="note head-sub dt-only">Your best starting lineup for the week, compared with the one set in Sleeper.</p></div>
+    <div class="stratHead"><div class="field" style="max-width:240px"><label for="luWeek">Week</label><select id="luWeek"></select></div><p class="note head-sub">Your best starting lineup for the week, compared with the one set in Sleeper.</p></div>
     <div id="luBody"></div>
     <p class="note">Start/sit blends Sleeper's weekly projection in your league's scoring (65%) with each player's overall and position value (35%), so one soft projection won't bench a much better player. Questionable counts 90%, doubtful 35%, and out, bye or IR count 0. Players already in your Sleeper lineup win close calls. Tap any player to open his card.</p>
   </section>
 
   <section class="panel" id="panel-waivers">
-    <h3 class="sec-h mob-only">Waivers</h3>
-    <p class="note sec-sub mob-only">The best players no one in your league has rostered, and who on your bench to drop for them.</p>
-    <div class="stratHead"><div class="field" style="max-width:240px"><label for="luWeekW">Week</label><select id="luWeekW"></select></div><p class="note head-sub dt-only">The best players no one in your league has rostered, and who on your bench to drop for them.</p></div>
+    <div class="stratHead"><div class="field" style="max-width:240px"><label for="luWeekW">Week</label><select id="luWeekW"></select></div><p class="note head-sub">The best players no one in your league has rostered, and who on your bench to drop for them.</p></div>
     <div id="luWaivers"></div>
     <p class="note">Free agents are players no team in your league has rostered. "Would start" compares them with your current best lineup for the week, using the same start score as the Lineup tab. Tap any player to open his card.</p>
   </section>
@@ -414,7 +410,7 @@
   <section class="panel" id="panel-strategy">
     <div class="stratHead">
       <div class="field" style="max-width:320px"><label for="stratTeam">Team</label><select id="stratTeam"></select></div>
-      <p class="note head-sub dt-only">Where your team stands, which direction fits it, and the moves that get you there.</p>
+      <p class="note head-sub">Where your team stands, which direction fits it, and the moves that get you there.</p>
     </div>
     <div id="strategy"></div>
   </section>
@@ -609,24 +605,24 @@
 <script src="js/render.js?v=20261014c"></script>
 <script src="js/player-cards.js?v=20261009b"></script>
 <script src="js/settings-tab.js?v=20261007a"></script>
-<script src="js/strategy.js?v=20261010g"></script>
+<script src="js/strategy.js?v=20261011g"></script>
 <script src="js/my-roster.js?v=20261009c"></script>
-<script src="js/lineup.js?v=20261010d"></script>
+<script src="js/lineup.js?v=20261011d"></script>
 <script src="js/scouting.js?v=20261010d"></script>
-<script src="js/live-scores.js?v=20261018a"></script>
+<script src="js/live-scores.js?v=20261019a"></script>
 <script src="js/trade-history.js?v=20261010c"></script>
 <script src="js/modes.js?v=20261009d"></script>
 <script src="js/standings-sim.js?v=20261011b"></script>
 <script src="js/calc-browse.js?v=20261007a"></script>
 <script src="js/calc-minibar.js?v=20261007a"></script>
-<script src="js/trophy.js?v=20261011a"></script>
+<script src="js/trophy.js?v=20261012a"></script>
 <script src="js/table-sort.js?v=20261009b"></script>
 <script src="js/popovers.js?v=20261014c"></script>
 <script src="js/trade-finder.js?v=20261012a"></script>
-<script src="js/pickers.js?v=20261010d"></script>
-<script src="js/nav.js?v=20261012h"></script>
+<script src="js/pickers.js?v=20261011d"></script>
+<script src="js/nav.js?v=20261013h"></script>
 <script src="js/app-shell.js?v=20261010a"></script>
-<script src="js/calc-phone.js?v=20261007m"></script>
+<script src="js/calc-phone.js?v=20261008m"></script>
 <script src="js/about.js?v=20261008c"></script>
 <script src="js/share.js?v=20261008a"></script>
 <script src="js/home.js?v=20261008a"></script>

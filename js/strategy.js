@@ -81,7 +81,7 @@ function renderStrategy(){
     : me.players.filter(a => a.age && a.age >= CLIFF[a.pos]-1 && a.value > 1200).sort((a,b)=>b.value-a.value).slice(0,4);
   // Computers: "Sell for Help Now" also lists surplus players at positions where you're deep who aren't core
   // pieces (not one of your starters or your three most valuable players)
-  const desk = !isPhoneView(), byVal = [...me.players].sort((a, b) => b.value - a.value), need = slotNeeds();
+  const desk = true, byVal = [...me.players].sort((a, b) => b.value - a.value), need = slotNeeds();
   const coreIds = new Set(byVal.slice(0, 3).map(a => a.id));
   POS.forEach(p => byVal.filter(a => a.pos === p).slice(0, Math.ceil(need[p] || 0)).forEach(a => coreIds.add(a.id)));
   let sellRows = sells.map(a => ({ a, why: null }));
@@ -144,11 +144,11 @@ function renderStrategy(){
     <p class="plan">${esc(plan)}</p></div></div>
     <p class="facts">${esc(why)}</p>
     <div class="posgrid">${POS.map(cell).join("")}<div class="pg ${pickCls}"><b>Picks</b><span>${ordinal(me.pickRank)}</span><small>${fmt(me.picks)} value</small></div></div>
-    <p class="facts" style="margin-bottom:14px"><span class="mob-only">Starter ranks out of ${N} teams. </span>Roster age ranks ${ordinal(me.ageRank)} youngest (value-weighted average ${me.age ? me.age.toFixed(1) : "?"}).</p></div>
+    <p class="facts" style="margin-bottom:14px">Roster age ranks ${ordinal(me.ageRank)} youngest (value-weighted average ${me.age ? me.age.toFixed(1) : "?"}).</p></div>
     <div class="grid2">
       <div class="box" data-k="moves"><h3>Recommended Moves</h3><ul class="moves">${moves.concat(tips).map(m=>`<li>${esc(m)}</li>`).join("") || "<li>Your roster is balanced. Look for value trades rather than filling holes.</li>"}</ul></div>
       ${needs.map(p => { const list = targetsFor(p); return `<div class="box" data-k="targets"><h3>${buying ? "Targets" : "Young Targets"} at ${p}</h3>${list.length ? `<p class="note" style="margin:0">${buying ? "Proven players on non-contending teams. Tap to open in the trade calculator." : "Young players with upside. Tap to open in the trade calculator."}</p><div class="targets">${list.map(tgtBtn).join("")}</div>` : `<p class="note">No clear targets in range.</p>`}</div>`; }).join("")}
-      ${corePlayers.length ? `<div class="box dt-only" data-k="core"><h3>Core Players</h3><p class="note" style="margin:0">Young, elite-level players to build around. Hold them, or only sell for a premium. Tap to open his player card.</p><div class="targets">${corePlayers.map(a => `<button class="tgt core" data-card="${esc(a.pid)}"><span class="info">
+      ${corePlayers.length ? `<div class="box" data-k="core"><h3>Core Players</h3><p class="note" style="margin:0">Young, elite-level players to build around. Hold them, or only sell for a premium. Tap to open his player card.</p><div class="targets">${corePlayers.map(a => `<button class="tgt core" data-card="${esc(a.pid)}"><span class="info">
       <span class="l1">${esc(a.name)}${injTag(a.pid)}<small>${esc(a.pos)}${a.lgPosRank ? a.lgPosRank : ""}, ${esc(ageText(a.age)||"?")}</small></span>
       <span class="l2"><span>Hold. Only sell for ${fmt(Math.round(a.value * 1.3 / 100) * 100)}+ in value</span></span>
     </span><span class="val">${fmt(a.value)}</span></button>`).join("")}</div></div>` : ""}

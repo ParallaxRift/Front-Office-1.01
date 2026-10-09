@@ -66,7 +66,7 @@ async function loadTrophyRoom(){
 function renderTrophyRoom(){
   const T = trophy; if (!T) return;
   const person = (t, size) => `${avatar(t.photo, t.name, size)}`;
-  if (!isPhoneView()){ renderChampWall(T, person); } else
+  { renderChampWall(T, person); } if (0)
   $("champList").innerHTML = T.seasons.map(x => x.champ ? `
     <article class="tr-champ">
       <div class="yr">${x.season}</div>
