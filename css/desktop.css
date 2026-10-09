@@ -528,3 +528,7 @@ p.tuning-upd{margin:6px 0 0;margin-left:0}
 .cw-live{margin:12px 0 0;font-size:13px}
 @media (prefers-reduced-motion:reduce){.cw-trophy img{transition:none}}
 #champList.champ-list{display:block!important}
+/* Trophy Room: wider cards, and long team names wrap instead of being cut off */
+.champ-wall{grid-template-columns:repeat(auto-fill,minmax(260px,1fr))!important}
+.cw-champ b,.cw-place b{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;line-height:1.25}
+.cw-trophy img{height:230px}
