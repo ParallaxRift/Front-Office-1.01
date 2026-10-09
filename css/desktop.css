@@ -554,3 +554,37 @@ p.tuning-upd{margin:6px 0 0;margin-left:0}
 .board .track .tilt{display:block;position:absolute;top:0;bottom:0;left:50%;width:0;background:linear-gradient(90deg,#C98A16,#F2B33D 50%,#FFD77A);box-shadow:0 0 12px rgba(242,179,61,.55);transition:left .45s cubic-bezier(.2,.8,.2,1),width .45s cubic-bezier(.2,.8,.2,1)}
 .board .track .mid{z-index:1}
 @media (prefers-reduced-motion:reduce){.board .track .tilt{transition:none}}
+/* Trade Calculator bar: a fair trade turns the bar green */
+.board:has(.fill.even) .track{background:linear-gradient(90deg,#2E9A63,#3FB97A 50%,#2E9A63)!important;box-shadow:0 0 12px rgba(63,185,122,.45)}
+.board:has(.fill.even) .track .tilt{opacity:0}
+
+/* Trade Calculator (desktop): Matchup of the Week style scoreboard */
+.board{position:relative;border-radius:14px!important;overflow:hidden!important;padding:0 0 16px!important;color:#fff!important;
+  background:radial-gradient(120% 70% at 0% 0%,rgba(224,90,74,.28),transparent 55%),radial-gradient(120% 70% at 100% 0%,rgba(63,185,122,.26),transparent 55%),
+  repeating-linear-gradient(135deg,rgba(255,255,255,.025) 0 2px,transparent 2px 14px),linear-gradient(180deg,#1B2835,#0F1820)!important;
+  box-shadow:0 0 0 1px rgba(242,179,61,.55),0 18px 40px -18px rgba(0,0,0,.7)!important}
+.board::before{content:"";position:absolute;inset:0 0 auto 0;height:4px;background:linear-gradient(90deg,var(--bc-send),var(--bc-gold) 50%,var(--bc-get));z-index:2}
+.board .bside,.board .vrow{background:transparent!important}
+.board .bside{padding-top:30px!important;text-align:center!important;display:flex;flex-direction:column;align-items:center}
+.board .bside .bteam{flex-direction:column;align-items:center;justify-content:center}
+.board .bside .bteam .av{width:76px!important;height:76px!important;box-shadow:0 0 0 3px #0F1820,0 0 0 5px var(--bc-send)}
+.board .bside.right .bteam .av{box-shadow:0 0 0 3px #0F1820,0 0 0 5px var(--bc-get)}
+.board .side-label{color:#F7D58A!important;letter-spacing:.16em!important}
+.board .vrow{padding-top:30px!important}
+.board .vrow::before{width:64px!important;height:64px!important;border-radius:50%!important;content:"VS"!important;display:grid;place-items:center;font:900 26px var(--bc-num);color:#121B24;
+  background:radial-gradient(circle at 35% 30%,#FFE6A8,var(--bc-gold) 60%,#C98A16)!important;box-shadow:0 0 0 5px rgba(242,179,61,.18),0 0 30px rgba(242,179,61,.6)!important}
+.board .verdict{color:#F7D58A!important;text-transform:uppercase;letter-spacing:.04em}
+.board .track{margin:14px 24px 0!important;border-radius:999px!important;overflow:hidden;height:16px!important;grid-column:1 / -1}
+.board .bplayers{padding:16px 16px 0!important}
+.board .bplayers .bcol{background:rgba(255,255,255,.05)!important;border:1px solid rgba(255,255,255,.1)!important}
+.board .bplayers .bitem{border-bottom-color:rgba(255,255,255,.08)!important}
+.board .bplayers .bitem .bi-text b,.board .bplayers .bitem .bi-val{color:#fff!important}
+.board .bplayers .bitem .bi-text small{color:#9DB0BE!important}
+.board .badj{color:#5FD39A!important;border-top-color:rgba(255,255,255,.15)!important}
+.board .brow{margin:14px 16px 0!important;background:rgba(255,255,255,.05)!important;border-color:rgba(255,255,255,.1)!important;color:#fff}
+.board .suggest .hint{color:#C9D4DC!important}
+.board .suggest button{background:rgba(242,179,61,.12)!important;color:#F7D58A!important;border-color:rgba(242,179,61,.35)!important}
+.board .share-btns .icon-btn{background:transparent!important;color:#fff!important;border-color:rgba(255,255,255,.2)!important}
+/* keep the gold advantage bar (and green when fair) on the new dark board */
+.board .track{background:#3A4652!important}
+.board:has(.fill.even) .track{background:linear-gradient(90deg,#2E9A63,#3FB97A 50%,#2E9A63)!important}
