@@ -1430,7 +1430,7 @@ body:not(.has-league) .side-switch,body:not(.has-league) #miniBar{display:none!i
 .sb-pts{font-family:var(--display);font-weight:800;font-size:30px;line-height:1;opacity:.75;flex:none}
 .sb-team.lead .sb-pts{opacity:1}
 .sb-vs{font-size:11px;font-weight:700;opacity:.5}
-.mb .sb-bar{height:12px;background:#3FB97A;overflow:hidden}.mb .sb-bar i{display:block;height:100%;background:#E05A4A;transition:width .4s;box-shadow:2px 0 0 #fff}
+.mb .sb-bar{height:16px;background:#3FB97A;overflow:hidden}.mb .sb-bar i{display:block;height:100%;background:#E05A4A;transition:width .4s;box-shadow:2px 0 0 #fff}
 .mb details{border-top:1px solid var(--line)}
 .mb summary{cursor:pointer;padding:10px 14px;font-weight:700;font-size:14px;color:var(--field)}
 .bx{padding:0 10px 10px}
@@ -1756,3 +1756,7 @@ body:has(#pcard:not([hidden])) #installTip{display:none!important}   /* the "Get
 /* phones: a trending tag wraps under the player's name instead of widening the table */
 @media (max-width:600px){ #valuesTable .nm-wrap{min-width:0} #valuesTable .nm-wrap .trend{margin-left:0;margin-top:2px} }
 .pw-score{font-family:var(--display);font-weight:800;font-size:18px;display:inline-block;min-width:26px;text-align:right}
+
+/* "?" next to a page title (Power Rankings, Scouting Reports) */
+.sec-h .info-btn{font:800 12px var(--body);width:20px;height:20px;margin-left:8px;position:relative;top:-3px;color:var(--muted)}
+.sec-h .info-btn:hover{color:var(--ink)}

@@ -79,6 +79,19 @@ function renderStrategy(){
   const sells = buying
     ? me.players.filter(a => (a.age||0) <= 23 && a.value > 800 && me.pos[a.pos] && a.value < me.pos[a.pos].start/Math.max(1,slotNeeds()[a.pos]) * 0.8).sort((a,b)=>b.value-a.value).slice(0,3)
     : me.players.filter(a => a.age && a.age >= CLIFF[a.pos]-1 && a.value > 1200).sort((a,b)=>b.value-a.value).slice(0,4);
+  // Computers: "Sell for Help Now" also lists surplus players at positions where you're deep who aren't core
+  // pieces (not one of your starters or your three most valuable players)
+  const desk = !isPhoneView(), byVal = [...me.players].sort((a, b) => b.value - a.value), need = slotNeeds();
+  const coreIds = new Set(byVal.slice(0, 3).map(a => a.id));
+  POS.forEach(p => byVal.filter(a => a.pos === p).slice(0, Math.ceil(need[p] || 0)).forEach(a => coreIds.add(a.id)));
+  let sellRows = sells.map(a => ({ a, why: null }));
+  if (desk && buying){
+    const extra = surplus.flatMap(p => byVal.filter(a => a.pos === p && !coreIds.has(a.id) && a.value > 800).slice(0, 3)).map(a => ({ a, why: `Surplus ${a.pos}: you're deep here and he isn't a starter` }));
+    const seen = new Set(); sellRows = [...extra, ...sellRows].filter(r => !seen.has(r.a.id) && seen.add(r.a.id)).sort((x, y) => y.a.value - x.a.value).slice(0, 6);
+  }
+  // Computers: core players to build around, young and elite-level (top ~3 per team overall, or near the top at his position)
+  const coreTop = { QB: 6, RB: 8, WR: 10, TE: 3 };
+  const corePlayers = desk ? me.players.filter(a => a.age && a.age < 26 && ((a.lgRank && a.lgRank <= N * 3) || (a.lgPosRank && a.lgPosRank <= (coreTop[a.pos] || 0)))).sort((a, b) => b.value - a.value).slice(0, 6) : [];
   const buyersFor = a => otherProfiles.filter(x => x.team.status !== "rebuild" && x.pos[a.pos].rank > N/2).map(x => x.team.name).slice(0,2);
 
   // best trade partners
@@ -135,10 +148,14 @@ function renderStrategy(){
     <div class="grid2">
       <div class="box"><h3>Recommended Moves</h3><ul class="moves">${moves.concat(tips).map(m=>`<li>${esc(m)}</li>`).join("") || "<li>Your roster is balanced. Look for value trades rather than filling holes.</li>"}</ul></div>
       ${needs.map(p => { const list = targetsFor(p); return `<div class="box"><h3>${buying ? "Targets" : "Young Targets"} at ${p}</h3>${list.length ? `<p class="note" style="margin:0">${buying ? "Proven players on non-contending teams. Tap to open in the trade calculator." : "Young players with upside. Tap to open in the trade calculator."}</p><div class="targets">${list.map(tgtBtn).join("")}</div>` : `<p class="note">No clear targets in range.</p>`}</div>`; }).join("")}
-      ${sells.length ? `<div class="box"><h3>${buying ? "Sell for Help Now" : "Sell Before They Decline"}</h3><div class="targets">${sells.map(a => { const buyers = !buying ? buyersFor(a) : []; return `<div class="tgt" style="cursor:default"><span class="info">
+      ${corePlayers.length ? `<div class="box dt-only"><h3>Core Players</h3><p class="note" style="margin:0">Young, elite-level players to build around. Hold them, or only sell for a premium. Tap to open his player card.</p><div class="targets">${corePlayers.map(a => `<button class="tgt core" data-card="${esc(a.pid)}"><span class="info">
+      <span class="l1">${esc(a.name)}${injTag(a.pid)}<small>${esc(a.pos)}${a.lgPosRank ? a.lgPosRank : ""}, ${esc(ageText(a.age)||"?")}</small></span>
+      <span class="l2"><span>Hold. Only sell for ${fmt(Math.round(a.value * 1.3 / 100) * 100)}+ in value</span></span>
+    </span><span class="val">${fmt(a.value)}</span></button>`).join("")}</div></div>` : ""}
+      ${sellRows.length ? `<div class="box"><h3>${buying ? "Sell for Help Now" : "Sell Before They Decline"}</h3>${desk ? `<p class="note" style="margin:0">Tap a player to find trades for him in the Trade Finder.</p>` : ""}<div class="targets">${sellRows.map(({ a, why }) => { const buyers = !buying ? buyersFor(a) : []; const tag = desk ? "button" : "div"; return `<${tag} class="tgt"${desk ? ` data-sell="${esc(a.id)}"` : ` style="cursor:default"`}><span class="info">
       <span class="l1">${esc(a.name)}${injTag(a.pid)}<small>${esc(a.pos)}, ${esc(ageText(a.age)||"?")}</small></span>
-      <span class="l2">${buyers.length ? `<span>Possible buyers: ${esc(buyers.join(", "))}</span>` : `<span>${buying ? "Bench piece to package" : "Aging, sell soon"}</span>`}</span>
-    </span><span class="val">${fmt(a.value)}</span></div>`; }).join("")}</div></div>` : ""}
+      <span class="l2">${buyers.length ? `<span>Possible buyers: ${esc(buyers.join(", "))}</span>` : `<span>${why || (buying ? "Bench piece to package" : "Aging, sell soon")}</span>`}</span>
+    </span><span class="val">${fmt(a.value)}</span></${tag}>`; }).join("")}</div></div>` : ""}
       ${historyInsightsHTML(t.rid)}
       ${partners.length ? `<div class="box"><h3>Best Trade Partners</h3><ul class="moves">${partners.map(p => `<li><span class="teamcell" style="vertical-align:middle">${teamPhoto(p.x.team.rid, true)}<b>${esc(p.x.team.name)}</b></span> (${statusText[p.x.team.status].toLowerCase()})${p.fit.length ? `: deep at ${andList(p.fit)}` : ""}${p.give.length ? `${p.fit.length?",":":"} needs ${andList(p.give)}, where you're deep` : ""}.${S.history ? ` <small class="habit">Trade habits: ${esc(habitText(p.h))}.</small>` : ""}</li>`).join("")}</ul></div>` : ""}
     </div>`;
@@ -146,11 +163,21 @@ function renderStrategy(){
 $("stratTeam").addEventListener("change", renderStrategy);
 $("strategy").addEventListener("click", e => {
   const b = e.target.closest("button.tgt"); if (!b) return;
-  const a = S.assets.get(b.dataset.id); if (!a) return;
-  $("teamA").value = $("stratTeam").value; $("teamB").value = a.owner;
+  if (b.dataset.card){ openPlayerCard(b.dataset.card); return; }                 // Core Players: his player card
+  const rid = $("stratTeam").value;
+  if (b.dataset.sell){                                                            // Sell for Help Now: the Trade Finder, with him picked to trade away
+    const a = S.assets.get(b.dataset.sell); if (!a) return;
+    jumpToTab("finder");
+    $("tfTeam").value = rid; tfSend.clear(); tfSend.add(a.id); tfTarget = null;
+    renderFinder();
+    window.scrollTo({ top: $("groups").offsetTop, behavior: "smooth" });
+    return;
+  }
+  const a = S.assets.get(b.dataset.id); if (!a) return;                           // a target: the Trade Calculator with him on the "you get" side
+  jumpToTab("calc");                                                               // open the calculator first, then fill it in, so nothing that runs on opening clears it
+  $("teamA").value = rid; $("teamB").value = a.owner;
   S.sendIds.clear(); S.getIds.clear(); S.getIds.add(a.id);
   renderCalc();
-  $("tabs").querySelector('[data-tab="calc"]').click();
   window.scrollTo({ top: $("groups").offsetTop, behavior: "smooth" });
 });
 

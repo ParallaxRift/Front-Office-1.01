@@ -334,7 +334,7 @@ body:not(.has-league) .connect{border-bottom:0!important}
 .mb .sb-pts{font-size:32px}
 .mb .sb-team .sb-nm b{font-size:14px}
 .mb .sb-team small{font-size:11.5px}
-.mb .sb-bar{height:10px}
+.mb .sb-bar{height:16px}
 .mb summary{padding:8px 12px;font-size:13px}
 .mb .bx{padding:0 10px 6px}
 .mb .bx-row{padding:3px 0;gap:4px;grid-template-columns:minmax(0,1fr) 30px minmax(0,1fr)}
@@ -396,13 +396,67 @@ p.tuning-upd{margin:6px 0 0;margin-left:0}
 .strat-hero .pg span{font-size:30px!important}
 .strat-hero .pg small{font-size:12px!important}
 /* My Roster (desktop): the team name and photo sit above the team dropdown */
-#panel-roster.on{display:flex;flex-direction:column}
-#panel-roster.on > *{min-width:0}
+#panel-roster.on{display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:28px;align-items:center}
+#panel-roster.on > *,#panel-roster #rosterSum > *{grid-column:1 / -1;min-width:0}
 #panel-roster #rosterSum{display:contents}
-#panel-roster #rosterSum .ros-head{order:-1;margin:0 0 14px}
+/* the team name and photo, with the team dropdown right next to it */
+#panel-roster #rosterSum .ros-head{grid-column:1;grid-row:1;margin:0 0 14px}
+#panel-roster.on > .stratHead{grid-column:2;grid-row:1;margin:0 0 14px}
+#panel-roster.on > .stratHead .field label{display:none}
 /* Lineup tiles (desktop): five across, the same compact size as the Team Strategy tiles */
 #luBody .pj-tiles{grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:10px!important;margin-bottom:14px!important}
 #luBody .pj-tile{padding:10px 14px!important;min-width:0}
 #luBody .pj-tile small{font-size:11.5px!important}
 #luBody .pj-tile b{font-size:30px!important;margin:2px 0 1px!important}
 #luBody .pj-tile span{font-size:12.5px!important;line-height:1.35;display:block}
+/* Trophy Room (desktop): smaller champion cards */
+.champ-list{grid-template-columns:repeat(auto-fill,minmax(240px,1fr))!important;gap:12px!important}
+.tr-champ{padding:10px 14px!important;border-top-width:3px!important}
+.tr-champ .yr{font-size:20px!important}
+.tr-champ .who{gap:10px!important;margin:6px 0 4px!important}
+.tr-champ .who .av{width:36px!important;height:36px!important}
+.tr-champ .who b{font-size:15px!important}
+.tr-champ .who small{font-size:12px!important}
+.tr-champ .rest{font-size:12.5px!important;gap:2px!important}
+.tr-champ.pending p,.tr-champ .note{font-size:13px!important;margin:4px 0 0}
+/* League Settings (desktop): condensed */
+#panel-settings .grid2{gap:14px!important}
+#panel-settings .box{padding:14px 18px!important}
+#panel-settings .box h3{font-size:19px!important;margin:0 0 8px!important}
+#panel-settings .kv{gap:3px 12px;font-size:14px}
+#panel-settings .kv dd{font-size:15px}
+#panel-settings .slot{font-size:14px;padding:1px 7px}
+#panel-settings .grid2{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;grid-template-rows:auto auto auto;align-items:start}
+#panel-settings .grid2 > .box:nth-child(1){grid-column:1;grid-row:1 / span 2}
+#panel-settings .grid2 > .box:nth-child(2){grid-column:2;grid-row:1}
+#panel-settings .grid2 > .box:nth-child(3){grid-column:2;grid-row:2}
+#panel-settings .grid2 > .box:nth-child(4){grid-column:1 / -1;grid-row:3}
+#panel-settings .grid2 > .box:nth-child(5){grid-column:3;grid-row:1 / span 2}
+#panel-settings #setRules{display:block;columns:3;column-gap:28px}
+#panel-settings #setRules li{break-inside:avoid}
+#panel-settings .rules li{padding:6px 0;gap:10px}
+#panel-settings .rules .mult{font-size:16px!important;min-width:50px}
+#panel-settings .rules .why{font-size:13.5px;line-height:1.35}
+#panel-settings .rules .why small{font-size:12px}
+#panel-settings .share{font-size:13px;gap:4px 10px}
+#panel-settings .note{font-size:13px}
+/* Scores: Matchup of the Week, to the right of your matchup */
+#matchups .mb.motw{background:var(--bc-deck)!important;color:#fff;border:0!important;border-top:4px solid var(--bc-gold)!important}
+#matchups .mb.motw .mb-tag{background:var(--bc-gold);color:#121B24}
+.motw-body{padding:26px 18px 16px;display:flex;flex-direction:column;gap:10px}
+.motw-team{display:flex;align-items:center;gap:10px;min-width:0}
+.motw-nm{flex:1;min-width:0}
+.motw-nm b{display:block;font-size:16px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.motw-nm small{display:block;font-size:12px;color:#9DB0BE}
+.motw-pts{text-align:right;flex:none}
+.motw-pts b{display:block;font-family:var(--bc-num);font-weight:900;font-size:34px;line-height:1;color:#fff}
+.motw-pts small{display:block;font-size:12px;color:#C9D4DC;margin-top:2px}
+.motw-vs{font:700 11px var(--bc-text);letter-spacing:.08em;text-transform:uppercase;color:#7D8C98;padding-left:52px}
+.motw .sb-bar{height:16px;border-radius:4px;margin:4px 0 2px}
+.motw-why{list-style:none;margin:4px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
+.motw-why li{position:relative;padding-left:18px;font-size:13.5px;color:#DCE3E8;line-height:1.4}
+.motw-why li::before{content:"";position:absolute;left:2px;top:.55em;width:7px;height:7px;border-radius:2px;background:var(--bc-gold)}
+.motw-go{align-self:flex-start;margin-top:6px;background:transparent!important;color:#fff!important;border:1px solid #3A4A58!important}
+.motw-go:hover{border-color:var(--bc-gold)!important}
+#matchups .mb.flash{outline:3px solid var(--bc-gold);outline-offset:2px;transition:outline-color .3s}
+#matchups .mb.motw{align-self:start}

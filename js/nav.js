@@ -58,3 +58,17 @@ new MutationObserver(syncNav).observe($("tabs"), { subtree: true, attributes: tr
 $("settingsBtn").addEventListener("click", () => setTimeout(syncNav));
 function navRevealTargets(tabs){ return [...new Set(tabs.map(t => $("groups").querySelector(`[data-group="${t.dataset.group}"]`)).filter(b => b && !b.hidden))]; }
 syncNav();
+
+// Jumping between tabs from a link (Team Strategy -> Trade Calculator, say) on a computer adds a step to the
+// browser history, so the Back button returns to the tab you came from instead of leaving the page.
+function jumpToTab(tab){
+  const cur = $("tabs").querySelector('[aria-selected="true"]')?.dataset.tab;
+  if (!isPhoneView() && cur && cur !== tab){
+    try { history.replaceState({ ...(history.state || {}), foTab: cur }, ""); history.pushState({ foTab: tab }, ""); } catch(e){}
+  }
+  navTab(tab)?.click();
+}
+window.addEventListener("popstate", e => {
+  const t = e.state?.foTab, b = t && navTab(t);
+  if (b && !b.hidden){ b.click(); window.scrollTo({ top: $("groups").offsetTop - 10 }); }
+});

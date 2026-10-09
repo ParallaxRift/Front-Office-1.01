@@ -187,9 +187,9 @@ function renderScores(data, week){
       const res = final && B && any ? (lead && a !== b ? `<span class="sb-res w">W</span>` : a === b ? `<span class="sb-res t">T</span>` : `<span class="sb-res l">L</span>`) : "";
       return `<div class="sb-team ${side}${lead ? " lead" : ""}">${teamPhoto(m.roster_id, "md")}<span class="sb-nm"><b>${esc(t?.name || "Team " + m.roster_id)}</b>${t?.manager && t.manager !== t.name ? `<small>${esc(t.manager)}</small>` : ""}${statusLine(m) ? `<small class="sb-st">${statusLine(m)}</small>` : ""}${pr ? `<small class="sb-proj">Proj ${pr.t.toFixed(1)}${wc != null ? ` · <b>${Math.round(wc * 100)}%</b> to win` : ""}</small>` : ""}</span><span class="sb-pts">${res}${pts(m).toFixed(2)}</span></div>`; };
     if (!B) return `<article class="mb${mine ? " mine" : ""}"><div class="sb">${team(A, "l")}</div></article>`;
-    // the bar splits the projected final (once a week is over, the actual final score)
+    // the bar shows each side's chance to win (9% to win = 9% of the bar); once a week is over, the final score
     const pTot = pA && pB ? pA.t + pB.t : 0;
-    const share = pTot > 0 ? Math.round(pA.t / pTot * 100) : any ? Math.round(a / (a + b) * 100) : 50;
+    const share = wA != null ? Math.round(wA * 100) : pTot > 0 ? Math.round(pA.t / pTot * 100) : any ? Math.round(a / (a + b) * 100) : 50;
     const rows = slots.map((slot, i) => `<div class="bx-row">${cell(A.starters?.[i], A.starters_points?.[i] ?? A.players_points?.[A.starters?.[i]], "l")}<span class="bx-slot">${esc(slotName[slot] || slot)}</span>${cell(B.starters?.[i], B.starters_points?.[i] ?? B.players_points?.[B.starters?.[i]], "r")}</div>`).join("");
     const benchOf = m => { const st = new Set(m.starters || []);
       return (m.players || []).filter(pid => pid && pid !== "0" && !st.has(pid) && playerLabel(pid)).map(pid => ({ pid, p: Number(m.players_points?.[pid] ?? 0) })).sort((x, y) => y.p - x.p); };
@@ -199,11 +199,12 @@ function renderScores(data, week){
       : `<p class="note">No bench players.</p>`;
     return `<article class="mb${mine ? " mine" : ""}">${mine ? `<div class="mb-tag">Your matchup${final ? " · Final" : live ? " · Live" : ""}</div>` : final ? `<div class="mb-tag quiet">Final</div>` : ""}
       <div class="sb">${team(A, "l")}<span class="sb-vs">vs</span>${team(B, "r")}</div>
-      <div class="sb-bar" role="img" aria-label="${esc(S.teams.get(A.roster_id)?.name || "")} ${pTot > 0 ? `has ${share}% of the projected points` : `has ${share}% of the points`}"><i style="width:${share}%"></i></div>
+      <div class="sb-bar" role="img" aria-label="${esc(S.teams.get(A.roster_id)?.name || "")} ${wA != null ? `has a ${share}% chance to win` : pTot > 0 ? `has ${share}% of the projected points` : `has ${share}% of the points`}"><i style="width:${share}%"></i></div>
       <details${mine || boxOpen ? " open" : ""}><summary>Box score</summary><div class="bx">${rows}</div></details>
       <details><summary>Bench</summary><div class="bx">${bench}</div></details>
     </article>`;
   }).join("");
+  if (boxOpen) matchupOfWeek(list, { pts, projOf, winChance, final, week });
   // ---- week recap: high and low score, closest game, biggest win ----
   const games = list.filter(g => g.length === 2 && pts(g[0]) + pts(g[1]) > 0), all = list.flat().filter(m => pts(m) > 0);
   if (!all.length){ $("scoresRecap").innerHTML = ""; return; }
@@ -221,3 +222,67 @@ function renderScores(data, week){
     ${tile("League average", ptsText(avg), `Week ${week}`)}
   </div>`;
 }
+
+// ---- Matchup of the Week (computers): the most interesting game this week, shown next to your matchup ----
+// Each game (other than yours) is scored on:
+//  - Rankings: both teams near the top of the standings and of Power, and close to each other
+//  - Suspense: a high combined projection and a win chance near 50/50 (no projected blowouts)
+//  - Star power: elite players (top ~2 per team overall) starting on both sides
+//  - Rivalry: the two managers trade with each other a lot, or share a division
+//  - Stakes (our own): both teams near the playoff line, or two hot streaks meeting
+function matchupOfWeek(list, X){
+  const games = list.filter(g => g.length === 2 && !g.some(m => m.roster_id === S.myRid)); if (!games.length) return;
+  const N = S.teams.size, nPO = Math.min(Number(S.league.settings?.playoff_teams) || 6, N);
+  const rec = r => { const x = S.rosters.find(y => y.roster_id === r)?.settings || {}; return { w: x.wins || 0, l: x.losses || 0, t: x.ties || 0, pf: (x.fpts || 0) + (x.fpts_decimal || 0) / 100 }; };
+  const place = new Map([...S.teams.keys()].map(r => [r, rec(r)]).sort((a, b) => (b[1].w + b[1].t / 2) - (a[1].w + a[1].t / 2) || b[1].pf - a[1].pf).map(([r], i) => [r, i + 1]));
+  const PW = typeof powerScores === "function" ? powerScores() : null, pr = r => PW?.m.get(r)?.rank || N;
+  const elite = N * 2, stars = m => (m.starters || []).filter(pid => { const a = S.assets.get("p:" + pid); return a && a.lgRank && a.lgRank <= elite; }).length;
+  const trades = (a, b) => (S.history?.trades || []).filter(t => t.sides.some(s => s.rid === a) && t.sides.some(s => s.rid === b)).length;
+  const div = r => S.rosters.find(y => y.roster_id === r)?.settings?.division;
+  const streak = r => { const s = S.rosters.find(y => y.roster_id === r)?.metadata?.streak || ""; const m = s.match(/^(\d+)([WL])$/i); return m ? (m[2].toUpperCase() === "W" ? +m[1] : -m[1]) : 0; };
+  const scored = games.map(([A, B]) => {
+    const a = A.roster_id, b = B.roster_id, why = [];
+    const pa = X.projOf(A), pb = X.projOf(B), w = X.winChance(pa, pb);
+    const avgPlace = (place.get(a) + place.get(b)) / 2, avgPow = (pr(a) + pr(b)) / 2;
+    let s = 0;
+    s += 2 * (1 - (avgPlace - 1) / N) + 1.5 * (1 - (avgPow - 1) / N);                       // top-tier teams
+    s += 1 * (1 - Math.abs(place.get(a) - place.get(b)) / N);                                  // closely ranked
+    if (avgPlace <= N / 3) why.push(`Two top teams: ${ordinal(place.get(a))} vs ${ordinal(place.get(b))} in the standings`);
+    else if (Math.abs(place.get(a) - place.get(b)) <= 1) why.push(`Neighbors in the standings (${ordinal(place.get(a))} and ${ordinal(place.get(b))})`);
+    if (w != null){
+      const bal = 1 - Math.abs(w - 0.5) * 2; s += 2.5 * bal;
+      const tot = pa.t + pb.t; s += 0.8 * tot / Math.max(1, ...games.map(([x, y]) => (X.projOf(x)?.t || 0) + (X.projOf(y)?.t || 0)));
+      if (bal >= 0.8) why.push(`A coin flip: ${Math.round(Math.max(w, 1 - w) * 100)}% for the favorite`);
+    } else {
+      const d = Math.abs(X.pts(A) - X.pts(B)), tot = X.pts(A) + X.pts(B);
+      if (tot > 0){ s += 2.5 * Math.max(0, 1 - d / Math.max(10, tot * 0.15)); if (d < 10) why.push(`Separated by ${d.toFixed(1)} points`); }
+    }
+    const st = [stars(A), stars(B)]; s += 0.35 * (st[0] + st[1]) + 0.5 * Math.min(st[0], st[1]);
+    if (Math.min(...st) >= 2) why.push(`Star power: ${st[0] + st[1]} top-${elite} players starting`);
+    const tr = trades(a, b); if (tr){ s += Math.min(1.5, 0.4 * tr); if (tr >= 3) why.push(`Rivals: they've traded ${tr} times`); }
+    if (div(a) && div(a) === div(b)){ s += 0.8; why.push("Division game"); }
+    const nearLine = r => Math.abs(place.get(r) - nPO - 0.5) <= 2;
+    if (nearLine(a) && nearLine(b)){ s += 1; why.push("Playoff race: both teams are near the playoff line"); }
+    const sa = streak(a), sb = streak(b); if (sa >= 2 && sb >= 2){ s += 0.6; why.push(`Hot vs hot: ${sa}- and ${sb}-game win streaks`); }
+    return { A, B, s, why, pa, pb, w };
+  }).sort((x, y) => y.s - x.s);
+  const g = scored[0]; if (!g) return;
+  const nm = r => esc(S.teams.get(r)?.name || "Team " + r), recTxt = r => { const x = rec(r); return `${x.w}-${x.l}${x.t ? "-" + x.t : ""}`; };
+  const side = (m, p, wc) => `<div class="motw-team">${teamPhoto(m.roster_id, "md")}<span class="motw-nm"><b>${nm(m.roster_id)}</b><small>${recTxt(m.roster_id)} · ${ordinal(place.get(m.roster_id))} · Power ${ordinal(pr(m.roster_id))}</small></span>
+    <span class="motw-pts"><b>${X.pts(m).toFixed(2)}</b>${p ? `<small>Proj ${p.t.toFixed(1)}${wc != null ? ` · ${Math.round(wc * 100)}%` : ""}</small>` : ""}</span></div>`;
+  const share = g.w != null ? Math.round(g.w * 100) : (X.pts(g.A) + X.pts(g.B) > 0 ? Math.round(X.pts(g.A) / (X.pts(g.A) + X.pts(g.B)) * 100) : 50);
+  const html = `<article class="mb motw" aria-label="Matchup of the Week"><div class="mb-tag">Matchup of the Week</div>
+    <div class="motw-body">${side(g.A, g.pa, g.w)}<div class="motw-vs">vs</div>${side(g.B, g.pb, g.w == null ? null : 1 - g.w)}
+    <div class="sb-bar"><i style="width:${share}%"></i></div>
+    <ul class="motw-why">${(g.why.length ? g.why : ["The best mix of rankings, projections and star power this week"]).slice(0, 3).map(x => `<li>${x}</li>`).join("")}</ul>
+    <button type="button" class="ghost motw-go" data-mid="${g.A.matchup_id}">See the box score</button></div></article>`;
+  const mine = $("matchups").querySelector(".mb.mine");
+  if (mine) mine.insertAdjacentHTML("afterend", html); else $("matchups").insertAdjacentHTML("afterbegin", html);
+  for (const card of $("matchups").querySelectorAll(".mb:not(.motw)")) if (!card.dataset.mid){ const i = [...$("matchups").querySelectorAll(".mb:not(.motw)")].indexOf(card); card.dataset.mid = list[i]?.[0]?.matchup_id ?? ""; }
+}
+$("matchups").addEventListener("click", e => {
+  const b = e.target.closest(".motw-go"); if (!b) return;
+  const card = $("matchups").querySelector(`.mb:not(.motw)[data-mid="${b.dataset.mid}"]`); if (!card) return;
+  card.querySelector("details")?.setAttribute("open", "");
+  card.scrollIntoView({ behavior: "smooth", block: "center" }); card.classList.add("flash"); setTimeout(() => card.classList.remove("flash"), 1600);
+});
