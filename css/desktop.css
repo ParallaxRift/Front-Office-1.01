@@ -354,3 +354,9 @@ body:not(.has-league) .connect{border-bottom:0!important}
 #matchups .mb .mb-tag{position:absolute;top:0;left:50%;transform:translateX(-50%);z-index:1;border-radius:0 0 8px 8px;padding:2px 12px;font-size:11px;line-height:1.5;white-space:nowrap}
 #matchups .mb .sb{padding-top:16px}
 #matchups .mb .sb{min-height:96px}
+/* Standings footnotes: Sort sits right under Playoffs (no gap); Title odds and Power each take a column */
+.stand-key{grid-template-columns:repeat(3,minmax(0,1fr))!important;grid-auto-rows:auto;align-items:start;gap:6px 28px!important}
+.stand-key li:nth-child(1){grid-column:1;grid-row:1}
+.stand-key li:nth-child(2){grid-column:2;grid-row:1 / span 2}
+.stand-key li:nth-child(3){grid-column:3;grid-row:1 / span 2}
+.stand-key li:nth-child(4){grid-column:1;grid-row:2}

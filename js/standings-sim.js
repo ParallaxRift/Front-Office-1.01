@@ -20,15 +20,28 @@ $("standTable").addEventListener("click", e => {
   standSort = standSort.key === k ? { key: k, dir: -standSort.dir } : { key: k, dir: STAND_FIRST_DIR[k] || -1 };
   renderStandings();
 });
+// Power: roster strength blended with title odds. Strength says how good the roster is; title odds add
+// record, injuries, points scored and trend from the season simulator. Odds count for more as the
+// season goes on (25% before any games, up to 60% by Week 7). Score 0-100; before the simulator
+// has run, Power is roster strength alone.
+function powerScores(){
+  const teams = [...S.teams.values()], strs = teams.map(t => t.strength), lo = Math.min(...strs), hi = Math.max(...strs);
+  const odds = S.titleOdds?.odds, maxOdds = odds ? Math.max(0.0001, ...teams.map(t => odds.get(t.rid) || 0)) : 0;
+  const w = odds ? Math.min(0.6, 0.25 + 0.05 * (S.weeksPlayed || 0)) : 0;
+  const m = new Map(teams.map(t => { const sN = hi > lo ? (t.strength - lo) / (hi - lo) : 1, oN = odds ? Math.sqrt((odds.get(t.rid) || 0) / maxOdds) : 0;
+    return [t.rid, { score: Math.round(100 * ((1 - w) * sN + w * oN)), odds: odds ? odds.get(t.rid) ?? null : null }]; }));
+  [...m.entries()].sort((a, b) => b[1].score - a[1].score || S.teams.get(b[0]).strength - S.teams.get(a[0]).strength).forEach(([, v], i) => v.rank = i + 1);
+  return { m, w };
+}
 function renderStandings(){
   if (!S.league) return;
   const pts = (w, d) => (Number(w) || 0) + (Number(d) || 0) / 100;
-  const power = [...S.teams.values()].sort((a, b) => b.strength - a.strength).map(t => t.rid);
+  const PW = powerScores();
   const rows = S.rosters.map(r => {
     const st = r.settings || {}, t = S.teams.get(r.roster_id);
     const w = st.wins || 0, l = st.losses || 0, ti = st.ties || 0, gp = w + l + ti;
     return { rid: r.roster_id, t, w, l, ti, gp, pf: pts(st.fpts, st.fpts_decimal), pa: pts(st.fpts_against, st.fpts_against_decimal),
-             max: pts(st.ppts, st.ppts_decimal), streak: r.metadata?.streak || "", power: power.indexOf(r.roster_id) + 1 };
+             max: pts(st.ppts, st.ppts_decimal), streak: r.metadata?.streak || "", power: PW.m.get(r.roster_id)?.rank || 0 };
   }).sort((a, b) => (b.w + b.ti / 2) - (a.w + a.ti / 2) || b.pf - a.pf);
   const playoff = Number(S.league.settings?.playoff_teams) || 0;
   const anyMax = rows.some(r => r.max > 0);
@@ -40,7 +53,7 @@ function renderStandings(){
   const val = { place: r => r.place, name: r => (r.t?.name || "").toLowerCase(), rec: r => r.place, pct: r => r.pct, odds: r => r.odds, pf: r => r.pf, pa: r => r.pa, max: r => r.max, strk: r => r.strk, power: r => r.power, stat: r => r.stat }[sk] || (r => r.place);
   const shown = [...rows].sort((a, b) => { const x = val(a), y = val(b); return (typeof x === "string" ? x.localeCompare(y, undefined, { numeric: true }) : x < y ? -1 : x > y ? 1 : 0) * sd || a.place - b.place; });
   const H = (k, label, cls = "", extra = "") => `<th class="sortable ${cls}" data-sort="${k}" aria-sort="${sk === k && !(ranked && sd > 0) ? (sd > 0 ? "ascending" : "descending") : "none"}" ${extra}>${label}</th>`;
-  $("standTable").innerHTML = `<thead><tr>${H("place", "#", "n")}${H("name", "Team")}${H("rec", "Record", "n")}${H("pct", "Win %", "n hide-sm")}${H("odds", `Title odds <button type="button" class="info-btn" data-info="col-odds" aria-label="What title odds mean">?</button>`, "n")}${H("pf", "Points for", "n hide-sm")}${H("pa", "Points against", "n hide-sm")}${anyMax ? H("max", "Max points", "n hide-sm") : ""}${H("strk", "Streak", "hide-sm")}${H("power", "Power", "n hide-sm")}${H("stat", "Status")}</tr></thead>
+  $("standTable").innerHTML = `<thead><tr>${H("place", "#", "n")}${H("name", "Team")}${H("rec", "Record", "n")}${H("pct", "Win %", "n hide-sm")}${H("odds", `Title odds <button type="button" class="info-btn" data-info="col-odds" aria-label="What title odds mean">?</button>`, "n")}${H("pf", "Points for", "n hide-sm")}${H("pa", "Points against", "n hide-sm")}${anyMax ? H("max", "Max points", "n hide-sm") : ""}${H("strk", "Streak", "hide-sm")}${H("power", `Power <button type="button" class="info-btn" data-info="col-power" aria-label="What Power means">?</button>`, "n hide-sm")}${H("stat", "Status")}</tr></thead>
     <tbody>${shown.map(r => `<tr class="${r.rid === S.myRid ? "me" : ""}${ranked && sd > 0 && playoff && r.place === playoff ? " cut" : ""}">
       <td class="n rk">${r.place}</td>
       <td><span class="teamcell">${teamPhoto(r.rid, "sm")}<span><b>${esc(r.t?.name || "Team " + r.rid)}</b>${r.t?.manager && r.t.manager !== r.t.name ? `<br><small style="color:var(--muted)">${esc(r.t.manager)}</small>` : ""}</span></span></td>
@@ -53,19 +66,21 @@ function renderStandings(){
       <td class="n hide-sm">${ordinal(r.power)}</td>
       <td>${r.t ? `<span class="badge ${badgeClass[r.t.status]}">${statusText[r.t.status]}</span>` : ""}</td></tr>`).join("")}</tbody>`;
   // ---- Power Rankings ----
-  const byStrength = [...S.teams.values()].sort((a, b) => b.strength - a.strength);
-  const maxStr = byStrength[0]?.strength || 1;
+  const strRank = new Map([...S.teams.values()].sort((a, b) => b.strength - a.strength).map((t, i) => [t.rid, i + 1]));
+  const byStrength = [...S.teams.values()].sort((a, b) => PW.m.get(a.rid).rank - PW.m.get(b.rid).rank);   // ordered by Power
   const standRank = new Map(rows.map((r, i) => [r.rid, i + 1]));
   const recOf = new Map(rows.map(r => [r.rid, `${r.w}-${r.l}${r.ti ? "-" + r.ti : ""}`]));
-  $("powerTable").innerHTML = `<thead><tr><th class="n">#</th><th>Team</th><th class="n">Roster strength <button type="button" class="info-btn" data-info="col-strength" aria-label="What does Roster strength mean?">?</button></th><th class="hide-sm">Best players</th><th class="n">Record</th><th class="n hide-sm">Standing</th><th class="hide-sm">Record vs. roster</th><th>Status</th></tr></thead>
+  $("powerTable").innerHTML = `<thead><tr><th class="n">#</th><th>Team</th><th class="n">Power <button type="button" class="info-btn" data-info="col-power" aria-label="What Power means">?</button></th><th class="n">Roster strength <button type="button" class="info-btn" data-info="col-strength" aria-label="What does Roster strength mean?">?</button></th><th class="n">Title odds</th><th class="hide-sm">Best players</th><th class="n">Record</th><th class="n hide-sm">Standing</th><th class="hide-sm">Record vs. roster</th><th>Status</th></tr></thead>
     <tbody>${byStrength.map((t, i) => {
       const top = teamAssets(t.rid).filter(a => a.kind === "player").slice(0, 3).map(a => a.name);
-      const diff = (standRank.get(t.rid) || 0) - (i + 1);   // positive = standings rank worse than power rank
+      const diff = (standRank.get(t.rid) || 0) - strRank.get(t.rid);   // positive = standings rank worse than roster-strength rank
       const luck = !standRank.get(t.rid) ? "" : diff >= 3 ? `<span class="luck down">Underachieving (${diff} spots lower)</span>` : diff <= -3 ? `<span class="luck up">Overachieving (${-diff} spots higher)</span>` : `<span class="note" style="font-size:13px">As expected</span>`;
       return `<tr class="${t.rid === S.myRid ? "me" : ""}">
         <td class="n rk">${i + 1}</td>
         <td><span class="teamcell">${teamPhoto(t.rid, "sm")}<b>${esc(t.name)}</b></span></td>
-        <td class="n">${fmt(t.strength)}<span class="pw-bar" style="width:${Math.max(4, Math.round(t.strength / maxStr * 70))}px"></span></td>
+        <td class="n"><b class="pw-score">${PW.m.get(t.rid).score}</b><span class="pw-bar" style="width:${Math.max(4, Math.round(PW.m.get(t.rid).score / 100 * 70))}px"></span></td>
+        <td class="n">${fmt(t.strength)}</td>
+        <td class="n">${titleOddsText(t.rid)}</td>
         <td class="hide-sm" style="white-space:normal;max-width:260px;font-size:14px">${esc(top.join(", "))}</td>
         <td class="n rec">${esc(recOf.get(t.rid) || "–")}</td>
         <td class="n hide-sm">${standRank.get(t.rid) ? ordinal(standRank.get(t.rid)) : "–"}</td>
@@ -77,7 +92,7 @@ function renderStandings(){
   $("standNote").innerHTML = `<ul class="stand-key">
     ${playoff ? line("Playoffs:", `the top ${playoff} teams make it; the line under #${playoff} marks the cutoff. Ties are broken by Points For.`) : line("Ties:", "broken by Points For.")}
     ${line("Title odds:", `each team's chance to win the championship, ${oddsWhen}. They weigh record, roster strength, injuries, points scored and which way each team is trending.`)}
-    ${line("Power:", "roster strength from player values only. It doesn't count wins or record.")}
+    ${line("Power:", PW.w ? `roster strength blended with title odds (${Math.round(PW.w * 100)}% title odds this week), so record, injuries, points scored and trend count too.` : "roster strength from player values. Title odds blend in once the season simulator has run.")}
     ${line("Sort:", "click any column heading; click again to flip the order.")}
   </ul>`;
 }

@@ -1755,3 +1755,4 @@ body:has(#pcard:not([hidden])) #installTip{display:none!important}   /* the "Get
 .trend:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
 /* phones: a trending tag wraps under the player's name instead of widening the table */
 @media (max-width:600px){ #valuesTable .nm-wrap{min-width:0} #valuesTable .nm-wrap .trend{margin-left:0;margin-top:2px} }
+.pw-score{font-family:var(--display);font-weight:800;font-size:18px;display:inline-block;min-width:26px;text-align:right}
