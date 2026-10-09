@@ -341,6 +341,10 @@ function renderCalc(){
   const total = eS + eG;
   $("fill").style.width = (total ? (eS/total*100) : 50) + "%";
   $("fill").className = "fill";   // gold until both sides have something
+  // Computers: one gold bar on grey that grows from the middle toward the team getting the better end
+  // (left = your team, right = theirs). A 50% value gap or more fills that whole half.
+  { const g = eG - eS, big = Math.max(eS, eG), half = !big || !(send.length || S.faab.send > 0) || !(get.length || S.faab.get > 0) ? 0 : Math.min(50, Math.abs(g) / big / 0.5 * 50);
+    const tl = $("tilt"); if (tl){ tl.style.width = half + "%"; tl.style.left = g > 0 ? (50 - half) + "%" : "50%"; } }
 
   const sug = $("suggest"); sug.innerHTML = "";
   const hasS = send.length || S.faab.send > 0, hasG = get.length || S.faab.get > 0;

@@ -1760,3 +1760,9 @@ body:has(#pcard:not([hidden])) #installTip{display:none!important}   /* the "Get
 /* "?" next to a page title (Power Rankings, Scouting Reports) */
 .sec-h .info-btn{font:800 12px var(--body);width:20px;height:20px;margin-left:8px;position:relative;top:-3px;color:var(--muted)}
 .sec-h .info-btn:hover{color:var(--ink)}
+
+/* Score bars: the team favored to win (51%+) is always the green side */
+.mb .sb-bar.fav-l{background:#E05A4A}.mb .sb-bar.fav-l i{background:#3FB97A}
+/* an even game (50/50): a grey bar */
+.mb .sb-bar.even{background:#9AA5AF}.mb .sb-bar.even i{background:#7D8893}
+.track .tilt{display:none}

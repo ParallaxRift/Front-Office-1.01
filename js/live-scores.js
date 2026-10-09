@@ -199,7 +199,7 @@ function renderScores(data, week){
       : `<p class="note">No bench players.</p>`;
     return `<article class="mb${mine ? " mine" : ""}">${mine ? `<div class="mb-tag">Your matchup${final ? " · Final" : live ? " · Live" : ""}</div>` : final ? `<div class="mb-tag quiet">Final</div>` : ""}
       <div class="sb">${team(A, "l")}<span class="sb-vs">vs</span>${team(B, "r")}</div>
-      <div class="sb-bar" role="img" aria-label="${esc(S.teams.get(A.roster_id)?.name || "")} ${wA != null ? `has a ${share}% chance to win` : pTot > 0 ? `has ${share}% of the projected points` : `has ${share}% of the points`}"><i style="width:${share}%"></i></div>
+      <div class="sb-bar${share >= 51 ? " fav-l" : share === 50 ? " even" : ""}" role="img" aria-label="${esc(S.teams.get(A.roster_id)?.name || "")} ${wA != null ? `has a ${share}% chance to win` : pTot > 0 ? `has ${share}% of the projected points` : `has ${share}% of the points`}"><i style="width:${share}%"></i></div>
       <details${mine || boxOpen ? " open" : ""}><summary>Box score</summary><div class="bx">${rows}</div></details>
       <details><summary>Bench</summary><div class="bx">${bench}</div></details>
     </article>`;
@@ -283,12 +283,12 @@ function matchupOfWeek(list, X){
     ...(g.pa && g.pb ? [["Projected", g.pa.t.toFixed(1), g.pb.t.toFixed(1), g.pa.t - g.pb.t]] : []),
     ["Top-" + elite + " starters", String(stars(A)), String(stars(B)), stars(A) - stars(B)]
   ].map(([k, l, r, d]) => `<div class="tape-row"><span class="${d > 0 ? "up" : ""}">${l}</span><em>${k}</em><span class="${d < 0 ? "up" : ""}">${r}</span></div>`).join("");
-  const side = (m, wc, cls) => `<div class="motw-side ${cls}">${teamPhoto(m.roster_id, "xl")}<b class="motw-name">${nm(m.roster_id)}</b>
+  const side = (m, wc, cls) => `<div class="motw-side ${cls}">${teamPhoto(m.roster_id, "xl")}<b class="motw-name">${nm(m.roster_id)}</b><span class="motw-rec">${recTxt(m.roster_id)}</span>
     <span class="motw-score">${X.pts(m).toFixed(2)}</span>${wc != null ? `<span class="motw-wc">${Math.round(wc * 100)}% to win</span>` : ""}</div>`;
   const html = `<article class="mb motw" aria-label="Matchup of the Week">
     <div class="motw-banner"><span class="motw-kicker">Prime Time · Week ${X.week}</span><h3>Matchup of the Week</h3></div>
-    <div class="motw-faceoff">${side(A, wa, "l")}<div class="motw-vs"><span>VS</span></div>${side(B, wb, "r")}</div>
-    <div class="motw-bar"><span>${share}%</span><div class="sb-bar"><i style="width:${share}%"></i></div><span>${100 - share}%</span></div>
+    <div class="motw-faceoff${share >= 51 ? " fav-l" : share === 50 ? " even" : ""}">${side(A, wa, "l")}<div class="motw-vs"><span>VS</span></div>${side(B, wb, "r")}</div>
+    <div class="motw-bar${share >= 51 ? " fav-l" : share === 50 ? " even" : ""}"><span>${share}%</span><div class="sb-bar${share >= 51 ? " fav-l" : share === 50 ? " even" : ""}"><i style="width:${share}%"></i></div><span>${100 - share}%</span></div>
     <div class="motw-tape">${tape}</div>
     <div class="motw-stars">${star(A)}${star(B)}</div>
     <div class="motw-tags">${(g.why.length ? g.why : ["The best mix of rankings, projections and star power this week"]).slice(0, 3).map(x => `<span>${x}</span>`).join("")}</div>

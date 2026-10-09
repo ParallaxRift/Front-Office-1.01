@@ -539,3 +539,18 @@ p.tuning-upd{margin:6px 0 0;margin-left:0}
 @keyframes cwPulse{70%{box-shadow:0 0 0 8px rgba(63,185,122,0)}100%{box-shadow:0 0 0 0 rgba(63,185,122,0)}}
 @media (prefers-reduced-motion:reduce){.cw-dot{animation:none}}
 .cw-live-card .cw-champ .av{box-shadow:0 0 0 2px #7D8C98}
+.motw-rec{font:800 14px var(--bc-num);letter-spacing:.06em;color:#9DB0BE;margin-top:-4px}
+/* Score bars: the favorite (51%+) is green, whichever side it's on */
+.mb .sb-bar.fav-l{background:var(--bc-send)!important}.mb .sb-bar.fav-l i{background:var(--bc-get)!important}
+.motw-bar.fav-l span:first-child{color:#5FD39A}.motw-bar.fav-l span:last-child{color:#FF8A78}
+.motw-faceoff.fav-l .motw-side.l .av{box-shadow:0 0 0 3px #0F1820,0 0 0 5px var(--bc-get),0 10px 24px -8px rgba(0,0,0,.8)}
+.motw-faceoff.fav-l .motw-side.r .av{box-shadow:0 0 0 3px #0F1820,0 0 0 5px var(--bc-send),0 10px 24px -8px rgba(0,0,0,.8)}
+.mb .sb-bar.even{background:#8A97A3!important}.mb .sb-bar.even i{background:#6B7885!important}
+.motw-bar.even span{color:#C9D4DC!important}
+.motw-faceoff.even .motw-side .av{box-shadow:0 0 0 3px #0F1820,0 0 0 5px #8A97A3,0 10px 24px -8px rgba(0,0,0,.8)!important}
+/* Trade Calculator bar (desktop): grey track, one gold bar that grows from the middle toward the side getting the advantage */
+.board .track{background:#3A4652!important;position:relative}
+.board .track .fill{display:none!important}
+.board .track .tilt{display:block;position:absolute;top:0;bottom:0;left:50%;width:0;background:linear-gradient(90deg,#C98A16,#F2B33D 50%,#FFD77A);box-shadow:0 0 12px rgba(242,179,61,.55);transition:left .45s cubic-bezier(.2,.8,.2,1),width .45s cubic-bezier(.2,.8,.2,1)}
+.board .track .mid{z-index:1}
+@media (prefers-reduced-motion:reduce){.board .track .tilt{transition:none}}
