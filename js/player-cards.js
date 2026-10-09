@@ -279,7 +279,7 @@ function valueHistoryBlock(a, vh){
     <p class="pc-note">His value in your league each time the Front Office Rankings changed, using your league's settings as they are today. ${matchMedia("(hover:none)").matches ? "Tap" : "Hover over"} a dot for the date and value.</p>`;
 }
 // ---------- Game log and usage history (week by week, from Sleeper) ----------
-const PC_TABS = [["status", "Current Status", "Status"], ["log", "Game Log", "Games"], ["career", "Career Stats", "Career"], ["usage", "Usage", "Usage"], ["value", "Value History", "Value"], ["trades", "Trade History", "Trades"]];   // [key, label, short label for phones]
+const PC_TABS = [["status", "Current Status", "Status"], ["proj", "Projections", "Proj"], ["log", "Game Log", "Games"], ["career", "Career Stats", "Career"], ["usage", "Usage", "Usage"], ["value", "Value History", "Value"], ["trades", "Trade History", "Trades"]];   // [key, label, short label for phones]
 const PC = { pid: null, pos: "", tab: "status", season: null, seasons: null };
 const weekCache = new Map();
 async function sleeperWeeks(pid, season){
@@ -429,10 +429,76 @@ function loadSchools(){
     }).catch(() => { schoolsLoad = null; return new Map(); });
   return schoolsLoad;
 }
+// ESPN's logo number for the schools most NFL players come from, so their logos show without
+// waiting on (or depending on) ESPN's team list
+const SCHOOL_IDS = { "Alabama": 333, "Georgia": 61, "Ohio State": 194, "Michigan": 130, "LSU": 99, "Clemson": 228, "Oklahoma": 201, "USC": 30, "Florida": 57,
+  "Notre Dame": 87, "Penn State": 213, "Oregon": 2483, "Auburn": 2, "Tennessee": 2633, "Texas": 251, "Texas A&M": 245, "Florida State": 52, "Miami": 2390,
+  "Wisconsin": 275, "Iowa": 2294, "Washington": 264, "Utah": 254, "TCU": 2628, "Ole Miss": 145, "Arkansas": 8, "Kentucky": 96, "South Carolina": 2579,
+  "Missouri": 142, "Nebraska": 158, "Minnesota": 135, "Purdue": 2509, "Michigan State": 127, "UCLA": 26, "Stanford": 24, "California": 25, "Arizona": 12,
+  "Arizona State": 9, "Colorado": 38, "Boise State": 68, "BYU": 252, "Pitt": 221, "Virginia Tech": 259, "North Carolina": 153, "Louisville": 97, "Baylor": 239,
+  "Texas Tech": 2641, "Oklahoma State": 197, "West Virginia": 277, "Iowa State": 66, "Kansas State": 2306, "Kansas": 2305, "Mississippi State": 344,
+  "Vanderbilt": 238, "Illinois": 356, "Indiana": 84, "Northwestern": 77, "Maryland": 120, "Rutgers": 164, "Duke": 150, "NC State": 152, "Georgia Tech": 59,
+  "Syracuse": 183, "Boston College": 103, "Wake Forest": 154, "Virginia": 258, "Oregon State": 204, "Washington State": 265, "Cincinnati": 2132, "UCF": 2116,
+  "Houston": 248, "SMU": 2567, "Memphis": 235, "Tulane": 2655 };
+const schoolIdLogo = name => { const k = schoolKey(name), hit = Object.entries(SCHOOL_IDS).find(([n]) => schoolKey(n) === k); return hit ? `https://a.espncdn.com/i/teamlogos/ncaa/500/${hit[1]}.png` : ""; };
 async function schoolLogo(college){
   if (!college) return "";
-  const m = await loadSchools(), alias = SCHOOL_ALIAS[college.toLowerCase().trim()];
-  return m.get(schoolKey(alias || college)) || m.get(schoolKey(college.replace(/\s*\(.*\)\s*/, ""))) || "";
+  const alias = SCHOOL_ALIAS[college.toLowerCase().trim()], name = alias || college, bare = college.replace(/\s*\(.*\)\s*/, "");
+  const known = schoolIdLogo(name);   // (not the bare name: "Miami (OH)" is not Miami)
+  if (known) return known;
+  const m = await loadSchools();
+  return m.get(schoolKey(name)) || m.get(schoolKey(bare)) || "";
+}
+// ---------- Projections: this week, the rest of the season, and the full season, in this league's scoring ----------
+const projCache = new Map();
+async function sleeperProjWeeks(pid, season){
+  const k = pid + "|" + season;
+  if (projCache.has(k)) return projCache.get(k);
+  try {
+    const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 8000);
+    const r = await fetch(`https://api.sleeper.com/projections/nfl/player/${encodeURIComponent(pid)}?season_type=regular&season=${season}&grouping=week`, { signal: ctl.signal });
+    clearTimeout(t);
+    if (!r.ok) return null;
+    const d = await r.json();
+    const list = Array.isArray(d) ? d.map(e => [e?.week, e]) : Object.entries(d || {});
+    const rows = list.map(([wk, e]) => e && e.stats ? { wk: Number(e.week ?? wk), opp: e.opponent || "", st: e.stats } : null)
+      .filter(x => x && x.wk >= 1 && x.wk <= 18).sort((x, y) => x.wk - y.wk);
+    projCache.set(k, rows);
+    return rows;
+  } catch(e){ return null; }
+}
+async function renderProjections(){
+  const pid = PC.pid, pos = PC.pos, a = S.assets?.get("p:" + pid), sp = S.sleeperPlayers?.[pid] || {};
+  const season = liveSeasonYear(), inSeason = S.nflState?.season_type === "regular", wk = inSeason ? currentWeek() : 0;
+  const lastReg = Math.min(18, (Number(S.league?.settings?.playoff_week_start) || 15) - 1), lastFantasy = lastFantasyWeek();
+  const [proj, played] = await Promise.all([sleeperProjWeeks(pid, season), inSeason ? sleeperWeeks(pid, season) : Promise.resolve(null)]);
+  if ($("pcard").hidden || PC.pid !== pid) return;
+  const out = seasonOutlook(pid), st = sp.injury_status;
+  // a player ruled out (or on IR) is projected at 0 until Front Office's estimated return
+  const backWk = out?.done ? 99 : out?.back || 0;
+  const availNote = w => st && ["Out", "IR", "PUP", "NFI", "Sus"].includes(st) && w < Math.max(wk + 1, backWk) ? (st === "Sus" ? "Suspended" : "Expected out") : "";
+  const ahead = (proj || []).filter(r => r.wk >= Math.max(1, wk) && r.wk <= lastFantasy).map(r => ({ ...r, pts: availNote(r.wk) ? 0 : leaguePoints(r.st, pos), note: availNote(r.wk) }));
+  const thisWeek = ahead.find(r => r.wk === wk);
+  const rest = ahead.filter(r => r.wk <= lastReg).reduce((t, r) => t + r.pts, 0), restN = ahead.filter(r => r.wk <= lastReg).length;
+  const pjStats = pj => Object.fromEntries(["pass_yd", "pass_td", "pass_int", "rush_yd", "rush_td", "rec", "rec_yd", "rec_td", "fum_lost"].map((k, i) => [k, Number(pj[i]) || 0]));
+  const fo = a?.pj ? leaguePoints(pjStats(a.pj), pos) : null;   // same scoring as the weekly numbers
+  const games = (played || []).filter(r => played && (Number(r.st.gp) > 0 || Number(r.st.off_snp) > 0)), soFar = games.reduce((t, g) => t + leaguePoints(g.st, pos), 0);
+  const tile = (label, big, sub) => `<div class="pj-tile"><small>${label}</small><b>${big}</b>${sub ? `<span>${sub}</span>` : ""}</div>`;
+  const tiles = [
+    inSeason ? tile(`This week${wk ? " · Wk " + wk : ""}`, thisWeek ? thisWeek.pts.toFixed(1) : "–", thisWeek ? (thisWeek.note || (thisWeek.opp ? "vs " + esc(thisWeek.opp) : "")) : proj ? "Bye or no projection" : "Not available right now") : "",
+    inSeason && restN ? tile("Rest of regular season", rest.toFixed(0), `${restN} game${restN > 1 ? "s" : ""}, ${(rest / restN).toFixed(1)} per game`) : "",
+    fo != null ? tile("Full season (Front Office)", fo.toFixed(0), `${(fo / 17).toFixed(1)} per game over 17 games`) : "",
+    games.length ? tile("Scored so far", soFar.toFixed(1), `${(soFar / games.length).toFixed(1)} per game in ${games.length} game${games.length > 1 ? "s" : ""}`) : ""
+  ].join("");
+  const v = (x, k) => Number(x[k]) || 0;
+  const line = r => pos === "QB" ? `${v(r.st, "pass_yd").toFixed(0)} pass yds, ${v(r.st, "pass_td").toFixed(1)} TD, ${v(r.st, "rush_yd").toFixed(0)} rush yds`
+    : pos === "RB" ? `${v(r.st, "rush_att").toFixed(1)} car, ${v(r.st, "rush_yd").toFixed(0)} rush yds, ${v(r.st, "rec").toFixed(1)} rec, ${(v(r.st, "rush_td") + v(r.st, "rec_td")).toFixed(1)} TD`
+    : `${v(r.st, "rec_tgt").toFixed(1)} tgt, ${v(r.st, "rec").toFixed(1)} rec, ${v(r.st, "rec_yd").toFixed(0)} yds, ${v(r.st, "rec_td").toFixed(1)} TD`;
+  const table = ahead.length ? `<h4 class="pc-h4">Week by week</h4><div class="pc-scroll"><table class="pc-proj"><thead><tr><th>Wk</th><th class="l">Opp</th><th class="l">Projected stats</th><th>Pts</th></tr></thead><tbody>
+    ${(() => { const rows = []; const by = new Map(ahead.map(r => [r.wk, r])); for (let w = ahead[0].wk; w <= ahead[ahead.length - 1].wk; w++) rows.push(by.get(w) || { wk: w, bye: true }); return rows; })().map(r => r.bye ? `<tr class="pc-dnp"><td>${r.wk}</td><td class="l"></td><td class="l" colspan="2">Bye</td></tr>` : `<tr class="${r.wk === wk ? "now" : ""}${r.wk > lastReg ? " po" : ""}"><td>${r.wk}</td><td class="l">${esc(r.opp || "–")}</td><td class="l">${r.note ? `<i>${esc(r.note)}</i>` : line(r)}</td><td class="pc-pts">${r.pts.toFixed(1)}</td></tr>`).join("")}
+    </tbody></table></div>` : "";
+  $("pcProj").innerHTML = `${tiles ? `<div class="pj-tiles">${tiles}</div>` : `<p class="empty">No projections for him right now.</p>`}${table}
+    <p class="pc-note">All points use your league's scoring settings. Weekly projections from Sleeper${ahead.some(r => r.wk > lastReg) ? "; shaded weeks are your fantasy playoffs" : ""}. The full-season number is from the Front Office Rankings projections. Players ruled out count 0 until Front Office's estimated return.</p>`;
 }
 async function openPlayerCard(pid){
   const sp = S.sleeperPlayers?.[pid] || {}, a = S.assets?.get("p:" + pid);
@@ -458,6 +524,7 @@ async function openPlayerCard(pid){
       <dl class="pc-facts">${facts.map(([k, v]) => `<div${k === "Fantasy team" || k === "College" ? ' class="wide"' : ""}><dt>${esc(k)}</dt><dd>${k === "Fantasy team" && a?.owner != null ? `<span class="pc-ft">${teamPhoto(a.owner, "sm")}${esc(v)}</span>` : esc(v)}</dd></div>`).join("")}</dl>
       <div class="pc-tabs" role="tablist" aria-label="Player details">${PC_TABS.filter(([k]) => k !== "value" || a).map(([k, l, sh], i) => `<button type="button" role="tab" data-pctab="${k}" aria-selected="${i === 0}" aria-label="${l}"><span class="t-full">${l}</span><span class="t-short">${sh}</span></button>`).join("")}</div>
       <section class="pc-pane" data-pane="status"><div id="pcNow">${currentStatus(sp)}</div><p class="pc-note">Current status from Sleeper.</p></section>
+      <section class="pc-pane" data-pane="proj" hidden><div id="pcProj"><p class="pc-loading">Loading projections…</p></div></section>
       <section class="pc-pane" data-pane="log" hidden><div id="pcLog"><p class="pc-loading">Loading game log…</p></div></section>
       <section class="pc-pane" data-pane="career" hidden><div id="pcStats"><p class="pc-loading">Loading stats…</p></div><p class="pc-note">Career stats from Sleeper. Regular season only. Fantasy points here use standard full-PPR scoring; the Game Log uses your league's scoring.</p></section>
       <section class="pc-pane" data-pane="usage" hidden><div id="pcUse"><p class="pc-loading">Loading usage…</p></div><div id="pcUseHist"></div></section>
@@ -503,6 +570,7 @@ $("pcard").addEventListener("click", e => {
   for (const pane of $("pcard").querySelectorAll(".pc-pane")) pane.hidden = pane.dataset.pane !== PC.tab;
   if (PC.tab === "log" || PC.tab === "usage") renderWeekPanes();
   if (PC.tab === "trades") $("pcTrades").innerHTML = playerTradesBlock(PC.pid);
+  if (PC.tab === "proj") renderProjections();
 });
 $("pcard").addEventListener("keydown", e => {   // arrow keys move between tabs
   const t = e.target.closest("[data-pctab]"); if (!t || !["ArrowLeft", "ArrowRight"].includes(e.key)) return;

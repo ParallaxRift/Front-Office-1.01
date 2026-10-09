@@ -1521,3 +1521,14 @@ body:has(#pcard:not([hidden])) #installTip{display:none!important}   /* the "Get
 .pc-trades .titem.me .tn{font-weight:700}
 .pc-me{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:999px;background:var(--field);color:#fff;font:700 10px var(--body);text-transform:uppercase;letter-spacing:.04em;vertical-align:2px}
 .pc-trades .trade-sides{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+/* Player card: Projections tab */
+.pj-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:6px}
+.pj-tile{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.pj-tile small{display:block;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
+.pj-tile b{display:block;font:700 28px var(--display);margin:2px 0}
+.pj-tile span{font-size:13px;color:var(--muted)}
+.pc-proj tr.now td{background:var(--field-soft);font-weight:600}
+.pc-proj tr.po td{background:var(--gold-soft)}
+.pc-proj td.l i{color:var(--muted)}
+.pc-proj .pc-pts{font-weight:700}
+@media (max-width:600px){.pj-tiles{grid-template-columns:1fr 1fr}.pj-tile b{font-size:24px}}
