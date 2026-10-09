@@ -476,7 +476,7 @@ function renderTuningLight(){
   const el = $("tuningLight"); if (!el || !S.league) return;
   const link = "";
   if (S.historyError){
-    el.innerHTML = `<span class="light off" aria-hidden="true"></span><div class="tuning-text"><b>League Tuning Is Off</b><p>Couldn't check your league's trade history, so values use ${marketWord()} and your league settings only. Reopen the league to try again.</p><p class="tuning-upd dt-only" data-upd></p>${link}</div>`; syncTuningUpdated();
+    el.innerHTML = `<span class="light off" aria-hidden="true"></span><div class="tuning-text"><b>League Tuning Is Off <button type="button" class="info-btn dt-only" data-info="tuning" aria-label="What League Tuning does">?</button></b><p>Couldn't check your league's trade history, so values use ${marketWord()} and your league settings only. Reopen the league to try again.</p><p class="tuning-upd dt-only" data-upd></p>${link}</div>`; syncTuningUpdated();
     return;
   }
   if (!S.history){
@@ -487,11 +487,11 @@ function renderTuningLight(){
   if (S.nudge){
     const adj = ["QB","RB","WR","TE","PICK"].map(k => ({ k, m: S.nudge[k] }))
       .map(x => `<span class="chip">${x.k === "PICK" ? "Picks" : x.k + "s"} ×${(Math.round(x.m*100)/100).toFixed(2)}</span>`).join("");
-    el.innerHTML = `<span class="light on" aria-hidden="true"></span><div class="tuning-text"><b>League Tuning Is On</b><p>These values include your league's trade habits, learned from ${S.nudge.n} trades, along with ${marketWord()}.</p><div class="chips">${adj}<span class="tuning-upd dt-only" data-upd></span></div>${link}</div>`; syncTuningUpdated();
+    el.innerHTML = `<span class="light on" aria-hidden="true"></span><div class="tuning-text"><b>League Tuning Is On <button type="button" class="info-btn dt-only" data-info="tuning" aria-label="What League Tuning does">?</button></b><p>These values include your league's trade habits, learned from ${S.nudge.n} trades, along with ${marketWord()}.</p><div class="chips">${adj}<span class="tuning-upd dt-only" data-upd></span></div>${link}</div>`; syncTuningUpdated();
   } else {
     const left = Math.max(0, NUDGE_MIN_TRADES - twoTeam);
     const pct = Math.min(100, Math.round(twoTeam / NUDGE_MIN_TRADES * 100));
-    el.innerHTML = `<span class="light off" aria-hidden="true"></span><div class="tuning-text"><b>League Tuning Is Off for Now: ${left} More Trade${left === 1 ? "" : "s"} to Go</b><p>Your league has ${twoTeam} of the ${NUDGE_MIN_TRADES} trades needed. Until then, values use ${marketWord()} and your league settings only.</p><div class="tprog" role="progressbar" aria-valuemin="0" aria-valuemax="${NUDGE_MIN_TRADES}" aria-valuenow="${twoTeam}" aria-label="Trades toward league tuning"><span style="width:${pct}%"></span></div><small class="tprog-label">${twoTeam} / ${NUDGE_MIN_TRADES} trades</small><p class="tuning-upd dt-only" data-upd style="margin:6px 0 0"></p>${link}</div>`; syncTuningUpdated();
+    el.innerHTML = `<span class="light off" aria-hidden="true"></span><div class="tuning-text"><b>League Tuning Is Off for Now: ${left} More Trade${left === 1 ? "" : "s"} to Go <button type="button" class="info-btn dt-only" data-info="tuning" aria-label="What League Tuning does">?</button></b><p>Your league has ${twoTeam} of the ${NUDGE_MIN_TRADES} trades needed. Until then, values use ${marketWord()} and your league settings only.</p><div class="tprog" role="progressbar" aria-valuemin="0" aria-valuemax="${NUDGE_MIN_TRADES}" aria-valuenow="${twoTeam}" aria-label="Trades toward league tuning"><span style="width:${pct}%"></span></div><small class="tprog-label">${twoTeam} / ${NUDGE_MIN_TRADES} trades</small><p class="tuning-upd dt-only" data-upd style="margin:6px 0 0"></p>${link}</div>`; syncTuningUpdated();
   }
 }
 
